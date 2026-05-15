@@ -1,1 +1,14 @@
- 
+{
+  "name": "paletcd-pro",
+  "version": "4.0.0",
+  "description": "Controle de Paletes - Cloud Edition",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "@netlify/functions": "^2.0.0"
+  }
+}
