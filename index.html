@@ -492,14 +492,67 @@ const SUPA_ID='main';
 let _supaReady=false;
 let _syncTimeout=null;
 
-async function supaCheck(){return false;}
-
-async function supaLoad(){
-  const data = await githubLoad();
-  return data;
+async function supaCheck(){
+  try{
+    const resp=await fetch(`${SUPA_URL}/rest/v1/paletcd_state?id=eq.main`, {
+      method:'HEAD',
+      headers:{'apikey':SUPA_KEY}
+    });
+    return resp.ok;
+  }catch(e){
+    return false;
+  }
 }
-
-async function supaSave(data){return githubSave(data);}
+ 
+async function supaLoad(){
+  try{
+    const resp=await fetch(`${SUPA_URL}/rest/v1/paletcd_state?id=eq.${SUPA_ID}&select=state`, {
+      headers:{'apikey':SUPA_KEY}
+    });
+    if(resp.ok){
+      const data=await resp.json();
+      if(data && data.length>0 && data[0].state){
+        console.log('✓ Dados carregados do Supabase');
+        _supaReady=true;
+        return typeof data[0].state==='string'?JSON.parse(data[0].state):data[0].state;
+      }
+    }
+  }catch(e){
+    console.log('Supabase indisponível — usando GitHub');
+  }
+  const githubData=await githubLoad();
+  if(githubData){
+    _supaReady=false;
+    return githubData;
+  }
+  return null;
+}
+ 
+async function supaSave(data){
+  try{
+    const jsonStr=typeof data==='string'?data:JSON.stringify(data);
+    const resp=await fetch(`${SUPA_URL}/rest/v1/paletcd_state`, {
+      method:'UPSERT',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates'
+      },
+      body:JSON.stringify({
+        id:SUPA_ID,
+        state:jsonStr
+      })
+    });
+    if(resp.ok){
+      console.log('✓ Sincronizado com Supabase');
+      _supaReady=true;
+      return true;
+    }
+  }catch(e){
+    console.log('Erro ao sincronizar com Supabase:',e.message);
+  }
+  return false;
+}
 
 function updateSyncBadge(){
   const b=document.getElementById('sync-badge');
