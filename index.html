@@ -251,48 +251,6 @@ textarea.form-control{resize:vertical;min-height:60px;}
   .login-box{padding:28px 20px;}
 }
 </style>
-<script>
-const SUPABASE_URL='https://znvhmenfyqqoxqbaovja.supabase.co';
-const SUPABASE_KEY='sb_publishable_-HVPXmi4xhxUQ9hHYJJy7Q_VPvziDI7';
-let supabase=null;
-function initSupabase(){
-try{
-supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-console.log('✅ Supabase conectado');
-return true;
-}catch(e){
-console.error('❌ Erro Supabase:',e);
-return false;
-}
-}
-async function supaLoad(){
-if(!supabase)return null;
-try{
-const{data}=await supabase.from('movimentacoes').select('*');
-return{movs:data||[],est:{},triagens:[],recebForn:[],reformas:[],forns:[],fornNomes:[],nMov:(data?.length||0)+1,modoMigracao:false};
-}catch(e){
-console.error('Erro load:',e);
-return null;
-}
-}
-async function supaSave(data){
-if(!supabase)return false;
-try{
-const seenIds=new Set();const uniqueMovs=[];
-data.movs.forEach(m=>{
-const key=m.id||`${m.loj}_${m.dt}_${m.op}`;
-if(!seenIds.has(key)){seenIds.add(key);uniqueMovs.push(m);}
-});
-await supabase.from('movimentacoes').delete().neq('id','');
-if(uniqueMovs.length>0)await supabase.from('movimentacoes').insert(uniqueMovs);
-console.log('✅ Dados salvos Supabase');
-return true;
-}catch(e){
-console.error('Erro save:',e);
-return false;
-}
-}
-</script>
 </head>
 <body>
 
@@ -504,7 +462,7 @@ return false;
 // GITHUB CONFIG - Backup e Sincronização
 // ═══════════════════════════════════════════════════════
 const GITHUB_OWNER = 'MNepomuceno20111972';
-const GITHUB_REPO = 'paletcd-controle-de-paletes';
+const GITHUB_REPO = 'paletcd-pro';
 const GITHUB_BRANCH = 'main';
 const GITHUB_TOKEN = ''; // Deixar vazio - usar raw.githubusercontent.com
 const GITHUB_FILE = 'paletcd_backup.json';
