@@ -512,23 +512,21 @@ async function supaLoad(){
 async function supaSave(data){
   if(!data||!data.movs||data.movs.length===0)return false;
   try{
-    await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
-    
     const rows=data.movs.map(m=>({
       id:m.id,
       tipo:m.tipo||'',
       sim:m.origem||'',
       destino:m.destino||'',
-      citado:m.qtd||0,
+      citado:parseInt(m.qtd)||0,
       modelos:m.modelos||null
     }));
     
-    const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{
+    const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes?upsert=true`,{
       method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
       body:JSON.stringify(rows)
     });
     
-    console.log('✅ Dados salvos no Supabase:',r.status);
+    console.log('✅ Dados sincronizados com Supabase:',r.status);
     return r.ok;
   }catch(e){console.error('Erro supaSave:',e);return false;}
 }
