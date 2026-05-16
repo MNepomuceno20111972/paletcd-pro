@@ -13,8 +13,8 @@
 <meta name="theme-color" content="#1b4f72">
 <title>PaletCD — Controle de Paletes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
   --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
@@ -251,6 +251,48 @@ textarea.form-control{resize:vertical;min-height:60px;}
   .login-box{padding:28px 20px;}
 }
 </style>
+<script>
+const SUPABASE_URL='https://znvhmenfyqqoxqbaovja.supabase.co';
+const SUPABASE_KEY='sb_publishable_-HVPXmi4xhxUQ9hHYJJy7Q_VPvziDI7';
+let supabase=null;
+function initSupabase(){
+try{
+supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+console.log('✅ Supabase conectado');
+return true;
+}catch(e){
+console.error('❌ Erro Supabase:',e);
+return false;
+}
+}
+async function supaLoad(){
+if(!supabase)return null;
+try{
+const{data}=await supabase.from('movimentacoes').select('*');
+return{movs:data||[],est:{},triagens:[],recebForn:[],reformas:[],forns:[],fornNomes:[],nMov:(data?.length||0)+1,modoMigracao:false};
+}catch(e){
+console.error('Erro load:',e);
+return null;
+}
+}
+async function supaSave(data){
+if(!supabase)return false;
+try{
+const seenIds=new Set();const uniqueMovs=[];
+data.movs.forEach(m=>{
+const key=m.id||`${m.loj}_${m.dt}_${m.op}`;
+if(!seenIds.has(key)){seenIds.add(key);uniqueMovs.push(m);}
+});
+await supabase.from('movimentacoes').delete().neq('id','');
+if(uniqueMovs.length>0)await supabase.from('movimentacoes').insert(uniqueMovs);
+console.log('✅ Dados salvos Supabase');
+return true;
+}catch(e){
+console.error('Erro save:',e);
+return false;
+}
+}
+</script>
 </head>
 <body>
 
@@ -487,8 +529,7 @@ async function githubSave(data) {
   return false;
 }
 const SUPA_URL='https://pbjggmxbfkudnsfkaxqw.supabase.co';
-const SUPABASE_URL='https://znvhmenfyqqoxqbaovja.supabase.co';
-const SUPABASE_KEY='sb_publishable_-HVPXmi4xhxUQ9hHYJJy7Q_VPvziDI7';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiamdnbXhiZmt1ZG5zZmtheHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDIyODYsImV4cCI6MjA5MjIxODI4Nn0.mx0KHCs81eGYN8NJycIfYnhjquwz0mPRSgPeESiDSzg';
 const SUPA_TABLE='paletcd_state';
 const SUPA_ID='main';
 let _supaReady=false;
@@ -778,9 +819,6 @@ function fixState(s){
 
 async function load(){
   try {
-    // Inicializar Supabase PRIMEIRO
-    initSupabase();
-    
     // SMART LOAD: Tenta carregar local e remoto, depois faz merge
     let localData = null;
     let remoteData = null;
@@ -796,12 +834,12 @@ async function load(){
       }
     }
     
-    // 2. Carrega dados remotos (Supabase)
+    // 2. Carrega dados remotos
     try {
-      remoteData = await supaLoad();
+      remoteData = await githubLoad();
       if(remoteData) remoteData = fixState(remoteData);
     } catch(e) {
-      console.error('Erro ao carregar Supabase:', e);
+      console.error('Erro ao carregar remoto:', e);
     }
     
     // 3. MERGE inteligente
