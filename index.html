@@ -16,10 +16,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
-  --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
-  --teal:#00D9FF;--teal-light:#33EBFF;
-  --amber:#FFB800;--red:#FF3B30;--green:#34C759;--orange:#FF9500;
-  --slate-light:#5d6d7e;--purple:#9933FF;
+  --navy:#1b4f72;--navy-dark:#154360;--navy-light:#2471a3;
+  --teal:#148f77;--teal-light:#1abc9c;
+  --amber:#d4a017;--red:#c0392b;--green:#1e8449;--orange:#ca6f1e;
+  --slate-light:#5d6d7e;--purple:#6c3483;
   --bg:#f0f4f8;--bg-card:#fff;
   --border:#d5e8f5;--border-dark:#aecfe8;
   --text:#1a252f;--text-mid:#34495e;--text-light:#6c8093;
@@ -32,7 +32,7 @@
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
 
 /* ── LOGIN ────────────────────────────── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0052CC 0%,#9933FF 100%);padding:20px;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1b4f72 0%,#148f77 100%);padding:20px;}
 .login-box{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .login-logo{text-align:center;margin-bottom:22px;}
 .login-logo-icon{font-size:46px;}
@@ -57,7 +57,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 /* ── APP ──────────────────────────────── */
 #app-shell{display:none;}
-.sidebar{width:var(--sidebar-w);background:#0052CC;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;}
+.sidebar{width:var(--sidebar-w);background:#1b4f72;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;}
 .sidebar-top{padding:18px 18px 12px;border-bottom:1px solid rgba(255,255,255,.12);}
 .sidebar-logo{font-size:17px;font-weight:700;color:#fff;letter-spacing:1px;}
 .sidebar-logo-sub{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
@@ -456,36 +456,9 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
-
 // ═══════════════════════════════════════════════════════
-// GITHUB CONFIG - Backup e Sincronização
+// SUPABASE CONFIG
 // ═══════════════════════════════════════════════════════
-const GITHUB_OWNER = 'MNepomuceno20111972';
-const GITHUB_REPO = 'paletcd-controle-de-paletes';
-const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN = ''; // Deixar vazio - usar raw.githubusercontent.com
-const GITHUB_FILE = null; // GitHub desativado
-
-async function githubLoad() {
-  return null; // GitHub desativado - usar Supabase
-  try {
-    const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${GITHUB_FILE}`;
-    const resp = await fetch(url);
-    if(resp.ok) {
-      const data = await resp.json();
-      console.log('✓ Dados carregados do GitHub');
-      return data;
-    }
-  } catch(e) {
-    console.log('GitHub indisponível, usando localStorage');
-  }
-  return null;
-}
-
-async function githubSave(data) {
-  console.log('💾 Dados salvos localmente (GitHub requer push manual)');
-  return false;
-}
 const SUPA_URL='https://pbjggmxbfkudnsfkaxqw.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiamdnbXhiZmt1ZG5zZmtheHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDIyODYsImV4cCI6MjA5MjIxODI4Nn0.mx0KHCs81eGYN8NJycIfYnhjquwz0mPRSgPeESiDSzg';
 const SUPA_TABLE='paletcd_state';
@@ -493,44 +466,42 @@ const SUPA_ID='main';
 let _supaReady=false;
 let _syncTimeout=null;
 
-async function supaCheck(){return false;}
+async function supaCheck(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?id=eq.${SUPA_ID}&select=id`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    _supaReady=r.ok;
+  }catch(e){_supaReady=false;}
+  updateSyncBadge();
+  return _supaReady;
+}
 
 async function supaLoad(){
-  const data = await githubLoad();
-  return data;
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?id=eq.${SUPA_ID}&select=data`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!r.ok)return null;
+    const rows=await r.json();
+    if(rows&&rows.length>0&&rows[0].data&&rows[0].data.movs)return rows[0].data;
+    return null;
+  }catch(e){return null;}
 }
 
 async function supaSave(data){
-  // NOVO: Primeiro carrega o que tá na nuvem
-  // Depois salva apenas o que é novo/modificado
-  try {
-    const remoteData = await githubLoad();
-    
-    // Deduplica antes de salvar
-    if(remoteData && remoteData.movs && data.movs) {
-      const remoteIds = new Set(remoteData.movs.map(m => m.id || `${m.loj}_${m.dt}_${m.op}`));
-      const uniqueMovs = [];
-      const seenIds = new Set();
-      
-      // Remove duplicatas em data.movs
-      data.movs.forEach(m => {
-        const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
-        if(!seenIds.has(key)) {
-          seenIds.add(key);
-          uniqueMovs.push(m);
-        }
-      });
-      
-      data.movs = uniqueMovs;
-    }
-    
-    // Salva dados dedupados
-    return await githubSave(data);
-  } catch(e) {
-    console.error('Erro em supaSave:', e);
-    // Fallback: salva mesmo sem verificar nuvem
-    return await githubSave(data);
-  }
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`,{
+      method:'POST',
+      headers:{
+        'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates'
+      },
+      body:JSON.stringify({id:SUPA_ID,data,updated_at:new Date().toISOString()})
+    });
+    return r.ok;
+  }catch(e){return false;}
 }
 
 function updateSyncBadge(){
@@ -582,7 +553,8 @@ const LOJAS_BASE=[
   {d:99,n:"Produção",cc:25},{d:100,n:"Cd Brasília",cc:171062},{d:104,n:"Indaiatuba",cc:32016},
   {d:107,n:"Americana 2",cc:32017},{d:108,n:"Limeira",cc:32018},{d:120,n:"Ouro Verde",cc:42183},
   {d:121,n:"Arborais",cc:2097977},{d:122,n:"Bauru",cc:2114443},{d:123,n:"Nova Cantareira",cc:2147546},
-  {d:127,n:"Franca",cc:2779648},{d:134,n:"Damha",cc:2968843},{d:135,n:"Vila Mariana 2",cc:3305395}
+  {d:127,n:"Franca",cc:2779648},{d:134,n:"Damha",cc:2968843},{d:135,n:"Vila Mariana 2",cc:3305395},
+  {d:136,n:"São Carlos",cc:3370612},{d:139,n:"Itaim Bibi 2",cc:3536394}
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -604,25 +576,25 @@ const PERFIL_DEF = {
 // ═══════════════════════════════════════════════════════
 const MENUS={
   adm:[
-    ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
-    ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
-    ['retorno-loja','↩️','Retorno Lojas'],
+    ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['historico','📋','Histórico'],['volume-dia','📅','Volume por Dia'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],['solicitacoes','📝','Solicitações'],
+    ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],['envio-loja','🚚','Envio Lojas'],
+    ['confirmacao','✅','Confirmação'],['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['paletes-loja','🏪','Paletes p/ Loja'],['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
-    ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
+    ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['historico','📋','Histórico'],['volume-dia','📅','Volume por Dia'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],['solicitacoes','📝','Solicitações'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['paletes-loja','🏪','Paletes p/ Loja'],['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   area:[
-    ['minha-area','📦','Meu Estoque'],
-    ['devolucao','🔄','Devolver'],
-    ['receb-forn','📥','Receb. Fornecedor'],
+    ['minha-area','📦','Meu Estoque'],['solicitacoes','📝','Solicitar'],
+    ['envio-loja','🚚','Envio Lojas'],['devolucao','🔄','Devolver'],
+    ['receb-forn','📥','Receb. Fornecedor'],['historico','📋','Histórico'],
   ],
   loja:[
-    ['loja-dash','📊','Resumo'],['devolucao-loja','↩️','Devolver'],['loja-hist','📋','Histórico'],
+    ['loja-dash','📊','Resumo'],['confirmacao','✅','Confirmar'],['devolucao-loja','↩️','Devolver'],['loja-hist','📋','Histórico'],
   ],
 };
 
@@ -655,88 +627,14 @@ let currentRefId=null;
 let charts={};
 
 function save(){
-  // ANTES DE SALVAR: Remove duplicatas
-  if(S.movs && S.movs.length > 0) {
-    const seenIds = new Set();
-    const movs_unicos = [];
-    
-    S.movs.forEach(m => {
-      const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
-      if(!seenIds.has(key)) {
-        seenIds.add(key);
-        movs_unicos.push(m);
-      }
-    });
-    
-    S.movs = movs_unicos;
-  }
-  
-  // Salva no localStorage
   localStorage.setItem('paletcd_v4',JSON.stringify(S));
-  
-  // Sincroniza com nuvem após 2s (debounce)
   if(_syncTimeout)clearTimeout(_syncTimeout);
   _syncTimeout=setTimeout(async()=>{
-    if(_supaReady){
-      const ok=await supaSave(S);
-      if(!ok){
-        _supaReady=false;
-        updateSyncBadge();
-      }
-    }
+    if(_supaReady){const ok=await supaSave(S);if(!ok){_supaReady=false;updateSyncBadge();}}
   },2000);
 }
 
 // Garante que todas as áreas e modelos existem corretamente na estrutura de estoque
-
-function calcEst(movs){
-  const est=emptyEst();
-  const s=[...movs].sort((a,b)=>{try{const[da,ma,ya]=(a.ts||'').split(',')[0].split('/');const[db,mb,yb]=(b.ts||'').split(',')[0].split('/');return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);}catch(e){return 0;}});
-  s.forEach(m=>{const mds=m.modelos||{};
-    switch(m.tipo){
-      case 'Compra':MODELOS.forEach(k=>{est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
-      case 'Distribuição Interna':MODELOS.forEach(k=>{est.REV[k]=Math.max(0,(est.REV[k]||0)-(mds[k]||0));if(est[m.destino])est[m.destino][k]=(est[m.destino][k]||0)+(mds[k]||0);});break;
-      case 'Envio para Loja':MODELOS.forEach(k=>{if(est[m.origem])est[m.origem][k]=Math.max(0,(est[m.origem][k]||0)-(mds[k]||0));est.Lojas[k]=(est.Lojas[k]||0)+(mds[k]||0);});break;
-      case 'Retorno de Loja':MODELOS.forEach(k=>{est.Lojas[k]=Math.max(0,(est.Lojas[k]||0)-(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
-      case 'Devolução Interna':MODELOS.forEach(k=>{if(est[m.origem])est[m.origem][k]=Math.max(0,(est[m.origem][k]||0)-(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
-      case 'Triagem':MODELOS.forEach(k=>{est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));if(m.destino==='Fila Reforma')est.ReformaFila[k]=(est.ReformaFila[k]||0)+(mds[k]||0);else est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
-      case 'Descarte':MODELOS.forEach(k=>{est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));});break;
-      case 'Envio para Reforma':MODELOS.forEach(k=>{est.ReformaFila[k]=Math.max(0,(est.ReformaFila[k]||0)-(mds[k]||0));est.Reforma[k]=(est.Reforma[k]||0)+(mds[k]||0);});break;
-      case 'Retorno de Reforma':MODELOS.forEach(k=>{est.Reforma[k]=Math.max(0,(est.Reforma[k]||0)-(mds[k]||0));est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
-      case 'Pagamento Fornecedor':MODELOS.forEach(k=>{est.REV[k]=Math.max(0,(est.REV[k]||0)-(mds[k]||0));});break;
-      case 'Envio Descartável Reforma':est.REV.DESCARTAVEL=Math.max(0,(est.REV.DESCARTAVEL||0)-(mds.DESCARTAVEL||m.qtd||0));break;
-    }
-  });return est;
-}
-function syncEst(){S.est=calcEst(S.movs);}
-
-// Calcula estoque até uma data específica ou em um período
-function calcEstAteDia(ate){
-  const movs=S.movs.filter(m=>{
-    const[d,mo,y]=(m.ts||'').split(',')[0].split('/');
-    const dt=new Date(y,mo-1,d);
-    return dt<=ate;
-  });
-  return calcEst(movs);
-}
-function calcEstPeriodo(de,ate){
-  // Saldo inicial = tudo até o dia anterior ao início
-  const deAntes=new Date(de);deAntes.setDate(deAntes.getDate()-1);
-  const estBase=calcEstAteDia(deAntes);
-  // Movimentações do período
-  const movsPeriodo=S.movs.filter(m=>{
-    const[d,mo,y]=(m.ts||'').split(',')[0].split('/');
-    const dt=new Date(y,mo-1,d);
-    return dt>=de&&dt<=ate;
-  });
-  return{estBase,movsPeriodo,estFinal:calcEstAteDia(ate)};
-}
-function parseDate(str){
-  if(!str)return null;
-  const[y,m,d]=str.split('-');return new Date(y,m-1,d);
-}
-
-
 function fixEst(est){
   if(!est) est={};
   const areas=[...AREAS_ALL,'TriagemFila','ReformaFila','Lojas','Reforma'];
@@ -750,117 +648,78 @@ function fixEst(est){
 }
 
 function fixState(s){
-  // Garante estrutura mínima
-  if(!s.est)s.est=emptyEst();
-  if(!s.movs)s.movs=[];
-  if(!s.solics)s.solics=[];
-  if(!s.triagens)s.triagens=[];
-  if(!s.reformas)s.reformas=[];
-  if(!s.forns)s.forns=[];
-  if(!s.recebForn)s.recebForn=[];
-  if(!s.fornNomes)s.fornNomes=[];
-  
   s.est=fixEst(s.est);
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
   if(!s.senhas.CFR)s.senhas.CFR='CFR@2024';
   if(!s.senhas.FRI)s.senhas.FRI='FRI@2024';
   delete s.senhas.REC;
-  if(!s.nMov||s.nMov<1)s.nMov=1;
   if(!s.nForn||s.nForn<1)s.nForn=1;
-  if(!s.nSol||s.nSol<1)s.nSol=1;
-  if(!s.nRef||s.nRef<1)s.nRef=1;
-  if(!s.nRecForn||s.nRecForn<1)s.nRecForn=1;
+  if(!s.recebForn)s.recebForn=[];
+  if(!s.fornNomes)s.fornNomes=[];
   if(s.modoMigracao===undefined)s.modoMigracao=false;
+  if(!s.nRecForn)s.nRecForn=1;
   if(!s.aberturaDiaria)s.aberturaDiaria=[];
   return s;
 }
 
 async function load(){
-  try {
-    // SMART LOAD: Tenta carregar local e remoto, depois faz merge
-    let localData = null;
-    let remoteData = null;
-    
-    // 1. Carrega dados locais
-    const stored = localStorage.getItem('paletcd_v4');
-    if(stored) {
-      try { 
-        localData = fixState(JSON.parse(stored)); 
-      }
-      catch(e) { 
-        console.error('Erro ao carregar localStorage'); 
-      }
-    }
-    
-    // 2. Carrega dados remotos
-    try {
-      remoteData = await githubLoad();
-      if(remoteData) remoteData = fixState(remoteData);
-    } catch(e) {
-      console.error('Erro ao carregar remoto:', e);
-    }
-    
-    // 3. MERGE inteligente
-    if(remoteData && remoteData.movs && remoteData.movs.length > 0) {
-      // Remoto tem dados
-      if(localData && localData.movs && localData.movs.length > 0) {
-        // Ambos têm → faz merge (remove duplicatas)
-        S = smartMergeData(localData, remoteData);
-      } else {
-        // Só remoto tem → usa remoto
-        S = remoteData;
-      }
-    } else {
-      // Remoto vazio ou erro → usa local
-      if(localData) {
-        S = localData;
-      }
-    }
-    
-    // 4. Persiste resultado
-    localStorage.setItem('paletcd_v4', JSON.stringify(S));
-    _supaReady = remoteData ? true : false;
-    
-  } catch(e) {
-    console.error('Erro em load():', e);
-  }
-  
-  setTimeout(()=>{
-    const div = document.getElementById('supa-loading');
-    if(div) div.remove();
-  }, 300);
-}
-// ── MERGE INTELIGENTE ──────────────────────
-function smartMergeData(local, remote) {
-  // Combina dados local e remoto, removendo duplicatas
-  // Fonte de verdade: remote (nuvem), mas não descarta dados locais novos
-  
-  const merged = JSON.parse(JSON.stringify(remote)); // Cópia do remote
-  
-  if(!local.movs) local.movs = [];
-  if(!merged.movs) merged.movs = [];
-  
-  // Criar set de IDs remotos para rápida busca
-  const remoteIds = new Set(merged.movs.map(m => m.id || `${m.loj}_${m.dt}_${m.op}`));
-  
-  // Adicionar movimentos locais que não existem no remoto
-  local.movs.forEach(m => {
-    const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
-    if(!remoteIds.has(key)) {
-      merged.movs.push(m);
-    }
-  });
-  
-  // Usar estruturas mais recentes/completas de remote
-  merged.est = remote.est || local.est;
-  merged.triagens = remote.triagens || local.triagens;
-  merged.recebForn = remote.recebForn || local.recebForn;
-  merged.reformas = remote.reformas || local.reformas;
-  merged.nMov = Math.max(remote.nMov || 0, local.nMov || 0);
-  
-  return merged;
-}
+  // Loading screen
+  const loadDiv=document.createElement('div');
+  loadDiv.id='supa-loading';
+  loadDiv.style.cssText='position:fixed;inset:0;background:linear-gradient(135deg,#1b4f72,#148f77);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;';
+  loadDiv.innerHTML='<div style="font-size:48px;margin-bottom:16px">🪵</div><div style="font-size:20px;font-weight:700;letter-spacing:1px;margin-bottom:8px">PaletCD</div><div style="font-size:13px;opacity:.7;margin-bottom:20px">Carregando dados...</div><div id="load-status" style="font-size:12px;opacity:.5">Conectando à nuvem...</div>';
+  document.body.prepend(loadDiv);
 
+  const setStatus=msg=>{const el=document.getElementById('load-status');if(el)el.textContent=msg;};
+
+  let loaded=false;
+
+  // 1. Tenta Supabase primeiro
+  setStatus('Conectando ao Supabase...');
+  const supaOk=await supaCheck();
+  if(supaOk){
+    setStatus('Buscando dados da nuvem...');
+    const remote=await supaLoad();
+    if(remote&&remote.movs!==undefined){
+      try{
+        S=fixState(remote);
+        localStorage.setItem('paletcd_v4',JSON.stringify(S));
+        loaded=true;
+        setStatus('✓ Dados carregados da nuvem!');
+        console.log('✓ Supabase: '+( S.movs?.length||0)+' movimentações');
+      }catch(e){console.warn('Erro Supabase:',e);}
+    } else {
+      setStatus('Nuvem vazia — verificando local...');
+    }
+  } else {
+    setStatus('Sem conexão — usando dados locais...');
+  }
+
+  // 2. Fallback: localStorage
+  if(!loaded){
+    try{
+      let d=localStorage.getItem('paletcd_v4')||localStorage.getItem('paletcd_v3');
+      if(d){
+        const parsed=JSON.parse(d);
+        if(parsed&&parsed.movs!==undefined){
+          S=fixState(parsed);
+          loaded=true;
+          setStatus('✓ Dados locais carregados!');
+          // Sobe para nuvem se conectado
+          if(supaOk&&S.movs?.length>0){
+            setStatus('Sincronizando com a nuvem...');
+            await supaSave(S);
+            setStatus('✓ Sincronizado!');
+          }
+        }
+      }
+    }catch(e){}
+  }
+
+  if(!loaded){seedData();}
+
+  setTimeout(()=>{loadDiv.remove();updateSyncBadge();},800);
+}
 function seedData(){
   S.est=emptyEst();
   S.forns=[];
@@ -1165,14 +1024,16 @@ function buildNav(){
 
 const PAGE_INFO={
   dashboard:['Dashboard','Visão geral da operação'],estoque:['Estoque por Área','Saldo por modelo'],
-  compra:['Compra de Paletes','Entrada na REV'],
-  distribuicao:['Distribuição Interna','REV → Áreas internas'],
+  historico:['Histórico','Todas as movimentações'],'volume-dia':['Volume por Dia','Saldo inicial, movimentações e saldo final por dia'],compra:['Compra de Paletes','Entrada na REV'],
+  distribuicao:['Distribuição Interna','REV → Áreas internas'],solicitacoes:['Solicitações','Pedidos de paletes'],
   triagem:['Triagem','Classificação de paletes retornados'],reforma:['Controle de Reforma','Paletes em reforma'],
+  'envio-loja':['Envio para Lojas','Áreas → Lojas'],'confirmacao':['Confirmação de Recebimento','Loja confirma'],
   'retorno-loja':['Retorno de Lojas','Lojas → REV'],'devolucao':['Devolução Interna','Áreas → Triagem'],
   movimentacoes:['Movimentações','Registro completo'],fornecedores:['Fornecedores','Gerenciar fornecedores'],
   'minha-area':['Meu Estoque','Saldo da sua área'],'loja-dash':['Minha Loja','Resumo da loja'],
   'loja-hist':['Histórico da Loja','Movimentações da loja'],
   'devolucao-loja':['Devolução ao CD','Retorno de paletes ao Centro de Distribuição'],
+  'paletes-loja':['Paletes por Loja','Envios e saldo por loja'],
   'receb-forn':['Recebimento de Fornecedores','Débitos de paletes'],'saldo-forn':['Saldo — Fornecedores','Contas a pagar de paletes'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
@@ -1196,13 +1057,13 @@ function navigate(screen){
 function renderScreen(s){
   const el=document.getElementById('content-area');el.innerHTML='';
   const fn={
-    dashboard:rDashboard,estoque:rEstoque,
-    compra:rCompra,distribuicao:rDistribuicao,
-    triagem:rTriagem,reforma:rReforma,
-    'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
+    dashboard:rDashboard,estoque:rEstoque,historico:rHistorico,'volume-dia':rVolumeDia,
+    compra:rCompra,distribuicao:rDistribuicao,solicitacoes:rSolicitacoes,
+    triagem:rTriagem,reforma:rReforma,'envio-loja':rEnvioLoja,
+    confirmacao:rConfirmacao,'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
     'minha-area':rMinhaArea,'loja-dash':rLojaDash,'loja-hist':rLojaHist,'devolucao-loja':rDevolucaoLoja,
-    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
+    'paletes-loja':rPaletesLoja,'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
   };
   if(fn[s]) fn[s](el);
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
@@ -1210,65 +1071,45 @@ function renderScreen(s){
 
 // ── DASHBOARD ──────────────────────────
 function rDashboard(el){
-  // Garante que S tem estrutura
-  if(!S.movs) S.movs=[];
-  if(!S.est) S.est=emptyEst();
-  if(!S.reformas) S.reformas=[];
-  if(!S.recebForn) S.recebForn=[];
-  
-  // Usa estoque filtrado se disponível
-  const estOrig=S.est;
-  if(window._dashEstTemp){S.est=window._dashEstTemp;}
   const totRev=totalEst('REV'), totLojas=totalEst('Lojas'), totRef=totalEst('Reforma');
   const totTr=totalEst('TriagemFila'), totGeral=AREAS_ALL.reduce((s,a)=>s+totalEst(a),0)+totLojas+totRef;
-  const movHoje=(S.movs||[]).filter(m=>m.ts.includes(new Date().toLocaleDateString('pt-BR'))).length;
+  const movHoje=S.movs.filter(m=>m.ts.includes(new Date().toLocaleDateString('pt-BR'))).length;
   el.innerHTML=`
-  <!-- FILTRO DE DATA -->
-  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Filtrar por período</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-        <input type="date" id="dash-de" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarDashboard()">
-        <span style="font-size:12px;color:var(--text-light)">até</span>
-        <input type="date" id="dash-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarDashboard()">
-        <button class="btn btn-ghost btn-sm" onclick="limparFiltroDash()">✕ Limpar</button>
-        <span id="dash-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- PAINEL 1: KPIs -->
-  <div class="section-hdr" style="margin-top:0"><div class="section-title">📦 Visão Geral</div></div>
+  <!-- PAINEL 1: KPIs gerais do CD -->
+  <div class="section-hdr" style="margin-top:0"><div class="section-title">📦 Visão Geral do CD</div></div>
   <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Total CD</div><div class="kpi-value">${totGeral}</div><div class="kpi-sub">paletes</div></div>
     <div class="kpi-card amber"><div class="kpi-label">Nas Lojas</div><div class="kpi-value">${totLojas}</div></div>
-    <div class="kpi-card orange"><div class="kpi-label">Em Reforma</div><div class="kpi-value">${(()=>{const t=S.reformas.filter(r=>r.status!=='Finalizado'&&r.status!=='Excluído').reduce((s,r)=>s+(r.qtdEnv-r.qtdRet),0);return Math.max(0,t);})()}</div><div class="kpi-sub">pendente retorno</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Em Reforma</div><div class="kpi-value">${totRef}</div></div>
     <div class="kpi-card red"><div class="kpi-label">Fila Triagem</div><div class="kpi-value">${totTr}</div></div>
-    <div class="kpi-card slate"><div class="kpi-label">Fila Reforma</div><div class="kpi-value">${totalEst('ReformaFila')}</div><div class="kpi-sub">${MODELOS.filter(m=>(S.est.ReformaFila[m]||0)>0).map(m=>`${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}: ${S.est.ReformaFila[m]}`).join(' | ')||'—'}</div></div>
     <div class="kpi-card green"><div class="kpi-label">Mov. Hoje</div><div class="kpi-value">${movHoje}</div></div>
     <div class="kpi-card red"><div class="kpi-label">A Pagar Forn.</div><div class="kpi-value">${(()=>{const t=S.recebForn.reduce((s,r)=>s+(r.total-r.pago),0);return Math.max(0,t);})()}</div><div class="kpi-sub">paletes</div></div>
   </div>
 
-  <!-- PAINEL 2: REV por modelo -->
-  <div class="section-hdr" style="margin-top:8px"><div class="section-title">🔄 Logística Reversa — Saldo por Modelo</div></div>
-  <div style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:18px;border-top:4px solid var(--teal);">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">
-      ${MODELOS.map(m=>{
-        const val=S.est.REV[m]||0;
-        const ativo=val>0;
-        return`<div style="background:${ativo?'#eaf9f5':'#f8fbff'};border:${ativo?'2px solid var(--teal)':'1px solid var(--border)'};border-radius:var(--radius-sm);padding:10px 12px;text-align:center;${ativo?'':'opacity:.4'}">
-          <div style="font-size:9px;font-weight:700;color:${ativo?'var(--teal)':'var(--text-light)'};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</div>
-          <div style="font-size:24px;font-weight:800;font-family:var(--mono);color:${ativo?'var(--navy)':'var(--text-light)'}">${val}</div>
-        </div>`;
-      }).join('')}
+  <!-- PAINEL 2: Card exclusivo REV com saldo por modelo -->
+  <div class="section-hdr" style="margin-top:8px"><div class="section-title">🔄 Logística Reversa — Saldo Atual</div></div>
+  <div style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;border-top:4px solid var(--teal);">
+    <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+      <div style="min-width:120px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light)">Total REV</div>
+        <div style="font-size:42px;font-weight:800;font-family:var(--mono);color:var(--teal);line-height:1.1">${totRev}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px">paletes disponíveis</div>
+      </div>
+      <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;">
+        ${MODELOS.map(m=>{
+          const val=S.est.REV[m]||0;
+          const ativo=val>0;
+          return`<div style="background:${ativo?'#eaf9f5':'#f8fbff'};border:${ativo?'2px solid var(--teal)':'1px solid var(--border)'};border-radius:var(--radius-sm);padding:10px 12px;text-align:center;${ativo?'':'opacity:.5'}">
+            <div style="font-size:9px;font-weight:700;color:${ativo?'var(--teal)':'var(--text-light)'};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</div>
+            <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${ativo?'var(--navy)':'var(--text-light)'}">${val}</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">📦 Estoque por Área</div><div id="ch-areas" style="margin-top:8px"></div></div>
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🔄 Modelos na REV</div><div id="ch-modelos" style="margin-top:8px"></div></div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🔧 Reforma — Enviado × Retornado</div><div id="ch-reforma" style="margin-top:8px"></div></div>
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🏭 Fornecedores — Vale Palete</div><div id="ch-forn" style="margin-top:8px"></div></div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Estoque por Área</div><canvas id="ch-areas" height="200"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Modelos de Palete — REV</div><canvas id="ch-modelos" height="200"></canvas></div>
   </div>
   <div class="section-hdr"><div class="section-title">Últimas Movimentações</div></div>
   <div class="card"><div class="table-wrap"><table>
@@ -1279,76 +1120,16 @@ function rDashboard(el){
       <td class="td-bold td-mono">${m.qtd}</td><td style="max-width:160px">${modelosHtml(m.modelos)}</td>
     </tr>`).join('')||emptyRow(6)}</tbody>
   </table></div></div>`;
-  // Restaura estoque original após render
-  S.est=estOrig;
   setTimeout(()=>{
-  function svgH(cid,items,bH,gap,lW){
-    const el=document.getElementById(cid);if(!el||!items.length){if(el)el.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:#6c8093">Sem dados</div>';return;}
-    bH=bH||18;gap=gap||8;lW=lW||90;
-    const W=440,tW=W-lW-55,mx=Math.max(...items.map(i=>i.v),1),H=8+(bH+gap)*items.length;
-    let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">`;
-    items.forEach((it,i)=>{const y=8+(bH+gap)*i,bw=Math.max(it.v>0?6:0,(it.v/mx)*tW);
-      s+=`<text x="${lW-6}" y="${y+bH*.72}" text-anchor="end" font-size="11" font-family="DM Sans,sans-serif" fill="#34495e">${it.l}</text>`;
-      s+=`<rect x="${lW}" y="${y}" width="${tW}" height="${bH}" rx="4" fill="#f0f4f8"/>`;
-      if(bw>0)s+=`<rect x="${lW}" y="${y}" width="${bw}" height="${bH}" rx="4" fill="${it.c||'#2471a3'}"><animate attributeName="width" from="0" to="${bw}" dur="0.5s" begin="${i*0.07}s" fill="freeze"/></rect>`;
-      if(it.v>0)s+=`<text x="${lW+bw+6}" y="${y+bH*.72}" font-size="11" font-family="DM Mono,monospace" fill="#1b4f72" font-weight="700">${it.v.toLocaleString('pt-BR')}</text>`;
-    });el.innerHTML=s+'</svg>';}
-  function svgH3(cid,grps,d1,d2,d3,c1,c2,c3,l1,l2,l3){
-    const el=document.getElementById(cid);if(!el||!grps.length){if(el)el.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:#6c8093">Sem dados</div>';return;}
-    const bH=9,gap=3,gG=10,lW=110,W=440,tW=W-lW-50,mx=Math.max(...d1,...d2,...d3,1),rH=(bH+gap)*3+gG,H=8+rH*grps.length+16;
-    let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">`;
-    grps.forEach((g,gi)=>{const bY=8+rH*gi,lb=g.length>16?g.substring(0,16)+'…':g;
-      s+=`<text x="${lW-6}" y="${bY+bH*.72}" text-anchor="end" font-size="11" font-family="DM Sans,sans-serif" fill="#1b4f72" font-weight="600">${lb}</text>`;
-      [[d1[gi],c1,l1],[d2[gi],c2,l2],[d3[gi],c3,l3]].forEach(([val,col,lbl],di)=>{
-        const y=bY+(bH+gap)*di,bw=Math.max(val>0?4:0,(val/mx)*tW);
-        s+=`<rect x="${lW}" y="${y}" width="${tW}" height="${bH}" rx="3" fill="#f0f4f8"/>`;
-        if(bw>0)s+=`<rect x="${lW}" y="${y}" width="${bw}" height="${bH}" rx="3" fill="${col}"><animate attributeName="width" from="0" to="${bw}" dur="0.5s" begin="${(gi*3+di)*0.05}s" fill="freeze"/></rect>`;
-        s+=`<text x="${lW+3}" y="${y+bH*.76}" font-size="7" fill="rgba(255,255,255,.85)">${lbl}</text>`;
-        if(val>0)s+=`<text x="${lW+bw+5}" y="${y+bH*.8}" font-size="10" font-family="DM Mono,monospace" fill="#1b4f72" font-weight="700">${val}</text>`;
-      });
-    });
-    // Legenda
-    let lx=lW;[[c1,l1],[c2,l2],[c3,l3]].forEach(([col,lbl])=>{
-      s+=`<rect x="${lx}" y="${H-10}" width="8" height="8" rx="2" fill="${col}"/>`;
-      s+=`<text x="${lx+11}" y="${H-3}" font-size="9" font-family="DM Sans,sans-serif" fill="#6c8093">${lbl}</text>`;
-      lx+=75;
-    });
-    el.innerHTML=s+'</svg>';
-  }
-  function svgH2(cid,grps,d1,d2,c1,c2,l1,l2){
-    const el=document.getElementById(cid);if(!el||!grps.length){if(el)el.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:#6c8093">Sem dados</div>';return;}
-    const bH=10,gap=4,gG=12,lW=110,W=440,tW=W-lW-50,mx=Math.max(...d1,...d2,1),rH=(bH+gap)*2+gG,H=8+rH*grps.length;
-    let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">`;
-    grps.forEach((g,gi)=>{const bY=8+rH*gi,lb=g.length>16?g.substring(0,16)+'…':g;
-      s+=`<text x="${lW-6}" y="${bY+bH*.72}" text-anchor="end" font-size="11" font-family="DM Sans,sans-serif" fill="#1b4f72" font-weight="600">${lb}</text>`;
-      [[d1[gi],c1,l1],[d2[gi],c2,l2]].forEach(([val,col,lbl],di)=>{const y=bY+(bH+gap)*di,bw=Math.max(val>0?4:0,(val/mx)*tW);
-        s+=`<rect x="${lW}" y="${y}" width="${tW}" height="${bH}" rx="3" fill="#f0f4f8"/>`;
-        if(bw>0)s+=`<rect x="${lW}" y="${y}" width="${bw}" height="${bH}" rx="3" fill="${col}"><animate attributeName="width" from="0" to="${bw}" dur="0.5s" begin="${(gi*2+di)*0.06}s" fill="freeze"/></rect>`;
-        s+=`<text x="${lW+3}" y="${y+bH*.76}" font-size="8" fill="rgba(255,255,255,.85)">${lbl}</text>`;
-        if(val>0)s+=`<text x="${lW+bw+5}" y="${y+bH*.8}" font-size="10" font-family="DM Mono,monospace" fill="#1b4f72" font-weight="700">${val}</text>`;
-      });});el.innerHTML=s+'</svg>';}
-  const AC=['#2471a3','#1abc9c','#e67e22','#8e44ad','#27ae60','#16a085','#2980b9','#f39c12','#e74c3c','#c0392b'];
-  const MC={PBR:'#2471a3',DESCARTAVEL:'#e67e22',CHEP:'#1abc9c',EURO:'#8e44ad',CHEP_EURO:'#e74c3c',GAIOLA:'#f39c12'};
-  svgH('ch-areas',[{l:'Log. Reversa',v:totalEst('REV'),c:AC[0]},{l:'Mercearia',v:totalEst('Mercearia')+totalEst('Mercearia Recebimento')+totalEst('Mercearia Expedição'),c:AC[1]},{l:'FLV',v:totalEst('FLV')+totalEst('FLV Recebimento')+totalEst('FLV Expedição'),c:AC[2]},{l:'Perecível',v:totalEst('Perecível')+totalEst('Perecível Recebimento')+totalEst('Perecível Expedição'),c:AC[3]},{l:'Produção',v:totalEst('Produção'),c:AC[4]},{l:'C. Frios',v:totalEst('Central de Frios'),c:AC[5]},{l:'Frigorífico',v:totalEst('Frigorífico'),c:AC[6]},{l:'Lojas',v:totalEst('Lojas'),c:AC[7]},{l:'Triagem',v:totalEst('TriagemFila'),c:AC[8]},{l:'Fila Reforma',v:totalEst('ReformaFila'),c:AC[9]}].filter(a=>a.v>0));
-  svgH('ch-modelos',MODELOS.map(m=>({l:MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola'),v:S.est.REV[m]||0,c:MC[m]})).filter(x=>x.v>0));
-  // Reforma: Enviado + Retornado + Descartável por fornecedor
-  const rM={};
-  S.reformas.filter(r=>r.status!=='Excluído').forEach(r=>{
-    if(!rM[r.fornNome])rM[r.fornNome]={e:0,r:0,d:0};
-    rM[r.fornNome].e+=r.qtdEnv;
-    rM[r.fornNome].r+=r.qtdRet;
-  });
-  // Soma descartável enviado por fornecedor
-  S.movs.filter(m=>m.tipo==='Envio Descartável Reforma').forEach(m=>{
-    const forn=m.destino||m.origem||'';
-    if(!rM[forn])rM[forn]={e:0,r:0,d:0};
-    rM[forn].d+=(m.modelos?.DESCARTAVEL||m.qtd||0);
-  });
-  const rK=Object.keys(rM);
-  svgH3('ch-reforma',rK,rK.map(k=>rM[k].e),rK.map(k=>rM[k].r),rK.map(k=>rM[k].d),'#e67e22','#1abc9c','#8e44ad','Enviado','Retornado','Descartável');
-  const tR=S.recebForn.reduce((s,r)=>s+r.total,0),tP=S.recebForn.reduce((s,r)=>s+r.pago,0);
-  svgH('ch-forn',[{l:'Recebido',v:tR,c:'#1b4f72'},{l:'Pago',v:tP,c:'#1abc9c'},{l:'A Pagar',v:Math.max(0,tR-tP),c:'#e74c3c'}],24,14,80);
-    },50);
+    const areas=AREAS_ALL;
+    const vals=areas.map(a=>totalEst(a));
+    const colors=['#1b4f72','#148f77','#2471a3','#1e8449','#ca6f1e','#8e44ad'];
+    if(charts.areas)charts.areas.destroy();
+    charts.areas=new Chart(document.getElementById('ch-areas'),{type:'bar',data:{labels:areas,datasets:[{label:'Paletes',data:vals,backgroundColor:colors,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#34495e',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#34495e'},grid:{color:'#eaf0f6'}}}}});
+    const mColors={PBR:'#2471a3',DESCARTAVEL:'#d4ac0d',CHEP:'#1e8449',EURO:'#6c3483',GAIOLA:'#ca6f1e'};
+    if(charts.mod)charts.mod.destroy();
+    charts.mod=new Chart(document.getElementById('ch-modelos'),{type:'doughnut',data:{labels:MODELOS.map(m=>MODELO_LABELS[m]),datasets:[{data:MODELOS.map(m=>S.est.REV[m]||0),backgroundColor:MODELOS.map(m=>mColors[m]),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
+  },50);
 }
 
 // ── ESTOQUE ────────────────────────────
@@ -1385,22 +1166,7 @@ function rEstoque(el){
   const AREAS_RENDER=['REV','Mercearia','Mercearia Recebimento','Mercearia Expedição','FLV','FLV Recebimento','FLV Expedição','Perecível','Perecível Recebimento','Perecível Expedição','Produção','Central de Frios','Frigorífico','Lojas','Reforma','TriagemFila','ReformaFila'];
   const AREAS_PAI_SET=new Set(Object.keys(AREA_PAI));
   const areaRows=AREAS_RENDER.map(a=>estAreaRow(a, AREAS_PAI_SET.has(a))).join('');
-  // Estoque filtrado por data
-  const estOrigEst=S.est;
-  if(window._estoqueEstTemp){S.est=window._estoqueEstTemp;}
   el.innerHTML=`
-  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Ver saldo em data específica</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-        <input type="date" id="est-de" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarEstoque()">
-        <span style="font-size:12px;color:var(--text-light)">até</span>
-        <input type="date" id="est-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarEstoque()">
-        <button class="btn btn-ghost btn-sm" onclick="limparFiltroEstoque()">✕ Limpar</button>
-        <span id="est-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${window._estoqueEstTemp?'(período filtrado)':''}</span>
-      </div>
-    </div>
-  </div>
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-label">Total Geral</div><div class="kpi-value">${tot}</div></div>
     <div class="kpi-card teal"><div class="kpi-label">REV</div><div class="kpi-value">${totalEst('REV')}</div></div>
@@ -1425,6 +1191,85 @@ function rEstoque(el){
 }
 
 // ── HISTÓRICO ──────────────────────────
+function rHistorico(el){
+  el.innerHTML=`
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Histórico</span></div>
+    <div class="filters" style="flex-wrap:wrap;gap:8px;">
+      <input class="filter-input" id="hs" placeholder="🔍 Buscar..." oninput="filtHist()">
+      <select class="filter-select" id="ht" onchange="filtHist()"><option value="">Todos os tipos</option>${TIPOS_MOV.map(t=>`<option>${t}</option>`).join('')}</select>
+      <select class="filter-select" id="hm" onchange="filtHist()"><option value="">Todos os modelos</option>${MODELOS.map(m=>`<option value="${m}">${MODELO_LABELS[m]}</option>`).join('')}</select>
+      <select class="filter-select" id="hdest" onchange="filtHist()">
+        <option value="">Todos os destinos</option>
+        <optgroup label="── Áreas CD ──">
+          <option value="REV">Log. Reversa (REV)</option>
+          <option value="Mercearia">Mercearia (todas)</option>
+          <option value="Mercearia Recebimento">↳ Mercearia Recebimento</option>
+          <option value="Mercearia Expedição">↳ Mercearia Expedição</option>
+          <option value="FLV">FLV (todas)</option>
+          <option value="FLV Recebimento">↳ FLV Recebimento</option>
+          <option value="FLV Expedição">↳ FLV Expedição</option>
+          <option value="Perecível">Perecível (todas)</option>
+          <option value="Perecível Recebimento">↳ Perecível Recebimento</option>
+          <option value="Perecível Expedição">↳ Perecível Expedição</option>
+          <option value="Produção">Produção</option>
+          <option value="Central de Frios">Central de Frios</option>
+          <option value="Frigorífico">Frigorífico</option>
+        </optgroup>
+        <optgroup label="── Externo ──">
+          <option value="Lojas">Lojas</option>
+          <option value="Reforma">Em Reforma</option>
+          <option value="Fornecedor">Fornecedor</option>
+        </optgroup>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="toggleOrdemHist()" id="btn-ordem-hist">🔼 Recente</button>
+      <button class="btn btn-ghost btn-sm" onclick="filtHist(1)">✕ Limpar</button>
+      <span id="hcount" style="font-size:11px;color:var(--text-light);margin-left:auto;align-self:center"></span>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Data/Hora</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
+      <tbody id="htbody"></tbody>
+    </table></div>
+  </div>`;
+  filtHist();
+}
+let _histOrdem='desc';
+function toggleOrdemHist(){
+  _histOrdem=_histOrdem==='desc'?'asc':'desc';
+  const btn=document.getElementById('btn-ordem-hist');
+  if(btn)btn.textContent=_histOrdem==='desc'?'🔼 Recente':'🔽 Antigo';
+  filtHist();
+}
+function filtHist(clr){
+  if(clr){
+    ['hs','ht','hm','hdest'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    _histOrdem='desc';
+    const btn=document.getElementById('btn-ordem-hist');if(btn)btn.textContent='🔼 Recente';
+  }
+  const s=(v('hs')||'').toLowerCase(),t=v('ht'),m=v('hm'),dest=(v('hdest')||'');
+  let movs=S.movs.filter(x=>{
+    if(!dest)return true;
+    const d=(x.destino||'').toLowerCase();
+    const sel=dest.toLowerCase();
+    if(sel==='mercearia') return d.startsWith('mercearia');
+    if(sel==='flv') return d.startsWith('flv');
+    if(sel==='perecível'||sel==='perecivel') return d.startsWith('perecív')||d.startsWith('pereciv');
+    return d===sel;
+  });
+  if(CU.role==='area') movs=movs.filter(x=>x.origem===CU.area||x.destino===CU.area);
+  if(CU.role==='loja') movs=movs.filter(x=>Number(x.loja)===CU.lojaDigito);
+  let f=movs.filter(x=>(!s||x.id.toLowerCase().includes(s)||x.tipo.toLowerCase().includes(s)||x.origem.toLowerCase().includes(s)||x.usuario.toLowerCase().includes(s))&&(!t||x.tipo===t)&&(!m||x.modelos?.[m]>0));
+  f=[...f].sort((a,b)=>_histOrdem==='asc'?parseTsDate(a.ts)-parseTsDate(b.ts):parseTsDate(b.ts)-parseTsDate(a.ts));
+  const ct=document.getElementById('hcount');if(ct)ct.textContent=`${f.length} registros`;
+  const tb=document.getElementById('htbody');
+  if(tb)tb.innerHTML=f.length?f.map(x=>`<tr>
+    <td class="td-mono">${x.id}</td><td class="td-mono" style="font-size:10px">${x.ts}</td>
+    <td>${badgeMov(x.tipo)}</td><td><span class="tag-area">${x.origem}</span></td><td><span class="tag-area">${x.destino}</span></td>
+    <td class="td-bold td-mono">${x.qtd}</td><td style="max-width:180px">${modelosHtml(x.modelos)}</td><td>${x.usuario}</td>
+    ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditMov('${x.id}','historico')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirMov('${x.id}','historico')" title="Excluir">🗑️</button></td>`:''}
+  </tr>`).join(''):emptyRow(canDelete()?9:8);
+}
+
 // ── COMPRA ─────────────────────────────
 function rCompra(el){
   el.innerHTML=`
@@ -1523,6 +1368,167 @@ function doDistribuicao(){
 }
 
 // ── SOLICITAÇÕES ───────────────────────
+function rSolicitacoes(el){
+  const isAdmRev=(CU.role==='adm'||CU.role==='rev');
+  const lista=isAdmRev?S.solics:S.solics.filter(s=>s.area===CU.area);
+  el.innerHTML=`
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:14px">📝 ${isAdmRev?'Solicitações':'Solicitar Paletes'}</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Área *</label>
+        ${CU.role==='area'?`<input class="form-control" value="${CU.area}" readonly>`:`${selectAreas('s-area')}`}
+      </div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-control" id="s-data" type="date" value="${hoje()}"></div>
+      <div class="form-group full"><label class="form-label">Solicitante *</label><input class="form-control" id="s-user" value="${CU.nome}"></div>
+      <div class="form-group full"><label class="form-label">Quantidades por Modelo *</label>${selectModeloInputs('s')}</div>
+      <div class="form-group full"><label class="form-label">Observação</label><textarea class="form-control" id="s-obs" placeholder="Motivo..."></textarea></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="doSolicitar()">✓ Enviar Solicitação</button></div>
+  </div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Solicitações ${isAdmRev?'(Todas)':'(Minhas)'}</span></div>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Data</th><th>Área</th><th>Total</th><th>Modelos</th><th>Status</th>${isAdmRev?'<th>Ação</th>':''}</tr></thead>
+  <tbody>${lista.length?lista.map(s=>`<tr>
+    <td class="td-mono">${s.id}</td><td class="td-mono">${s.data}</td>
+    <td><span class="tag-area">${s.area}</span></td><td class="td-bold">${s.qtd}</td>
+    <td>${modelosHtml(s.modelos)}</td>
+    <td>${s.status==='Atendido'?'<span class="badge badge-green">Atendido</span>':'<span class="badge badge-amber">Pendente</span>'}</td>
+    ${isAdmRev?`<td>${s.status==='Pendente'?`<button class="btn btn-success btn-xs" onclick="doAtender('${s.id}')">✓ Atender</button>`:'—'}</td>`:''}
+    ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditSolic('${s.id}','solicitacoes')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirSolic('${s.id}','solicitacoes')" title="Excluir">🗑️</button></td>`:''}`
+  ).join(''):emptyRow(isAdmRev?7:6)}</tbody></table></div></div>`;
+}
+function doSolicitar(){
+  const area=CU.role==='area'?CU.area:v('s-area');
+  const modelos=parseModelos(),tot=totalModelos(modelos),user=v('s-user');
+  if(!area)return toast('Selecione a área.','err');
+  if(tot<1)return toast('Informe as quantidades.','err');
+  if(!user)return toast('Informe o solicitante.','err');
+  S.solics.unshift({id:'SOL-'+String(S.nSol++).padStart(4,'0'),area,qtd:tot,modelos,usuario:user,data:v('s-data')||hoje(),obs:v('s-obs'),status:'Pendente'});
+  save();toast(`✓ Solicitação de ${tot} paletes enviada.`);renderScreen('solicitacoes');
+}
+function doAtender(solId){
+  const sol=S.solics.find(s=>s.id===solId);
+  if(!sol||sol.status==='Atendido')return;
+  if(!S.modoMigracao){for(const m of MODELOS){const qtd=sol.modelos?.[m]||0;if(qtd>(S.est.REV[m]||0))return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} na REV.`,'err');}}
+  MODELOS.forEach(m=>{const qtd=sol.modelos?.[m]||0;S.est.REV[m]=(S.est.REV[m]||0)-qtd;S.est[sol.area][m]=(S.est[sol.area][m]||0)+qtd;});
+  sol.status='Atendido';
+  addMov('Distribuição Interna','REV',sol.area,null,null,sol.qtd,'REV',`Sol. ${sol.id}`,sol.modelos);
+  toast(`✓ Solicitação ${solId} atendida!`);renderScreen('solicitacoes');
+}
+
+// ── ENVIO LOJA ─────────────────────────
+function rEnvioLoja(el){
+  const area=CU.role==='area'?CU.area:'';
+  el.innerHTML=`
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:14px">🚚 Envio para Lojas</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Área Origem *</label>
+        ${CU.role==='area'?`<input class="form-control" value="${area}" readonly>`:`${selectAreas('el-area')}`}
+      </div>
+      <div class="form-group"><label class="form-label">Loja Destino *</label>${selectLojas('el-loja')}</div>
+      <div class="form-group"><label class="form-label">Nº Carga</label><input class="form-control" id="el-carga" placeholder="Opcional"></div>
+      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="el-data" type="date" value="${hoje()}"></div>
+      <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="el-user" value="${CU.nome}"></div>
+      <div class="form-group"><label class="form-label">Observação</label><input class="form-control" id="el-obs" placeholder="Observação"></div>
+      <div class="form-group full"><label class="form-label">Quantidades por Modelo *</label>${selectModeloInputs('el')}</div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="doEnvioLoja()">✓ Registrar Envio</button></div>
+  </div>`;
+}
+function doEnvioLoja(){
+  const areaOrigem=CU.role==='area'?CU.area:v('el-area');
+  const lojaDigito=parseInt(v('el-loja')),modelos=parseModelos(),tot=totalModelos(modelos),user=v('el-user');
+  if(!areaOrigem)return toast('Selecione a área origem.','err');
+  if(!lojaDigito)return toast('Selecione a loja.','err');
+  if(tot<1)return toast('Informe as quantidades.','err');
+  if(!user)return toast('Informe o usuário.','err');
+  S.est=fixEst(S.est);
+  if(!S.modoMigracao){for(const m of MODELOS){const q=modelos[m]||0;if(q>(S.est[areaOrigem]?.[m]||0))return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} em ${areaOrigem}.`,'err');}}
+  MODELOS.forEach(m=>{const q=modelos[m]||0;S.est[areaOrigem][m]=(S.est[areaOrigem][m]||0)-q;S.est.Lojas[m]=(S.est.Lojas[m]||0)+q;});
+  const lNome=lojaNome(lojaDigito);
+  addMov('Envio para Loja',areaOrigem,lNome,lojaDigito,null,tot,user,v('el-obs')+(v('el-carga')?' Carga:'+v('el-carga'):''),modelos,v('el-data'));
+  toast(`✓ ${tot} paletes → ${lNome}.`);renderScreen('envio-loja');
+}
+
+// ── CONFIRMAÇÃO ────────────────────────
+function rConfirmacao(el){
+  const isLoja=CU.role==='loja';
+  el.innerHTML=`
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:14px">✅ Confirmação de Recebimento</div>
+    ${isLoja?`<div class="info-box">🏪 Loja: <strong>${CU.nome}</strong></div>`:''}
+    <div class="form-grid">
+      ${isLoja?'':`<div class="form-group"><label class="form-label">Loja *</label>${selectLojas('conf-loja')}</div>`}
+      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="conf-data" type="date" value="${hoje()}"></div>
+      <div class="form-group"><label class="form-label">Responsável *</label><input class="form-control" id="conf-user" value="${CU.nome}"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="form-label" style="margin-bottom:8px;display:block">✅ Quantidades Recebidas por Modelo *</label>
+      ${selectModeloInputs('cf')}
+    </div>
+
+    <div style="margin-top:16px;background:#fef9e7;border:1.5px solid #f39c12;border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#b7770d;margin-bottom:10px;">⚠️ Paletes / Gaiolas com Avaria (opcional)</div>
+      <div style="font-size:11px;color:#7d6608;margin-bottom:10px;">Informe apenas itens que chegaram danificados. <strong>Estes devem ser devolvidos ao CD.</strong></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${MODELOS.map(m=>`<div>
+          <label style="font-size:10px;font-weight:700;color:#7d6608;text-transform:uppercase;display:block;margin-bottom:3px;">${MODELO_LABELS[m]}</label>
+          <input class="form-control" id="qbr-${m}" type="number" min="0" value="0" style="padding:7px;text-align:center;font-size:13px;font-weight:700;background:#fef9e7;border-color:#f39c12;">
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label class="form-label" style="margin-bottom:5px;display:block">Observação</label>
+      <textarea class="form-control" id="conf-obs" placeholder="Condições de entrega, divergências..." style="min-height:60px"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-success btn-full" style="font-size:14px;padding:13px" onclick="doConfirmacao()">✓ Confirmar Recebimento</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Últimas Confirmações${isLoja?' — '+CU.nome:''}</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Data</th><th>Loja</th><th>Qtd</th><th>Modelos</th><th>Avarias</th><th>Resp.</th></tr></thead>
+      <tbody>${S.movs.filter(m=>m.tipo==='Confirmação Loja'&&(isLoja?Number(m.loja)===CU.lojaDigito:true)).slice(0,10).map(m=>`<tr>
+        <td class="td-mono">${m.ts.split(',')[0]}</td>
+        <td>${isLoja?CU.nome:lojaNome(m.loja)}</td>
+        <td class="td-bold">${m.qtd}</td>
+        <td style="max-width:160px">${modelosHtml(m.modelos)}</td>
+        <td style="font-size:11px;color:${m.quebras&&totalModelos(m.quebras)>0?'var(--amber)':'var(--text-light)'}">
+          ${m.quebras&&totalModelos(m.quebras)>0?modelosHtml(m.quebras):'—'}
+        </td>
+        <td>${m.usuario}</td>
+      </tr>`).join('')||emptyRow(6)}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function doConfirmacao(){
+  const isLoja=CU.role==='loja';
+  const lojaDigito=isLoja?CU.lojaDigito:parseInt(v('conf-loja'));
+  const modelos=parseModelos(),tot=totalModelos(modelos),user=v('conf-user');
+  if(!lojaDigito)return toast('Selecione a loja.','err');
+  if(tot<1)return toast('Informe as quantidades recebidas.','err');
+  if(!user)return toast('Informe o responsável.','err');
+  // Captura avarias
+  const quebras={};
+  MODELOS.forEach(m=>{const q=parseInt(document.getElementById('qbr-'+m)?.value)||0;if(q>0)quebras[m]=q;});
+  const totQuebras=totalModelos(quebras);
+  const lNome=lojaNome(lojaDigito);
+  const obs=v('conf-obs')+(totQuebras>0?` | Avarias: ${totQuebras} paletes`:'');
+  addMov('Confirmação Loja',lNome,'Confirmado',lojaDigito,null,tot,user,obs,modelos,v('conf-data'));
+  // Registra avarias separadamente se houver
+  if(totQuebras>0){
+    addMov('Avaria Loja',lNome,'Pendente Devolução',lojaDigito,null,totQuebras,user,'Avarias reportadas no recebimento',quebras,v('conf-data'));
+  }
+  save();
+  toast(`✓ Recebimento confirmado!${totQuebras>0?' ⚠️ '+totQuebras+' avaria(s) registrada(s).':''}`);
+  renderScreen('confirmacao');
+}
 
 // ── RETORNO LOJA ───────────────────────
 function rRetornoLoja(el){
@@ -1566,7 +1572,6 @@ function doRetornoLoja(){
   const mov=addMov('Retorno de Loja',lojaNome(lojaDigito),'Triagem',lojaDigito,null,tot,user,v('rl-obs'),modelos,v('rl-data'));
   // salva NF no registro
   if(nf&&S.movs[0])S.movs[0].nf=nf;
-  syncEst();
   save();
   toast(`✓ ${tot} paletes retornados → Triagem.${nf?' NF:'+nf:''}`);renderScreen('retorno-loja');
 }
@@ -1788,7 +1793,6 @@ function doTriagem(){
   if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
   if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
   S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
-  syncEst();
   save();
   toast(`✓ Triagem: ${tp} operação | ${tr} reforma | ${td} descarte.`);
   renderScreen('triagem');
@@ -1961,7 +1965,6 @@ function confirmarRetornoReforma(){
     totalDistribuido+=retMFinal;
   });
   addMov('Retorno de Reforma',ref.fornNome,'REV',null,ref.fornId,qtd,CU?.nome||'Sistema',obs,modelosRetorno,document.getElementById('mref-data')?.value||null);
-  syncEst();
   save();
   toast(`✓ ${qtd} paletes retornados → REV.`);
   closeModal('modal-retorno');
@@ -2283,7 +2286,6 @@ function doDevolucaoLoja(){
   const lNome=lojaNome(lojaDigito);
   const obs=motivo+(v('dl-obs')?' — '+v('dl-obs'):'');
   addMov('Retorno de Loja',lNome,'Triagem',lojaDigito,null,tot,user,obs,modelos,v('dl-data'));
-  syncEst();
   save();
   toast(`✓ ${tot} paletes devolvidos → Fila de Triagem.`);
   renderScreen('devolucao-loja');
@@ -2320,6 +2322,67 @@ function rLojaHist(el){
 }
 
 // ── PALETES POR LOJA ───────────────────
+function rPaletesLoja(el){
+  // build loja summary
+  const resumo=LOJAS_BASE.map(l=>{
+    const env=S.movs.filter(m=>m.tipo==='Envio para Loja'&&Number(m.loja)===l.d).reduce((s,m)=>s+m.qtd,0);
+    const ret=S.movs.filter(m=>m.tipo==='Retorno de Loja'&&Number(m.loja)===l.d).reduce((s,m)=>s+m.qtd,0);
+    const conf=S.movs.filter(m=>m.tipo==='Confirmação Loja'&&Number(m.loja)===l.d).reduce((s,m)=>s+m.qtd,0);
+    const saldo=Math.max(0,env-ret);
+    // por modelo
+    const porModelo={};
+    MODELOS.forEach(m=>{
+      const e=S.movs.filter(x=>x.tipo==='Envio para Loja'&&Number(x.loja)===l.d&&x.modelos?.[m]>0).reduce((s,x)=>s+(x.modelos[m]||0),0);
+      const r=S.movs.filter(x=>x.tipo==='Retorno de Loja'&&Number(x.loja)===l.d&&x.modelos?.[m]>0).reduce((s,x)=>s+(x.modelos[m]||0),0);
+      porModelo[m]=Math.max(0,e-r);
+    });
+    return{loja:l,env,ret,conf,saldo,porModelo};
+  }).filter(r=>r.env>0||r.saldo>0);
+
+  const totalEnv=resumo.reduce((s,r)=>s+r.env,0);
+  const totalSaldo=resumo.reduce((s,r)=>s+r.saldo,0);
+
+  el.innerHTML=`
+  <div class="kpi-grid">
+    <div class="kpi-card teal"><div class="kpi-label">Lojas com Paletes</div><div class="kpi-value">${resumo.length}</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Total Enviado</div><div class="kpi-value">${totalEnv}</div></div>
+    <div class="kpi-card navy"><div class="kpi-label">Saldo nas Lojas</div><div class="kpi-value">${totalSaldo}</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🏪 Paletes por Loja</span>
+      <button class="btn btn-success btn-sm" onclick="exportPaletesLoja()">⬇ Exportar Excel</button>
+    </div>
+    <div class="filters">
+      <input class="filter-input" id="pl-s" placeholder="🔍 Buscar loja..." oninput="filtPaletesLoja()">
+      <select class="filter-select" id="pl-m" onchange="filtPaletesLoja()">
+        <option value="">Todos os modelos</option>${MODELOS.map(m=>`<option value="${m}">${MODELO_LABELS[m]}</option>`).join('')}
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Loja</th><th>Dígito</th><th>Enviado</th><th>Retornado</th><th>Saldo</th>${MODELOS.map(m=>`<th>${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</th>`).join('')}</tr></thead>
+      <tbody id="pl-tbody"></tbody>
+    </table></div>
+  </div>`;
+  window._paletesLojaData=resumo;
+  filtPaletesLoja();
+}
+function filtPaletesLoja(){
+  const s=(v('pl-s')||'').toLowerCase(), m=v('pl-m');
+  const data=(window._paletesLojaData||[]).filter(r=>
+    (!s||r.loja.n.toLowerCase().includes(s))&&(!m||r.porModelo[m]>0)
+  );
+  const tb=document.getElementById('pl-tbody');
+  if(!tb)return;
+  tb.innerHTML=data.length?data.map(r=>`<tr>
+    <td class="td-bold">${r.loja.n}</td>
+    <td class="td-mono">${String(r.loja.d).padStart(3,'0')}</td>
+    <td class="td-mono">${r.env}</td>
+    <td class="td-mono">${r.ret}</td>
+    <td class="td-bold td-mono" style="color:${r.saldo>0?'var(--navy)':'var(--text-light)'}">${r.saldo}</td>
+    ${MODELOS.map(m=>`<td class="td-mono" style="font-weight:${r.porModelo[m]>0?'700':'400'};color:${r.porModelo[m]>0?'var(--navy)':'var(--text-light)'}">${r.porModelo[m]}</td>`).join('')}
+  </tr>`).join(''):emptyRow(5+MODELOS.length);
+}
 
 // ── RECEBIMENTO DE FORNECEDORES ────────
 function saldoFornRcf(fornecedor){
@@ -2580,7 +2643,6 @@ function confirmarPagForn(){
     S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-qAbate);
   });
   addMov('Pagamento Fornecedor',r.fornecedor,'Fornecedor',null,null,qtd,CU.nome,obs,r.modelos);
-  syncEst();
   save();toast(`✓ Pagamento de ${qtd} paletes registrado → saiu da REV.`);closeModal('modal-retorno');renderScreen('receb-forn');
 }
 
@@ -2695,22 +2757,7 @@ function rSaldoForn(el){
   const totalRec=itens.reduce((s,[,v])=>s+v.total,0);
   const totalPago=itens.reduce((s,[,v])=>s+v.pago,0);
 
-  // Estoque filtrado por data
-  const estOrigEst=S.est;
-  if(window._estoqueEstTemp){S.est=window._estoqueEstTemp;}
   el.innerHTML=`
-  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Ver saldo em data específica</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-        <input type="date" id="est-de" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarEstoque()">
-        <span style="font-size:12px;color:var(--text-light)">até</span>
-        <input type="date" id="est-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="filtrarEstoque()">
-        <button class="btn btn-ghost btn-sm" onclick="limparFiltroEstoque()">✕ Limpar</button>
-        <span id="est-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${window._estoqueEstTemp?'(período filtrado)':''}</span>
-      </div>
-    </div>
-  </div>
   <div class="kpi-grid">
     <div class="kpi-card navy"><div class="kpi-label">Total Recebido</div><div class="kpi-value">${totalRec}</div><div class="kpi-sub">paletes</div></div>
     <div class="kpi-card green"><div class="kpi-label">Total Pago</div><div class="kpi-value">${totalPago}</div></div>
@@ -3009,6 +3056,23 @@ function confirmarEditRecebForn(id,screen){
   if(novoTot>0){r.modelos=novosMod;r.total=novoTot;}
   save();toast('✓ Recebimento editado.');closeModal('modal-edit-mov');if(screen)renderScreen(screen);
 }
+function abrirEditSolic(id,screen){
+  if(!canDelete())return toast('Sem permissão para editar.','err');
+  const s=S.solics.find(x=>x.id===id);if(!s)return;
+  _editSolId=id;
+  document.getElementById('edit-sol-data').value=s.data||'';
+  document.getElementById('edit-sol-user').value=s.usuario||'';
+  document.getElementById('edit-sol-obs').value=s.obs||'';
+  document.querySelector('#modal-edit-solic .modal-footer .btn-primary').onclick=()=>confirmarEditSolic(screen);
+  openModal('modal-edit-solic');
+}
+function confirmarEditSolic(screen){
+  const s=S.solics.find(x=>x.id===_editSolId);if(!s)return;
+  s.data=document.getElementById('edit-sol-data').value||s.data;
+  s.usuario=document.getElementById('edit-sol-user').value||s.usuario;
+  s.obs=document.getElementById('edit-sol-obs').value;
+  save();toast('✓ Solicitação editada.');closeModal('modal-edit-solic');if(screen)renderScreen(screen);
+}
 
 // ── EXCLUSÃO DE REGISTROS ──────────────
 function canDelete(){return CU.role==='adm'||CU.role==='rev';}
@@ -3165,6 +3229,13 @@ function excluirTriagem(idx,screen){
   S.triagens.splice(idx,1);save();
   toast('✓ Triagem excluída.','warn');if(screen)renderScreen(screen);
 }
+function excluirSolic(id,screen){
+  if(!canDelete())return toast('Sem permissão para excluir.','err');
+  if(!confirm(`Excluir solicitação ${id}?`))return;
+  const idx=S.solics.findIndex(s=>s.id===id);
+  if(idx===-1)return;
+  S.solics.splice(idx,1);save();toast(`✓ Solicitação ${id} excluída.`,'warn');if(screen)renderScreen(screen);
+}
 function excluirRecebForn(id,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
   if(!confirm(`Excluir recebimento ${id}?`))return;
@@ -3193,11 +3264,253 @@ function renderBannerMigracao(){
 // ── RECALCULO DE ESTOQUE ───────────────
 function recalcularEstoque(){
   if(!canDelete())return toast('Sem permissão.','err');
-  if(!confirm('Recalcular todo o estoque a partir das movimentações?'))return;
-  const n=calcEst(S.movs);
-  const l=MODELOS.map(m=>{const a=S.est.REV?.[m]||0,b=n.REV[m]||0,d=b-a;return`${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}: ${a}→${b} (${d>=0?'+':''}${d})`;}).join('\n');
-  if(!confirm(`REV:\n${l}\n\nAplicar?`))return;
-  S.est=n;save();toast('✓ Estoque recalculado!');navigate('estoque');
+  if(!confirm('Recalcular todo o estoque a partir das movimentações? O saldo atual será substituído pelo calculado.'))return;
+  
+  // Zera tudo
+  const novoEst=emptyEst();
+  
+  // Replay todas as movimentações do mais antigo ao mais recente
+  const movOrdenados=[...S.movs].reverse();
+  
+  movOrdenados.forEach(mov=>{
+    const mods=mov.modelos||{};
+    const qtd=mov.qtd||0;
+    
+    switch(mov.tipo){
+      case 'Compra':
+      case 'Retorno de Reforma':
+        MODELOS.forEach(m=>{novoEst.REV[m]=(novoEst.REV[m]||0)+(mods[m]||0);});
+        break;
+      case 'Distribuição Interna':
+        MODELOS.forEach(m=>{
+          novoEst.REV[m]=Math.max(0,(novoEst.REV[m]||0)-(mods[m]||0));
+          if(novoEst[mov.destino])novoEst[mov.destino][m]=(novoEst[mov.destino][m]||0)+(mods[m]||0);
+        });
+        break;
+      case 'Envio para Loja':
+        MODELOS.forEach(m=>{
+          if(novoEst[mov.origem])novoEst[mov.origem][m]=Math.max(0,(novoEst[mov.origem][m]||0)-(mods[m]||0));
+          novoEst.Lojas[m]=(novoEst.Lojas[m]||0)+(mods[m]||0);
+        });
+        break;
+      case 'Retorno de Loja':
+        MODELOS.forEach(m=>{
+          novoEst.Lojas[m]=Math.max(0,(novoEst.Lojas[m]||0)-(mods[m]||0));
+          novoEst.TriagemFila[m]=(novoEst.TriagemFila[m]||0)+(mods[m]||0);
+        });
+        break;
+      case 'Devolução Interna':
+        MODELOS.forEach(m=>{
+          if(novoEst[mov.origem])novoEst[mov.origem][m]=Math.max(0,(novoEst[mov.origem][m]||0)-(mods[m]||0));
+          novoEst.TriagemFila[m]=(novoEst.TriagemFila[m]||0)+(mods[m]||0);
+        });
+        break;
+      case 'Triagem':
+        // Triagem pode ir para REV (operação) ou ReformaFila (reforma)
+        MODELOS.forEach(m=>{
+          novoEst.TriagemFila[m]=Math.max(0,(novoEst.TriagemFila[m]||0)-(mods[m]||0));
+          if(mov.destino==='Fila Reforma'){
+            novoEst.ReformaFila[m]=(novoEst.ReformaFila[m]||0)+(mods[m]||0);
+          } else {
+            novoEst.REV[m]=(novoEst.REV[m]||0)+(mods[m]||0);
+          }
+        });
+        break;
+      case 'Descarte':
+        MODELOS.forEach(m=>{novoEst.TriagemFila[m]=Math.max(0,(novoEst.TriagemFila[m]||0)-(mods[m]||0));});
+        break;
+      case 'Envio para Reforma':
+        MODELOS.forEach(m=>{
+          novoEst.ReformaFila[m]=Math.max(0,(novoEst.ReformaFila[m]||0)-(mods[m]||0));
+          novoEst.Reforma[m]=(novoEst.Reforma[m]||0)+(mods[m]||0);
+        });
+        break;
+      case 'Pagamento Fornecedor':
+        // Pagamento = devolve paletes ao fornecedor = sai da REV
+        MODELOS.forEach(m=>{novoEst.REV[m]=Math.max(0,(novoEst.REV[m]||0)-(mods[m]||0));});
+        break;
+      case 'Envio Descartável Reforma':
+        // Envio de descartável ao fornecedor de reforma = sai da REV
+        novoEst.REV.DESCARTAVEL=Math.max(0,(novoEst.REV.DESCARTAVEL||0)-(mods.DESCARTAVEL||qtd||0));
+        break;
+      // Recebimento Fornecedor, Confirmação Loja, etc. não mexem no estoque
+    }
+  });
+  
+  // Mostra comparativo antes de aplicar
+  const linhas=MODELOS.map(m=>{
+    const antes=S.est.REV?.[m]||0;
+    const depois=novoEst.REV[m]||0;
+    const diff=depois-antes;
+    return `${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}: ${antes} → ${depois} (${diff>=0?'+':''}${diff})`;
+  }).join('\n');
+  const msg=`Recalculo concluído — REV:\n\n${linhas}\n\nAplicar o estoque recalculado?`;
+  if(!confirm(msg))return;
+  
+  S.est=novoEst;
+  save();
+  toast('✓ Estoque recalculado com base nas movimentações!');
+  navigate('estoque');
+}
+
+
+
+// ── VOLUME POR DIA ─────────────────────
+function rVolumeDia(el){
+  // Coleta todos os dias com movimentações
+  const diasMap={};
+  S.movs.forEach(mov=>{
+    const dia=mov.ts.split(',')[0]; // dd/mm/aaaa
+    if(!diasMap[dia])diasMap[dia]=[];
+    diasMap[dia].push(mov);
+  });
+
+  // Ordena dias cronologicamente
+  const dias=Object.keys(diasMap).sort((a,b)=>{
+    const [da,ma,ya]=a.split('/');const [db,mb,yb]=b.split('/');
+    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
+  });
+
+  // Filtro de data
+  el.innerHTML=`
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">📅 Volume por Dia</span>
+      <button class="btn btn-success btn-sm" onclick="exportVolumeDia()">⬇ Excel</button>
+    </div>
+    <div class="filters">
+      <input class="filter-input" id="vd-data" type="date" onchange="filtVolumeDia()" placeholder="Filtrar data...">
+      <select class="filter-select" id="vd-modelo" onchange="filtVolumeDia()">
+        <option value="">Todos os modelos</option>
+        ${MODELOS.map(m=>`<option value="${m}">${MODELO_LABELS[m]}</option>`).join('')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('vd-data').value='';document.getElementById('vd-modelo').value='';filtVolumeDia()">✕ Limpar</button>
+    </div>
+    <div id="vd-body" style="padding:0"></div>
+  </div>`;
+
+  window._volumeDiaDias=dias;
+  window._volumeDiaMap=diasMap;
+  filtVolumeDia();
+}
+
+function filtVolumeDia(){
+  const filtData=v('vd-data');
+  const filtModelo=v('vd-modelo');
+  const dias=window._volumeDiaDias||[];
+  const diasMap=window._volumeDiaMap||{};
+  const body=document.getElementById('vd-body');
+  if(!body)return;
+
+  // Converte filtro de data yyyy-mm-dd para dd/mm/yyyy
+  let filtDiaFmt='';
+  if(filtData){const [y,m,d]=filtData.split('-');filtDiaFmt=`${d}/${m}/${y}`;}
+
+  const diasFiltrados=filtDiaFmt?dias.filter(d=>d===filtDiaFmt):dias;
+
+  if(!diasFiltrados.length){
+    body.innerHTML='<div class="empty" style="padding:30px"><div class="empty-icon">📭</div><div class="empty-text">Nenhum lançamento encontrado</div></div>';
+    return;
+  }
+
+  // Para cada dia, calcula saldo acumulado
+  // Reconstrói estoque dia a dia usando recalculo
+  let html='';
+  const modelosMostrar=filtModelo?[filtModelo]:MODELOS;
+
+  diasFiltrados.forEach(dia=>{
+    const movsDia=diasMap[dia]||[];
+    
+    // Agrupa movimentações do dia por tipo
+    const entradas=movsDia.filter(m=>['Compra','Retorno de Reforma','Retorno de Loja','Triagem'].includes(m.tipo));
+    const saidas=movsDia.filter(m=>['Distribuição Interna','Envio para Loja','Envio para Reforma','Pagamento Fornecedor','Descarte','Devolução Interna'].includes(m.tipo));
+    
+    // Totais por modelo no dia
+    const totEntrada={};const totSaida={};
+    modelosMostrar.forEach(m=>{totEntrada[m]=0;totSaida[m]=0;});
+    
+    movsDia.forEach(mov=>{
+      const mods=mov.modelos||{};
+      modelosMostrar.forEach(m=>{
+        const q=mods[m]||0;
+        if(['Compra','Retorno de Reforma','Triagem'].includes(mov.tipo)&&mov.destino==='REV'){
+          totEntrada[m]+=q;
+        } else if(mov.tipo==='Retorno de Loja'){
+          totEntrada[m]+=q; // entra na triagem
+        } else if(['Distribuição Interna','Envio para Loja','Envio para Reforma','Pagamento Fornecedor','Descarte'].includes(mov.tipo)){
+          totSaida[m]+=q;
+        }
+      });
+    });
+
+    const totalEntDia=modelosMostrar.reduce((s,m)=>s+totEntrada[m],0);
+    const totalSaiDia=modelosMostrar.reduce((s,m)=>s+totSaida[m],0);
+
+    html+=`<div style="border-bottom:2px solid var(--border-dark);">
+      <div style="padding:10px 16px;background:#f0f4f8;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleDiaDetalhe('dd-${dia.replace(/\//g,'-')}')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <strong style="font-size:14px;color:var(--navy);font-family:var(--mono)">${dia}</strong>
+          <span style="font-size:11px;color:var(--text-light)">${movsDia.length} movimentação(ões)</span>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;">
+          <span style="font-size:12px;color:var(--green)">▲ ${totalEntDia} entradas</span>
+          <span style="font-size:12px;color:var(--red)">▼ ${totalSaiDia} saídas</span>
+          <span style="font-size:11px;color:var(--text-light)">▼</span>
+        </div>
+      </div>
+      <div id="dd-${dia.replace(/\//g,'-')}" style="display:none;">
+        <div style="padding:12px 16px;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:var(--navy);color:#fff;">
+              <th style="padding:7px 12px;text-align:left">Tipo</th>
+              <th style="padding:7px 12px;text-align:left">Origem → Destino</th>
+              <th style="padding:7px 12px;text-align:center">Total</th>
+              ${modelosMostrar.map(m=>`<th style="padding:7px 8px;text-align:center;font-size:10px">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</th>`).join('')}
+            </tr></thead>
+            <tbody>
+              ${movsDia.map(mov=>`<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:6px 12px">${badgeMov(mov.tipo)}</td>
+                <td style="padding:6px 12px;font-size:11px"><span class="tag-area">${mov.origem}</span> → <span class="tag-area">${mov.destino}</span></td>
+                <td style="padding:6px 12px;text-align:center;font-weight:700;font-family:var(--mono)">${mov.qtd}</td>
+                ${modelosMostrar.map(m=>`<td style="padding:6px 8px;text-align:center;font-family:var(--mono);color:${(mov.modelos?.[m]||0)>0?'var(--navy)':'var(--text-light)'}">${mov.modelos?.[m]||0}</td>`).join('')}
+              </tr>`).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background:#f8fbff;font-weight:700;">
+                <td colspan="2" style="padding:7px 12px;font-size:11px;color:var(--text-light)">TOTAL DO DIA</td>
+                <td style="padding:7px 12px;text-align:center;font-family:var(--mono);color:var(--navy)">${movsDia.reduce((s,m)=>s+m.qtd,0)}</td>
+                ${modelosMostrar.map(m=>{
+                  const tot=movsDia.reduce((s,mv)=>s+(mv.modelos?.[m]||0),0);
+                  return`<td style="padding:7px 8px;text-align:center;font-family:var(--mono);font-weight:700;color:${tot>0?'var(--navy)':'var(--text-light)'}">${tot}</td>`;
+                }).join('')}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  body.innerHTML=html;
+}
+
+function toggleDiaDetalhe(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function exportVolumeDia(){
+  const dias=window._volumeDiaDias||[];
+  const diasMap=window._volumeDiaMap||{};
+  const rows=[
+    ['Data','Tipo','Origem','Destino','Total',...MODELOS.map(m=>MODELO_LABELS[m])]
+  ];
+  dias.forEach(dia=>{
+    (diasMap[dia]||[]).forEach(mov=>{
+      rows.push([dia,mov.tipo,mov.origem,mov.destino,mov.qtd,...MODELOS.map(m=>mov.modelos?.[m]||0)]);
+    });
+  });
+  downloadXLSX(rows,'Volume_por_Dia_PaletCD');
 }
 
 
@@ -3363,85 +3676,19 @@ function excluirAbertura(id){
   save();toast('✓ Abertura excluída.','warn');renderScreen('abertura-diaria');
 }
 
-
-// ── FILTRO DATA DASHBOARD ───────────────
-function filtrarDashboard(){
-  const de=parseDate(document.getElementById('dash-de')?.value);
-  const ate=parseDate(document.getElementById('dash-ate')?.value);
-  if(!de&&!ate)return renderScreen('dashboard');
-  // Recalcula com período
-  const ate2=ate||new Date();
-  const estFiltrado=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
-  // Atualiza label
-  const lbl=document.getElementById('dash-periodo-label');
-  if(lbl){
-    const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-    lbl.textContent=de?`Saldo em ${fmt(ate2)} (de ${fmt(de)} até ${fmt(ate2)})`:`Saldo até ${fmt(ate2)}`;
-  }
-  // Recarrega tela com estoque filtrado (temporário)
-  window._dashEstTemp=estFiltrado;
-  renderScreen('dashboard');
-  // Restaura filtro depois (renderScreen limpa os campos)
-  setTimeout(()=>{
-    const de2=document.getElementById('dash-de');const ate2b=document.getElementById('dash-ate');
-    if(de2&&de)de2.value=document.getElementById('dash-de')?._lastVal||'';
-    if(ate2b&&ate)ate2b.value=document.getElementById('dash-ate')?._lastVal||'';
-  },10);
-}
-function limparFiltroDash(){
-  window._dashEstTemp=null;
-  const de=document.getElementById('dash-de');const ate=document.getElementById('dash-ate');
-  if(de)de.value='';if(ate)ate.value='';
-  renderScreen('dashboard');
-}
-
-
-function filtrarEstoque(){
-  const de=parseDate(document.getElementById('est-de')?.value);
-  const ate=parseDate(document.getElementById('est-ate')?.value);
-  if(!de&&!ate){window._estoqueEstTemp=null;renderScreen('estoque');return;}
-  const ate2=ate||new Date();
-  window._estoqueEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
-  const lbl=document.getElementById('est-periodo-label');
-  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  if(lbl)lbl.textContent=de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
-  renderScreen('estoque');
-}
-function limparFiltroEstoque(){
-  window._estoqueEstTemp=null;
-  renderScreen('estoque');
-}
-
 // ── BACKUP & SYNC ──────────────────────
 async function forceSyncNuvem(){
   if(!canDelete())return toast('Sem permissão.','err');
-  
-  toast('Sincronizando (fazendo merge)...','warn');
-  
-  try {
-    // 1. Carrega o que está na nuvem
-    const remoteData = await githubLoad();
-    
-    // 2. Faz merge se ambos têm dados
-    if(remoteData && remoteData.movs && S.movs) {
-      S = smartMergeData(S, remoteData);
-    }
-    
-    // 3. Salva resultado sincronizado
-    const saved = await supaSave(S);
-    
-    if(saved){
-      _supaReady = true;
-      updateSyncBadge();
-      localStorage.setItem('paletcd_v4', JSON.stringify(S));
-      toast('✓ Dados sincronizados com merge bem-sucedido!');
-    } else {
-      toast('Erro ao sincronizar.','err');
-    }
-  } catch(err) {
-    console.error('Erro em forceSyncNuvem:', err);
-    toast('Erro ao sincronizar: '+err.message,'err');
+  toast('Sincronizando...','warn');
+  const ok=await supaCheck();
+  if(!ok)return toast('Sem conexão com Supabase.','err');
+  // Só sobe se tiver dados reais
+  if(!S.movs||S.movs.length===0){
+    if(!confirm('O sistema está vazio. Confirma sincronização mesmo assim?'))return;
   }
+  const saved=await supaSave(S);
+  if(saved){_supaReady=true;updateSyncBadge();toast('✓ Dados sincronizados com a nuvem!');}
+  else toast('Erro ao sincronizar.','err');
 }
 function exportBackup(){
   const json=JSON.stringify(S,null,2);
@@ -3459,23 +3706,12 @@ function importBackup(event){
     try{
       const data=JSON.parse(e.target.result);
       if(!data.movs||!data.est)return toast('Arquivo inválido.','err');
-      
-      // NOVO: Oferece merge ao invés de replace
-      const confirm_msg = `Importar backup com ${data.movs.length} movimentações?\n\nOções:\n[OK] Mesclar com dados atuais (recomendado)\n[Cancelar] Substituir dados atuais`;
-      if(!confirm(confirm_msg))return;
-      
-      // MERGE: Combina backup com dados atuais
-      const backupFixed = fixState(data);
-      S = smartMergeData(S, backupFixed); // Merge ao invés de replace
-      
+      if(!confirm(`Importar backup com ${data.movs.length} movimentações? Dados atuais serão substituídos.`))return;
+      S=fixState(data);
       save();
       // Sobe para nuvem
-      if(_supaReady){
-        await supaSave(S);
-        toast('✓ Backup importado, mesclado e sincronizado!');
-      } else {
-        toast('✓ Backup importado e mesclado localmente!','warn');
-      }
+      if(_supaReady)await supaSave(S);
+      toast('✓ Backup importado e sincronizado!');
       navigate('dashboard');
     }catch(err){toast('Erro ao ler o arquivo.','err');}
   };
