@@ -468,17 +468,6 @@ let _syncTimeout=null;
 
 async function supaCheck(){
   try{
-    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?id=eq.${SUPA_ID}&select=id`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
-    _supaReady=r.ok;
-  }catch(e){_supaReady=false;}
-  updateSyncBadge();
-  return _supaReady;
-}
-
-async function supaCheck(){
-  try{
     const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes?limit=1`,{
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
     });
