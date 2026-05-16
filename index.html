@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#1b4f72">
 <title>PaletCD — Controle de Paletes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
@@ -462,12 +461,13 @@ textarea.form-control{resize:vertical;min-height:60px;}
 // GITHUB CONFIG - Backup e Sincronização
 // ═══════════════════════════════════════════════════════
 const GITHUB_OWNER = 'MNepomuceno20111972';
-const GITHUB_REPO = 'paletcd-pro';
+const GITHUB_REPO = 'paletcd-controle-de-paletes';
 const GITHUB_BRANCH = 'main';
 const GITHUB_TOKEN = ''; // Deixar vazio - usar raw.githubusercontent.com
-const GITHUB_FILE = 'paletcd_backup.json';
+const GITHUB_FILE = null; // GitHub desativado
 
 async function githubLoad() {
+  return null; // GitHub desativado - usar Supabase
   try {
     const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${GITHUB_FILE}`;
     const resp = await fetch(url);
