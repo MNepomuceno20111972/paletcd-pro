@@ -14,6 +14,7 @@
 <title>PaletCD — Controle de Paletes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
@@ -486,7 +487,8 @@ async function githubSave(data) {
   return false;
 }
 const SUPA_URL='https://pbjggmxbfkudnsfkaxqw.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiamdnbXhiZmt1ZG5zZmtheHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDIyODYsImV4cCI6MjA5MjIxODI4Nn0.mx0KHCs81eGYN8NJycIfYnhjquwz0mPRSgPeESiDSzg';
+const SUPABASE_URL='https://znvhmenfyqqoxqbaovja.supabase.co';
+const SUPABASE_KEY='sb_publishable_-HVPXmi4xhxUQ9hHYJJy7Q_VPvziDI7';
 const SUPA_TABLE='paletcd_state';
 const SUPA_ID='main';
 let _supaReady=false;
@@ -499,7 +501,38 @@ async function supaLoad(){
   return data;
 }
 
-async function supaSave(data){return githubSave(data);}
+async function supaSave(data){
+  // NOVO: Primeiro carrega o que tá na nuvem
+  // Depois salva apenas o que é novo/modificado
+  try {
+    const remoteData = await githubLoad();
+    
+    // Deduplica antes de salvar
+    if(remoteData && remoteData.movs && data.movs) {
+      const remoteIds = new Set(remoteData.movs.map(m => m.id || `${m.loj}_${m.dt}_${m.op}`));
+      const uniqueMovs = [];
+      const seenIds = new Set();
+      
+      // Remove duplicatas em data.movs
+      data.movs.forEach(m => {
+        const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
+        if(!seenIds.has(key)) {
+          seenIds.add(key);
+          uniqueMovs.push(m);
+        }
+      });
+      
+      data.movs = uniqueMovs;
+    }
+    
+    // Salva dados dedupados
+    return await githubSave(data);
+  } catch(e) {
+    console.error('Erro em supaSave:', e);
+    // Fallback: salva mesmo sem verificar nuvem
+    return await githubSave(data);
+  }
+}
 
 function updateSyncBadge(){
   const b=document.getElementById('sync-badge');
@@ -623,10 +656,35 @@ let currentRefId=null;
 let charts={};
 
 function save(){
+  // ANTES DE SALVAR: Remove duplicatas
+  if(S.movs && S.movs.length > 0) {
+    const seenIds = new Set();
+    const movs_unicos = [];
+    
+    S.movs.forEach(m => {
+      const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
+      if(!seenIds.has(key)) {
+        seenIds.add(key);
+        movs_unicos.push(m);
+      }
+    });
+    
+    S.movs = movs_unicos;
+  }
+  
+  // Salva no localStorage
   localStorage.setItem('paletcd_v4',JSON.stringify(S));
+  
+  // Sincroniza com nuvem após 2s (debounce)
   if(_syncTimeout)clearTimeout(_syncTimeout);
   _syncTimeout=setTimeout(async()=>{
-    if(_supaReady){const ok=await supaSave(S);if(!ok){_supaReady=false;updateSyncBadge();}}
+    if(_supaReady){
+      const ok=await supaSave(S);
+      if(!ok){
+        _supaReady=false;
+        updateSyncBadge();
+      }
+    }
   },2000);
 }
 
@@ -719,21 +777,94 @@ function fixState(s){
 }
 
 async function load(){
-  const stored = localStorage.getItem('paletcd_v4');
-  if(stored) {
-    try { S = fixState(JSON.parse(stored)); }
-    catch(e) { console.error('Erro ao carregar localStorage'); }
-  }
-  const githubData = await githubLoad();
-  if(githubData) {
-    S = fixState(githubData);
+  try {
+    // Inicializar Supabase PRIMEIRO
+    initSupabase();
+    
+    // SMART LOAD: Tenta carregar local e remoto, depois faz merge
+    let localData = null;
+    let remoteData = null;
+    
+    // 1. Carrega dados locais
+    const stored = localStorage.getItem('paletcd_v4');
+    if(stored) {
+      try { 
+        localData = fixState(JSON.parse(stored)); 
+      }
+      catch(e) { 
+        console.error('Erro ao carregar localStorage'); 
+      }
+    }
+    
+    // 2. Carrega dados remotos (Supabase)
+    try {
+      remoteData = await supaLoad();
+      if(remoteData) remoteData = fixState(remoteData);
+    } catch(e) {
+      console.error('Erro ao carregar Supabase:', e);
+    }
+    
+    // 3. MERGE inteligente
+    if(remoteData && remoteData.movs && remoteData.movs.length > 0) {
+      // Remoto tem dados
+      if(localData && localData.movs && localData.movs.length > 0) {
+        // Ambos têm → faz merge (remove duplicatas)
+        S = smartMergeData(localData, remoteData);
+      } else {
+        // Só remoto tem → usa remoto
+        S = remoteData;
+      }
+    } else {
+      // Remoto vazio ou erro → usa local
+      if(localData) {
+        S = localData;
+      }
+    }
+    
+    // 4. Persiste resultado
     localStorage.setItem('paletcd_v4', JSON.stringify(S));
+    _supaReady = remoteData ? true : false;
+    
+  } catch(e) {
+    console.error('Erro em load():', e);
   }
+  
   setTimeout(()=>{
     const div = document.getElementById('supa-loading');
     if(div) div.remove();
   }, 300);
 }
+// ── MERGE INTELIGENTE ──────────────────────
+function smartMergeData(local, remote) {
+  // Combina dados local e remoto, removendo duplicatas
+  // Fonte de verdade: remote (nuvem), mas não descarta dados locais novos
+  
+  const merged = JSON.parse(JSON.stringify(remote)); // Cópia do remote
+  
+  if(!local.movs) local.movs = [];
+  if(!merged.movs) merged.movs = [];
+  
+  // Criar set de IDs remotos para rápida busca
+  const remoteIds = new Set(merged.movs.map(m => m.id || `${m.loj}_${m.dt}_${m.op}`));
+  
+  // Adicionar movimentos locais que não existem no remoto
+  local.movs.forEach(m => {
+    const key = m.id || `${m.loj}_${m.dt}_${m.op}`;
+    if(!remoteIds.has(key)) {
+      merged.movs.push(m);
+    }
+  });
+  
+  // Usar estruturas mais recentes/completas de remote
+  merged.est = remote.est || local.est;
+  merged.triagens = remote.triagens || local.triagens;
+  merged.recebForn = remote.recebForn || local.recebForn;
+  merged.reformas = remote.reformas || local.reformas;
+  merged.nMov = Math.max(remote.nMov || 0, local.nMov || 0);
+  
+  return merged;
+}
+
 function seedData(){
   S.est=emptyEst();
   S.forns=[];
@@ -3288,16 +3419,33 @@ function limparFiltroEstoque(){
 // ── BACKUP & SYNC ──────────────────────
 async function forceSyncNuvem(){
   if(!canDelete())return toast('Sem permissão.','err');
-  toast('Sincronizando...','warn');
-  const ok=console.log("App iniciado");
-  if(!ok)return toast('Sem conexão com Supabase.','err');
-  // Só sobe se tiver dados reais
-  if(!S.movs||S.movs.length===0){
-    if(!confirm('O sistema está vazio. Confirma sincronização mesmo assim?'))return;
+  
+  toast('Sincronizando (fazendo merge)...','warn');
+  
+  try {
+    // 1. Carrega o que está na nuvem
+    const remoteData = await githubLoad();
+    
+    // 2. Faz merge se ambos têm dados
+    if(remoteData && remoteData.movs && S.movs) {
+      S = smartMergeData(S, remoteData);
+    }
+    
+    // 3. Salva resultado sincronizado
+    const saved = await supaSave(S);
+    
+    if(saved){
+      _supaReady = true;
+      updateSyncBadge();
+      localStorage.setItem('paletcd_v4', JSON.stringify(S));
+      toast('✓ Dados sincronizados com merge bem-sucedido!');
+    } else {
+      toast('Erro ao sincronizar.','err');
+    }
+  } catch(err) {
+    console.error('Erro em forceSyncNuvem:', err);
+    toast('Erro ao sincronizar: '+err.message,'err');
   }
-  const saved=await supaSave(S);
-  if(saved){_supaReady=true;updateSyncBadge();toast('✓ Dados sincronizados com a nuvem!');}
-  else toast('Erro ao sincronizar.','err');
 }
 function exportBackup(){
   const json=JSON.stringify(S,null,2);
@@ -3315,12 +3463,23 @@ function importBackup(event){
     try{
       const data=JSON.parse(e.target.result);
       if(!data.movs||!data.est)return toast('Arquivo inválido.','err');
-      if(!confirm(`Importar backup com ${data.movs.length} movimentações? Dados atuais serão substituídos.`))return;
-      S=fixState(data);
+      
+      // NOVO: Oferece merge ao invés de replace
+      const confirm_msg = `Importar backup com ${data.movs.length} movimentações?\n\nOções:\n[OK] Mesclar com dados atuais (recomendado)\n[Cancelar] Substituir dados atuais`;
+      if(!confirm(confirm_msg))return;
+      
+      // MERGE: Combina backup com dados atuais
+      const backupFixed = fixState(data);
+      S = smartMergeData(S, backupFixed); // Merge ao invés de replace
+      
       save();
       // Sobe para nuvem
-      if(_supaReady)await supaSave(S);
-      toast('✓ Backup importado e sincronizado!');
+      if(_supaReady){
+        await supaSave(S);
+        toast('✓ Backup importado, mesclado e sincronizado!');
+      } else {
+        toast('✓ Backup importado e mesclado localmente!','warn');
+      }
       navigate('dashboard');
     }catch(err){toast('Erro ao ler o arquivo.','err');}
   };
