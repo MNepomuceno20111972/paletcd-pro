@@ -496,9 +496,13 @@ async function supaLoad(){
     if(!rows||!Array.isArray(rows)||rows.length===0)return null;
     
     const movs=rows.map(row=>({
-      id:row.id,tipo:row.tipo,origem:row.origem||'',destino:row.destino||'',
-      loja:row.loja||'',forn:row.forn||'',qtd:row.qtd||0,usuario:row.usuario||'',
-      obs:row.obs||'',modelos:row.modelos||null,ts:row.ts||new Date().toLocaleString('pt-BR'),nf:row.nf||''
+      id:row.id,
+      tipo:row.tipo||'',
+      origem:row.sim||'',
+      destino:row.destino||'',
+      loja:'',forn:'',qtd:row.citado||0,usuario:'',obs:'',
+      modelos:row.modelos||null,
+      ts:new Date().toLocaleString('pt-BR'),nf:''
     }));
     
     return {movs,est:emptyEst(),solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[]};
@@ -510,14 +514,21 @@ async function supaSave(data){
   try{
     await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
     
-    const rows=data.movs.map(m=>({id:m.id,tipo:m.tipo,origem:m.origem,destino:m.destino,loja:m.loja,forn:m.forn,qtd:m.qtd,usuario:m.usuario,obs:m.obs,modelos:m.modelos,ts:m.ts,nf:m.nf}));
+    const rows=data.movs.map(m=>({
+      id:m.id,
+      tipo:m.tipo||'',
+      sim:m.origem||'',
+      destino:m.destino||'',
+      citado:m.qtd||0,
+      modelos:m.modelos||null
+    }));
     
     const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{
-      method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
       body:JSON.stringify(rows)
     });
     
-    console.log('✅ Dados salvos no Supabase');
+    console.log('✅ Dados salvos no Supabase:',r.status);
     return r.ok;
   }catch(e){console.error('Erro supaSave:',e);return false;}
 }
