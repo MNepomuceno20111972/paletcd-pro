@@ -477,31 +477,49 @@ async function supaCheck(){
   return _supaReady;
 }
 
+async function supaCheck(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes?limit=1`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    return r.ok;
+  }catch(e){return false;}
+}
+
 async function supaLoad(){
   try{
-    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?id=eq.${SUPA_ID}&select=data`,{
+    const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes?order=id.desc&limit=10000`,{
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
     });
     if(!r.ok)return null;
     const rows=await r.json();
-    if(rows&&rows.length>0&&rows[0].data&&rows[0].data.movs)return rows[0].data;
-    return null;
-  }catch(e){return null;}
+    if(!rows||!Array.isArray(rows)||rows.length===0)return null;
+    
+    const movs=rows.map(row=>({
+      id:row.id,tipo:row.tipo,origem:row.origem||'',destino:row.destino||'',
+      loja:row.loja||'',forn:row.forn||'',qtd:row.qtd||0,usuario:row.usuario||'',
+      obs:row.obs||'',modelos:row.modelos||null,ts:row.ts||new Date().toLocaleString('pt-BR'),nf:row.nf||''
+    }));
+    
+    return {movs,est:emptyEst(),solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[]};
+  }catch(e){console.error('Erro supaLoad:',e);return null;}
 }
 
 async function supaSave(data){
+  if(!data||!data.movs||data.movs.length===0)return false;
   try{
-    const r=await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`,{
-      method:'POST',
-      headers:{
-        'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
-        'Content-Type':'application/json',
-        'Prefer':'resolution=merge-duplicates'
-      },
-      body:JSON.stringify({id:SUPA_ID,data,updated_at:new Date().toISOString()})
+    await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    
+    const rows=data.movs.map(m=>({id:m.id,tipo:m.tipo,origem:m.origem,destino:m.destino,loja:m.loja,forn:m.forn,qtd:m.qtd,usuario:m.usuario,obs:m.obs,modelos:m.modelos,ts:m.ts,nf:m.nf}));
+    
+    const r=await fetch(`${SUPA_URL}/rest/v1/movimentacoes`,{
+      method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(rows)
     });
+    
+    console.log('✅ Dados salvos no Supabase');
     return r.ok;
-  }catch(e){return false;}
+  }catch(e){console.error('Erro supaSave:',e);return false;}
 }
 
 function updateSyncBadge(){
