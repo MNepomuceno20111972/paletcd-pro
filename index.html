@@ -455,7 +455,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
 
 <div class="toast-wrap" id="toast-wrap"></div>
 
-<script type="module">
+<script>
 
 // ═══════════════════════════════════════════════════════
 // GITHUB CONFIG - Backup e Sincronização
@@ -485,86 +485,28 @@ async function githubSave(data) {
   console.log('💾 Dados salvos localmente (GitHub requer push manual)');
   return false;
 }
-// ============ FIREBASE CONFIG ============
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD9qVsBjf_v59TN8Ayvarts5Q7LXxzlVrQ",
-  authDomain: "paletcd.firebaseapp.com",
-  databaseURL: "https://paletcd-default-rtdb.firebaseio.com",
-  projectId: "paletcd",
-  storageBucket: "paletcd.firebasestorage.app",
-  messagingSenderId: "431517046970",
-  appId: "1:431517046970:web:e03e0ff01e1b898275ca83"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const fbDb = getDatabase(fbApp);
+const SUPA_URL='https://pbjggmxbfkudnsfkaxqw.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiamdnbXhiZmt1ZG5zZmtheHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDIyODYsImV4cCI6MjA5MjIxODI4Nn0.mx0KHCs81eGYN8NJycIfYnhjquwz0mPRSgPeESiDSzg';
+const SUPA_TABLE='paletcd_state';
+const SUPA_ID='main';
 let _supaReady=false;
 let _syncTimeout=null;
 
-async function supaCheck(){
-  try {
-    const snapshot = await get(ref(fbDb, "paletcd"));
-    _supaReady = true;
-    console.log("✅ Firebase conectado");
-    return true;
-  } catch (e) {
-    _supaReady = false;
-    console.warn("⚠️ Firebase offline", e.message);
-    return false;
-  }
-}
+async function supaCheck(){return false;}
 
 async function supaLoad(){
-  try {
-    const snapshot = await get(ref(fbDb, "paletcd"));
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      console.log("✅ Dados carregados do Firebase");
-      return data;
-    }
-    return null;
-  } catch (e) {
-    console.warn("⚠️ Erro ao carregar Firebase:", e.message);
-    return null;
-  }
+  const data = await githubLoad();
+  return data;
 }
 
-async function supaSave(data){
-  try {
-    await set(ref(fbDb, "paletcd"), data);
-    console.log("✅ Dados sincronizados com Firebase");
-    return true;
-  } catch (e) {
-    console.error("❌ Erro ao sincronizar Firebase:", e.message);
-    return false;
-  }
-}
+async function supaSave(data){return githubSave(data);}
 
 function updateSyncBadge(){
   const b=document.getElementById('sync-badge');
   if(!b)return;
-  b.innerHTML=_supaReady?'🔥 <span style="color:#1e8449;font-weight:700">Firebase</span>':'💾 <span style="color:#935116;font-weight:700">Local</span>';
-  b.title=_supaReady?'Conectado ao Firebase':'Sem conexão — dados salvos localmente';
+  b.innerHTML=_supaReady?'☁️ <span style="color:#1e8449;font-weight:700">Nuvem</span>':'💾 <span style="color:#935116;font-weight:700">Local</span>';
+  b.title=_supaReady?'Conectado ao Supabase':'Sem conexão — dados salvos localmente';
 }
-
-// Sincronização em tempo real do Firebase
-onValue(ref(fbDb, "paletcd"), (snapshot) => {
-  if (snapshot.exists()) {
-    const remoteData = snapshot.val();
-    // Merge inteligente - atualizar se dados remotos são mais novos
-    if (JSON.stringify(S) !== JSON.stringify(remoteData)) {
-      S = remoteData;
-      saveToStorage();
-      renderUI();
-      console.log("🔄 Dados atualizados de outro dispositivo");
-    }
-  }
-}, (error) => {
-  console.warn("⚠️ Erro na sincronização em tempo real:", error.message);
-});
 
 // ═══════════════════════════════════════════════════════
 // MODELOS DE PALETE
