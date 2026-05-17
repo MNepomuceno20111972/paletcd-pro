@@ -14,8 +14,8 @@
 <title>PaletCD — Controle de Paletes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
@@ -516,7 +516,7 @@ async function initFirebase() {
   
   _firebaseInitPromise = new Promise((resolve) => {
     const checkFirebase = setInterval(() => {
-      if(typeof firebase !== 'undefined') {
+      if(typeof firebase !== 'undefined' && firebase.initializeApp) {
         clearInterval(checkFirebase);
         try {
           if(!firebase.apps.length) {
@@ -541,7 +541,7 @@ async function initFirebase() {
         console.warn("Firebase timeout - usando localStorage");
         resolve(false);
       }
-    }, 5000);
+    }, 8000);
   });
   
   return _firebaseInitPromise;
@@ -551,7 +551,9 @@ async function firebaseLoad() {
   if(!firebaseReady || !db) return null;
   try {
     const snapshot = await db.ref('palet_app/state').once('value');
-    return snapshot.val();
+    const data = snapshot.val();
+    if(data) console.log("✓ Dados carregados do Firebase");
+    return data;
   } catch(err) {
     console.error("Erro ao carregar do Firebase:", err);
     return null;
@@ -565,6 +567,7 @@ async function firebaseSave(data) {
       ...data,
       lastSync: new Date().toISOString()
     });
+    console.log("✓ Dados salvos no Firebase");
     return true;
   } catch(err) {
     console.error("Erro ao salvar no Firebase:", err);
