@@ -3141,9 +3141,31 @@ function salvarAjuste(){
 }
 function excluirTriagem(idx,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
-  if(!confirm('Excluir este registro de triagem?'))return;
-  S.triagens.splice(idx,1);save();
-  toast('✓ Triagem excluída.','warn');if(screen)renderScreen(screen);
+  if(!confirm('Excluir este registro de triagem? As alterações no estoque serão desfeitas.'))return;
+  
+  const trg=S.triagens[idx];
+  if(!trg)return;
+  
+  // Desfaz as alterações no estoque modelo por modelo
+  for(const m of MODELOS){
+    const det=trg.detModelos?.[m]||{op:0,ref:0,desc:0};
+    // Volta os itens para a fila
+    S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+(det.op||0)+(det.ref||0)+(det.desc||0);
+    // Remove de REV
+    S.est.REV[m]=(S.est.REV[m]||0)-(det.op||0);
+    // Remove de Reforma
+    S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)-(det.ref||0);
+    // Remove de Descarte
+    S.est.Descartado[m]=(S.est.Descartado[m]||0)-(det.desc||0);
+  }
+  
+  // Remove o registro de triagem
+  S.triagens.splice(idx,1);
+  
+  syncEst();
+  save();
+  toast('✓ Triagem excluída e estoque restaurado.','warn');
+  if(screen)renderScreen(screen);
 }
 function excluirRecebForn(id,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
