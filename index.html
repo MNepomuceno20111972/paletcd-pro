@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0028)https://paletcd.netlify.app/ -->
-<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,10 +12,10 @@
 <meta name="msapplication-TileImage" content="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxYjRmNzIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxNDhmNzciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEwMCIgZmlsbD0idXJsKCNnKSIvPjxyZWN0IHg9Ijc2IiB5PSIzMTAiIHdpZHRoPSIzNjAiIGhlaWdodD0iNTUiIHJ4PSIxMCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOTUiLz48cmVjdCB4PSI3NiIgeT0iMzQ1IiB3aWR0aD0iODAiIGhlaWdodD0iMTAwIiByeD0iOCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOTUiLz48cmVjdCB4PSIyMTYiIHk9IjM0NSIgd2lkdGg9IjgwIiBoZWlnaHQ9IjEwMCIgcng9IjgiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjk1Ii8+PHJlY3QgeD0iMzU2IiB5PSIzNDUiIHdpZHRoPSI4MCIgaGVpZ2h0PSIxMDAiIHJ4PSI4IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45NSIvPjxyZWN0IHg9Ijk2IiB5PSIxNjAiIHdpZHRoPSIzMjAiIGhlaWdodD0iMTQwIiByeD0iMTIiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjkiLz48cmVjdCB4PSIxMTYiIHk9IjE3OCIgd2lkdGg9Ijg1IiBoZWlnaHQ9IjEwMyIgcng9IjgiIGZpbGw9IiMxNDhmNzciIG9wYWNpdHk9IjAuNyIvPjxyZWN0IHg9IjIyNCIgeT0iMTc4IiB3aWR0aD0iODUiIGhlaWdodD0iMTAzIiByeD0iOCIgZmlsbD0iIzE0OGY3NyIgb3BhY2l0eT0iMC43Ii8+PHJlY3QgeD0iMzMyIiB5PSIxNzgiIHdpZHRoPSI2NCIgaGVpZ2h0PSIxMDMiIHJ4PSI4IiBmaWxsPSIjMTQ4Zjc3IiBvcGFjaXR5PSIwLjUiLz48dGV4dCB4PSIyNTYiIHk9IjEyOCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4mIzEyODIzMDs8L3RleHQ+PC9zdmc+">
 <meta name="theme-color" content="#1b4f72">
 <title>PaletCD — Controle de Paletes</title>
-<link href="./PaletCD — Controle de Paletes_files/css2" rel="stylesheet">
-<script src="./PaletCD — Controle de Paletes_files/chart.umd.min.js.download"></script>
-<script src="./PaletCD — Controle de Paletes_files/firebase-app-compat.js.download"></script>
-<script src="./PaletCD — Controle de Paletes_files/firebase-database-compat.js.download"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
@@ -252,11 +252,11 @@ textarea.form-control{resize:vertical;min-height:60px;}
   .login-box{padding:28px 20px;}
 }
 </style>
-<meta id="bbafmabaelnnkondpfpjmdklbmfnbmol"></head>
+</head>
 <body>
 
 <!-- ═══════ LOGIN ═══════ -->
-<div id="login-screen" style="display: none;">
+<div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon">🪵</div>
@@ -264,8 +264,8 @@ textarea.form-control{resize:vertical;min-height:60px;}
       <div class="login-logo-sub">Controle de Paletes</div>
     </div>
     <div class="login-tabs">
-      <div class="login-tab active" id="tab-area" onclick="switchTab(&#39;area&#39;)">🏢 Área / CD</div>
-      <div class="login-tab" id="tab-loja" onclick="switchTab(&#39;loja&#39;)">🏪 Loja</div>
+      <div class="login-tab active" id="tab-area" onclick="switchTab('area')">🏢 Área / CD</div>
+      <div class="login-tab" id="tab-loja" onclick="switchTab('loja')">🏪 Loja</div>
     </div>
 
     <!-- Área -->
@@ -295,7 +295,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
     <div id="form-loja" style="display:none">
       <div class="login-section">
         <label class="login-label">Selecione sua Loja</label>
-        <select class="login-select" id="ll-loja"><option value="">— Selecionar —</option><option value="1">001 · Carolina</option><option value="2">002 · Ponte Preta</option><option value="3">003 · Bonfim</option><option value="5">005 · Amoreiras</option><option value="6">006 · Americana 1</option><option value="9">009 · Tatuapé</option><option value="10">010 · Sorocaba 1</option><option value="11">011 · Butantã</option><option value="12">012 · Ibitirama</option><option value="13">013 · Moema</option><option value="14">014 · Penha</option><option value="15">015 · Santana Pujol</option><option value="16">016 · Taquaral</option><option value="17">017 · Termal</option><option value="19">019 · Morumbi</option><option value="21">021 · Centro</option><option value="23">023 · Cambuí</option><option value="24">024 · Santana Ataliba</option><option value="25">025 · Santana Tolle</option><option value="26">026 · Sorocaba 2</option><option value="29">029 · Mooca</option><option value="30">030 · Piracicaba</option><option value="31">031 · Sousas</option><option value="32">032 · Vila Mariana</option><option value="33">033 · Galleria</option><option value="34">034 · Anália Franco</option><option value="35">035 · São José</option><option value="36">036 · Angelica</option><option value="37">037 · Teodoro Sampaio</option><option value="38">038 · Ribeirão Preto</option><option value="39">039 · Interlargos</option><option value="40">040 · Market Place</option><option value="41">041 · Leopoldina</option><option value="42">042 · Santo André</option><option value="43">043 · Perdizes</option><option value="55">055 · Campo Belo</option><option value="56">056 · Vila Mascote</option><option value="57">057 · Jundiai Farm</option><option value="62">062 · Shop Piracicaba</option><option value="63">063 · Shop Jundiai</option><option value="64">064 · Alphaville Barueri</option><option value="65">065 · Ribeirao 2</option><option value="67">067 · São Bernardo</option><option value="69">069 · Alphaville</option><option value="70">070 · Frigorifico</option><option value="71">071 · Apucarana</option><option value="72">072 · Shop Tatuapé</option><option value="73">073 · Cambui 2</option><option value="74">074 · Itaim</option><option value="75">075 · Nova Campinas</option><option value="76">076 · Santos</option><option value="79">079 · Sorocaba 3</option><option value="80">080 · Itu</option><option value="81">081 · Pamplona</option><option value="84">084 · Tatuapé 3</option><option value="86">086 · São Jose Do Rio Preto</option><option value="87">087 · Itatiba</option><option value="88">088 · Cotia</option><option value="92">092 · Restaurante</option><option value="97">097 · Cd Sumaré</option><option value="99">099 · Produção</option><option value="100">100 · Cd Brasília</option><option value="104">104 · Indaiatuba</option><option value="107">107 · Americana 2</option><option value="108">108 · Limeira</option><option value="120">120 · Ouro Verde</option><option value="121">121 · Arborais</option><option value="122">122 · Bauru</option><option value="123">123 · Nova Cantareira</option><option value="127">127 · Franca</option><option value="134">134 · Damha</option><option value="135">135 · Vila Mariana 2</option><option value="136">136 · São Carlos</option><option value="139">139 · Itaim Bibi 2</option></select>
+        <select class="login-select" id="ll-loja"><option value="">— Selecionar —</option></select>
       </div>
       <div class="login-section">
         <label class="login-label">Senha (Código do Cliente)</label>
@@ -304,7 +304,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
       <button class="login-btn" onclick="loginLoja()">Entrar</button>
     </div>
 
-    <div class="login-error" id="login-error" style="display: none;">Senha incorreta. Tente novamente.</div>
+    <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
 
     <div style="margin-top:16px;background:#f8fbff;border-radius:8px;padding:12px;font-size:12px;color:var(--text-light);text-align:center;">
       🔒 Esqueceu sua senha? Entre em contato com o <strong style="color:var(--navy)">Administrador</strong>.
@@ -313,23 +313,23 @@ textarea.form-control{resize:vertical;min-height:60px;}
 </div>
 
 <!-- ═══════ APP ═══════ -->
-<div id="app-shell" style="display: block;">
+<div id="app-shell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-logo">🪵 PaletCD</div>
       <div class="sidebar-logo-sub">Controle de Paletes</div>
       <div class="sidebar-user">
-        <div class="su-icon" id="su-icon">👑</div>
+        <div class="su-icon" id="su-icon">👤</div>
         <div>
-          <div class="su-name" id="su-name">Administrador</div>
-          <div class="su-role" id="su-role">Área: ADM</div>
+          <div class="su-name" id="su-name">—</div>
+          <div class="su-role" id="su-role">—</div>
         </div>
       </div>
     </div>
-    <nav id="sidebar-nav"><div class="nav-item" data-screen="dashboard"><span class="nav-icon">📊</span>Dashboard</div><div class="nav-item" data-screen="estoque"><span class="nav-icon">📦</span>Estoque</div><div class="nav-item" data-screen="compra"><span class="nav-icon">🛒</span>Compra</div><div class="nav-item" data-screen="distribuicao"><span class="nav-icon">🔀</span>Distribuição</div><div class="nav-item active" data-screen="triagem"><span class="nav-icon">🔍</span>Triagem</div><div class="nav-item" data-screen="reforma"><span class="nav-icon">🔧</span>Reforma</div><div class="nav-item" data-screen="retorno-loja"><span class="nav-icon">↩️</span>Retorno Lojas</div><div class="nav-item" data-screen="devolucao"><span class="nav-icon">🔄</span>Devolução</div><div class="nav-item" data-screen="movimentacoes"><span class="nav-icon">↕️</span>Movimentações</div><div class="nav-item" data-screen="fornecedores"><span class="nav-icon">🏭</span>Fornecedores</div><div class="nav-item" data-screen="receb-forn"><span class="nav-icon">📥</span>Receb. Fornecedor</div><div class="nav-item" data-screen="saldo-forn"><span class="nav-icon">💰</span>Saldo Fornecedores</div><div class="nav-item" data-screen="senhas-adm"><span class="nav-icon">🔑</span>Senhas</div><div class="nav-item" data-screen="reset"><span class="nav-icon">🗑️</span>Resetar Sistema</div><div class="nav-item" data-screen="ajuste-estoque"><span class="nav-icon">🔧</span>Ajuste Estoque</div></nav>
+    <nav id="sidebar-nav"></nav>
     <div class="sidebar-footer">
       <div style="font-size:10px;color:rgba(255,255,255,.3);">v3.0 · PaletCD</div>
-      <button class="chg-pwd-btn" onclick="openModal(&#39;modal-pwd&#39;)">🔑 Alterar Senha</button>
+      <button class="chg-pwd-btn" onclick="openModal('modal-pwd')">🔑 Alterar Senha</button>
       <button class="logout-btn" onclick="logout()">↩ Sair</button>
     </div>
   </aside>
@@ -339,1246 +339,32 @@ textarea.form-control{resize:vertical;min-height:60px;}
     <header class="topbar">
       <button class="menu-toggle" id="menu-toggle">☰</button>
       <div>
-        <div class="topbar-title" id="page-title">Triagem</div>
-        <div class="topbar-sub" id="page-sub">Classificação de paletes retornados</div>
+        <div class="topbar-title" id="page-title">Dashboard</div>
+        <div class="topbar-sub" id="page-sub">Bem-vindo ao PaletCD</div>
       </div>
       <div id="sync-badge" style="font-size:11px;padding:4px 10px;background:var(--bg);border:1px solid var(--border-dark);border-radius:var(--radius-sm);cursor:help;white-space:nowrap;">☁️</div>
-      <div class="topbar-right" id="top-clock">16:09:05</div>
-      <div id="topbar-mig-wrap" style="margin-left:8px"><button id="btn-migracao" onclick="toggleModoMigracao()" style="background:var(--bg);border:1.5px solid var(--border-dark);color:var(--text-mid);border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font);">📥 Migração</button></div>
+      <div class="topbar-right" id="top-clock"></div>
+      <div id="topbar-mig-wrap" style="margin-left:8px"></div>
     </header>
-    <div class="content" id="content-area">
-  <div class="info-box">Fila de triagem: <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
-        <span style="background:#fff;border:1.5px solid var(--border-dark);border-radius:4px;padding:3px 10px;font-size:11px;">
-          <span class="mbadge mbadge-pbr">Palete PBR</span> <strong style="font-family:var(--mono);margin-left:4px">1839</strong>
-        </span><span style="background:#fff;border:1.5px solid var(--border-dark);border-radius:4px;padding:3px 10px;font-size:11px;">
-          <span class="mbadge mbadge-desc">Palete Descartável</span> <strong style="font-family:var(--mono);margin-left:4px">174</strong>
-        </span><span style="background:#fff;border:1.5px solid var(--border-dark);border-radius:4px;padding:3px 10px;font-size:11px;">
-          <span class="mbadge mbadge-chep">Palete CHEP</span> <strong style="font-family:var(--mono);margin-left:4px">22</strong>
-        </span><span style="background:#fff;border:1.5px solid var(--border-dark);border-radius:4px;padding:3px 10px;font-size:11px;">
-          <span class="mbadge mbadge-euro">Palete Euro</span> <strong style="font-family:var(--mono);margin-left:4px">6</strong>
-        </span><span style="background:#fff;border:1.5px solid var(--border-dark);border-radius:4px;padding:3px 10px;font-size:11px;">
-          <span class="mbadge mbadge-gaiola">Gaiola de Madeira</span> <strong style="font-family:var(--mono);margin-left:4px">145</strong>
-        </span>
-      </div></div>
-  
-  <div style="background:#eaf4fb;border:1.5px solid #aed6f1;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1a5276;margin-bottom:10px;">📦 Lojas com retornos registrados</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">137</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">15 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>15</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 9, Romaneio</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Vila Mariana 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">392 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>343</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>20</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>24</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 1892, 1867, 1835/1836, 1813, 1803, 1776, 1767, 1712, 1694, 1687, 1671, 1661, 1655, 1645, 1627, 1608, 1604, 1584, 1574, 1567, 1550, 1531, 1516, 1500, 1486, 1457, 1445, 1440, 1425, 1418</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Vila Mariana</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">765 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>672</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>36</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>49</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 29824, 1874, 29793, 1852, 29751, 29737, 29722, 29686, 29677, 29651, 29631, 29610, 29600, 29555, 29531, 29523, 29488, 29450, 29442, 29419, 1542, 29374, 29360, 29319, 29290, 29280, 29276, 29248, 29229</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Tatuapé</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">818 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>663</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>65</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>12</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>78</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 67870, 67850, 67838, 67818, 67770, 67758, 67737, 67726, 67715, 67690/67703, 67675, 67643, 67636, 67621, 67600, 67572, 67564, 67547, 67541, 67512, 67491, 67472, 67461, 67434, 67421, 67400, 67384, 67349, 67326, 67300, 67292, 67278, 67256, 67237</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Vila Mascote</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">394 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>350</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>24</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>18</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 53686, 53668, 53660, 53650, 53625, 53606, 53584, 53574, 53562, 53553, 53544, 53529, 53520, 53513, 53504, 53479, 53471, 53452, 53443, 53429, 53405, ROMANEIO, 53398, 53385, 53372</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">São Carlos</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">50 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>45</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: Romaneio, 50, 35, 22</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">São Jose Do Rio Preto</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">494 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>401</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>44</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>41</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 6950, 6933, 6924, 6910, 6901, 6884, 6864, 6796, 6841, 6831, 6825, 6818, 6809, 6794, 6785, 6778, 6772, 6768, 6760, 6752, 6737, 6723, 6716, 6710, 6701, 6690, 6667, 6659, 6642, 6638</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Santo André</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">665 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>570</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>45</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>7</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>43</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 15533, 15510, 15501, 15490, 15478, 15466, 15455, 15444, 15421, 15414, 15411, 15393, 15381, 15367, 15360, 15347, 15330, 15313, 15308, 15301, 15290, 15279, 15264, 15257, 15239, 15223, 15216, 15187, 15181, 15202, 15158, 15146, 15134, 15128, 15114, 15099</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Shop Tatuapé</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">302 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>271</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>20</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>8</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 8025, 8019, 8014, 8007, 8002, 7995, 7991, 7975, 7969, 7953, 7937, 7919, 7911, 7906, 7900, 7891, 7880, 7875, 7862, 7858, 7850, 7844, 7835, 7816, 7810, 7809, 7803, 7796, 7791, 7781, 7771, 7764, 7759, 7749, 7737</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Sorocaba 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">583 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>484</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>40</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>57</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 27314, 27304, 27298, 27271, 27251, 27235, 27227, 27212, 27195, 27184, 27177, 27146, 8256, 27125, 27114, 27109, 27096, 27090, 27073, 27068, 27066, 27057, 27038, 27022, 27003, 26992, 26985, 296972, 2961</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">São José</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">843 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>695</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>50</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>96</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 19906, 19884, 19868, 19854, 19841, 19822, 19795, 19774, 19730, 19714, 19690, 19675, 19664, 19654, 19639, 19612, 19605, 19583, 19570, 19555, 19542, 19530, 19500, 19488, 19474, 19463, 19421, 19403, 19365, 19340, 19332, 19313, 19299</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Sousas</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">376 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>316</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>25</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>29</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 17404, 17399, 17388, 17375, 17366, 17362, 17349, 17336, 17328, 17320, 17313, 17295, 17276, 17271, 17263, 17261, 17251, 17246, 17227, 17223, 17214, 17205, 17195, 17179, 17163, 17155, 17148, 17137, 17132, 17121, 17108, 17090, 17080</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Sorocaba 3</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">399 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>353</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>21</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>21</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 8377, 8368, 8340, 8303, 8269, 8228, 8189, 8168, 8138, 8107</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">São Bernardo</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">431 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>365</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>29</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>32</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 11243, 11226, 11215, 11207, 11183, 11145, 11127, 11100, 11071, 11039, 11016, 53405, 10985, 10956</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Santos</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">415 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>367</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>25</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>20</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 8654, 8639, 8633, 8619, 8611, 8599, 8583, 8575, 8570, 8561, 8556, 8547, 8542, 8535, 8531, 8524, 8518, 8511, 8504, 8496, 8490, 8478, 8470, 8465, 8454, 8441, 8430, 8419, 8408, 8398</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Restaurante</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">55 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>51</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>4</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: Ficha, 1290, fICHA, 1289, 1282</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Santana Ataliba</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">656 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>563</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>44</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>46</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 44859, Ficha, 44842, 44828, 44786, 44775, 44754, 44734, 44727, 44703, 44685, 44676, 44659, 44649, 44636, 44627, 44604, 44575, 44564, 44546, 44517, 44509, 44490, 44473, 44461, 44453, 44446, 44434, 44401, 44392, 44367, 44357</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Santana Pujol</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">688 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>549</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>67</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>66</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 45211, 45187, 45170, 45152, 45124, 45100, 45081, 45077, 45068, 45046, 45028, 45020, 45012, 44986, Ficha, 44961, 44955, 44944, 44942, 44928, 44900, 44887, 44875, 44860, 44829, 44816, 44809, 44801, 44780, 44762</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Ribeirão Preto</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">768 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>644</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>55</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>65</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 20717, 20699, 20688, 20673, 20663, 20649, 20630, 20612, 10923, 20587, 20579, 20569, 20555, 10900, 20546, 20526, 20511, 20499, 20493, 20483, 20473, 20461, 20449, 20440, 20431, 20418, 20402, 20382, 20369, 20362, 20352, 20338, 20328, 20316, 20290, 20276</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Ribeirao 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">356 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>316</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>21</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>16</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 10986, 10979, 10974, 10954, 10946, 10919, 20594, 10917, 10913, 10907, 10896, 20533, 10891, 10884, 10871, 10867, 10859, 10850, 10832, 10822, 10813, 10801, 10797, 10785, 10767, 10757, 10747, 10740, 10730, 10721</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Santana Tolle</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">440 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>382</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>27</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>30</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 35054, 35006, 34973, 34958, 34932, 34905, 34893, 34868, 348551, 34831, 34799, 34787, 34767, Ficha, 34723, 34693, 34682, 34659</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Pamplona</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">317 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>270</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>27</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>17</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 10509, 10488, 10483, 10473, 10470, 10465, 10445, 10425, 10423, 10409, 10397, 10381, 10368, 10364, 10357, 10341, 10333, 10322, 10313, 10299, 10290, 10276, 10262, 10250, 10249, 10236, 10223, 10215, 10181, 10166, 10146, 10126</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Ponte Preta</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">357 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>311</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>21</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>23</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 52626, 52615, 52609, 52557, 52546, 52535, 52514, 52503, 52500, 52492, 52474, 52451, 52429, 52424, 52405, 52400, 52388, 52382, 52361, 52354, 52337, 52318, 52307, 52283, 52263, 52256, 52241, 52233, 52220, 52205, 52191, 52186, 52173, 52156, 52142</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Nova Campinas</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">655 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>550</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>52</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>47</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 18318, 18296, 18282, 4649, 18263, 18234, 118231, 18222, Ficha, 18176, 18205, 18203, 18170, 18142, 18135, 18129, 18116/17, 18108, 18101, 18077, 18070, 18052, 18209, 18029, 18014, 17997, 17986, 17964, 17931, 17904, 17879, 17863, 17847, 17830</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Nova Cantareira</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">551 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>440</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>43</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>60</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 4661, 4632, 4616, 4594, 4575, 4555, 4554, 4538, 4523, 4513, 4507, 4497, 4483, 4472, 4467, 18093, 4450, 4441, 4427, 4415, 4402, 4372, 4363, 4357, 17975, 4348, 4327, 4301, 4282, 4271, 4268, 4258, 4244</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Perdizes</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">519 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>436</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>38</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>7</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>38</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 21995, 21982, 21955, 21926, 21919, 21900, Ficha, 21869, 21838, 21829, 21800, Romaneio, 21764, 21746, 21720, 21684, 21680, 21666, 21649, 21623, 21615, 21590, 21557</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Piracicaba</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">707 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>577</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>54</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>10</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>66</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 22996, 22988/22990, 22976/22979, 22964, 22930, 22922, 22905, 22892, 22878, 22861, 22839, 22837, 22828, 22806, 22794, 22792, 22775, 22757, 22739, 22734, 22730, 22716, 22711</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Penha</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">323 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>274</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>20</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>27</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 30067, 30051, 30048, 30047, 30009, 30001, 29992, 29977, 29964, 29961, 29942, 29938, 29916, 29907, 29891, 29868, 29860, 29847, 29842, 29828, 29825, 29815, 29800</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Moema</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">616 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>518</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>48</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>42</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 62641, 62616, 62573, 62562, 62532, 62518, 62483, 62475, Ficha, 62445, 62397, 62374, 62366, 62363, 62325, 62268, 62265, 62250, 62239, 62225, 62212, 62186, 62176, 62162, 62145, 62138, 62082, 62049, 62032, 61990, 61969</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Morumbi</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">721 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>593</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>53</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>9</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>66</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 55272, 55251, 55221, 55182, 55173, 55160, 55135, 55118, 55108, 55087, 55079, 55068, 55042, 55031, 55024, 55016, 55011, 55000, Ficha, 54971, 54960, 54949, 54939, 54920, 54907, 54893, 54870, 54859, 54839, 54831</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Market Place</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">559 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>450</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>37</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>7</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>65</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 16314, 16306, 16302, 16274, 16261, 16252, 16232, 16217, 16214, Ficha, 16203, 16198, 16190, 16170, 16163, 16154, 16147, 16128, 16127, 16113, 16108, 16101, 16095, 16089, 16079, 16064, 16058, 16052, 16034, ROMANEIO, SEMNF, 15977, 15973, 15965, 15945</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Limeira</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">477 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>427</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>10</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>39</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 37155, 37150, 37138, 37132, 37094, 37090, 35499, 37076, 37064, 37057, 37046, 37039, 37033, 37022, 37018, 37002, 36998, 36994, 36977, 36969, 36963, 36953, 36950, 36942, 36933, 36924, 36909, 36898, 36895, 36888, 36878, 36859</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Jundiai Farm</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">566 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>456</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>57</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>47</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 13328, 13319, 13290, 13283, 13268, 13263, 13236, 13227, 13223, 13197, 13183, 13170, 13157, 13131, 13119, 13106, 13094, 13070/78, 13058, 13028/29, 13024, 13013, 13006</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Leopoldina</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">496 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>419</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>42</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>30</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 20595, 20589, 20563, 20555, 20539, 20515, 20508, 20500, 20490, 20480, 20465, 20457, 20448, 20437, 20430, 20424, 20410, 20400, 20391, 20380, 20370, 20355, 20343, 20331, 20322, 20317, 202309, 20293, 20285, 20271, 20262, 20245, 20233</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Mooca</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">510 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>424</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>33</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>51</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 34946, 34931, Ficha, 34868, 34815, 34806, 34785, 62414, 34763, 34718, 34688, 34662, 34652, 34634, 34590, 34557, 34550, 34507, 34468, 34452, 34429</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Itaim Bibi 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">18 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>17</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>1</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 86, 62</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Indaiatuba</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">847 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>711</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>60</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>10</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>66</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 36493, 36469, 36452, 36440, 36428, 36421, 36395, 36379, 36361, 36354, 36347, 36340, 36326, 36304, 36293, 36280, 36270, 36244, 36238, 36226, 36207, 36201, 36190, 36180, 36167, 36150, 36135, 36122, 36108, 36100, 36074, 36056, 36033, 36026, 36012, 35993</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Itaim</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">253 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>216</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>16</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>19</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 13761, 13746, 13742, 13704, Ficha, 14, 13663, 13657, 13650, 13635, 13628, 13620, 13599, 13592, 13569, 13565, 13511, 13503, 13491, 13469, 13465, 13461, 13448, 13432, 13401, 13354, 13332</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Interlargos</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">343 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>303</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>15</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>22</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 17579, 17533, 17501, 17483, 17451, 17438, 17424, 17399, 17373, 17367, 17352, 17317/31, 17309, 17293, 17264, 17243, 17222</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Itu</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">498 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>432</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>18</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>40</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 10087, 10068, 10052, 10041, 10750, 10014, Ficha, 9991, 9977, 9956, 9947, 9943, 9937, 9915, 9896, 9885, 9871, 9845, 9833, 9811</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Ibitirama</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">457 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>394</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>31</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>28</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 48157, 48138, 48112, 48095, 48082, 48073, 48051, 48038, 48020, 48007, 47993, 47967, 47957, 47938, Ficha, 47914, 47879</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Cotia</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">693 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>575</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>61</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>50</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 10865, 10843, 10838, 10814, 10806, 10793, 10782, 10759, 10753, 10750, 10738, 10730, 10714, 10694, 10682, 10675, 27895, 10661, 10640, 10634, 10630, 10620, 10605, 10594, 10589, 10568, 10562, 10547, 10534, 10505, 10488, 10452, 10444, 10435, 10423</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Galleria</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">577 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>478</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>56</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>35</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 28189, 28153, 28134, 28116, 28094, 28072, 28059, 28039, 28016, 27978, 27955, 27944, 27933, 27921, 27895, 27885, 27866, 27857, 27838, 27826, 27813, 27798, 27769, 27755, 27717, 27701, 27682, 27651, 27624, 27614, 27603, 27582, 27552, 27569</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Damha</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">254 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>232</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>7</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>13</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 1809, 1792, 1773, 1763, 1745, 1739, 1729, 1712, 1695, 1683, 1665, 1659, 1653, 1645, 1629, 1621, 1610, 1604, ROMANEIO, 1582, 1568, 1558</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Franca</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">376 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>319</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>27</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>30</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 7934, 7924, 7905, 7898, 7892, 7880, 7866, 7857, 7849, 7841, 7814, 7809, 7798, 7783, 7776, 7760, 7752, 7746, 7727, 7711, 7680, 7665, 7657, 7641, 7623, 7613, 7607, 7592</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Cd Brasília</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">1020 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>865</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>136</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>16</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 424598, Ficha, 423320, 422700/1, 422136, 421927, 421825, 421496, 421205, 421204, 420384, 420383, 420193, 418087, 420071, 419743, 419750, 419425, 418934, 418719, 418639, 418565, 418526, 418086, 417905, 4171999, 417332, 417333/34, 417453, 417271, 417192, 417350, 417331, 417305, 416918, 416656</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Butantã</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">827 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>629</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>87</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>106</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 74178, 74163, 74150, 74134, 74120, 74092, 74040, 74014, 74010, 73991, 73986, 73972, 73949, 73927, 73913, 73897, 73879, 73864, 73842, 73819/20, 73806, 73790, 73775, 73751, 73739, 73716, 73710, 73678, 73655, 73645, 73627, 73623, 73590, 73577, 73552, 73524, 73519, 73499, 73489, 73465, 73441</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Carolina</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">672 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>571</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>42</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>51</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 80458, 80439, 80434, 80403, 80390, 80360, 80333, 80312, 80294, 80289, 80277, 80263, 80243, 80218, 80213, 80206, 80190, 80184, 80165, 80158, 80114, 80112, 80105, 80092, 80079, 80068, 80051, 80031, 80023, 80004, 79985, 79972, 79951, 79933, 79912, 79909, 79888, 79873, 79851, 79836</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Cambui 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">347 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>282</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>34</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>27</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 18166, 18144, 18140, 18136, 18124, 18110, 18092, 18080, 18065, 18053, 18041, 18035, 18026, 18007, 18002, 17991, 17972, 17961, 17949, 17934, 17916, 17889, 17876, 17866, 17848, 17838, 17821, 17788</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Cambuí</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">593 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>443</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>84</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>14</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP Euro: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>43</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 63538, 63521, 63511, 63482, 63468, 63460, 63423, 63409, Ficha, 63395, 63380, 63368, 63347, 63336, 63326, 63308, 63289, 63284, 63265, 63250, 63239, 63222, 63207, 63188, 63161, 63155, 63137, 63116, 63105, 63094, 63044, 63033, 63020, 63003, 62978</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Bonfim</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">312 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>265</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>29</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>16</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 37805, 37797, 37783, 37775, 37768, 37758, 37743, 37727, 37710, 37707, 37694, 37689, 37682, 37672, 37652, 37639, 37635, 37626, 37618, 37607, 37593, 37586, 37569, 37558, 37551, 37541, 37532, 37519, 37502, 37487, 37478, 37472, 37449, 37439</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Campo Belo</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">724 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>587</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>75</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>57</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 15341, 15330, 15300, 15272, 15242, 15219, 15211, 15198, 15169, 15143/13157, 15115, 15103, 15097, 15075/74, 15054, 15052, 15021, 15015, 15004, 14991, 14971, 14956, 14932, 14917, 14907, 14884, 14865, 14809, 14802, 14789, 14772, 14761</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Bauru</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">313 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>284</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>9</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>16</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 8180, 8156, 8128, 8111, 8094, 8072, 8051, 8034, 8023, 7999, 7988, 7965</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Amoreiras</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">568 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>479</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>33</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>2</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>53</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 56740, 56730, 56727, 56719/56724, 56709, 56701, 56683, 56662, 56641, 56635/6, 56630, 56618, 56607/03, 56585, 56565, 56538, 56553, 56545/56443, 56527, 56508/09, 56495, 56491, 56471, 56463, 56460, 56447, 56440, 56421, 56393, 56383, 56378, 56372, 56357, 56346, 56330, 56312, 56297, 56287, 56274, 56271, 56251, 56235</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Apucarana</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">665 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>551</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>53</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>55</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 13667, 13646, 13636, 13620, 13613, 13584, 13558, 13535/6, 13529, 13505, 13493, 13481, 13465, 13452, 13438, 13425, 13410, 13395, 13381, 13363, 13341, 13327, 13313, 13285, 13267, 13248, 13240, Ficha, 13227, 13221</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Arborais</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">643 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>558</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>52</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>5</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>28</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 9354, 9342, Ficha, 9320, 9295, 9279, 9266, 9257, 9244, 9217, 9206, 9198, 9184, 9150, 9146, 9136, 9127, 9121, 9100, 9079, 9057, 9041, 9030, 8999, 8978, 8962, 8948, 8936</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Angelica</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">418 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>342</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>25</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>47</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 16841, 16825, 16809, 16798, 16789, 16776, Ficha, 16755, 16744, 16724, 16702, 16695, 16681, 16666, 16661, 16645, 16626, 16617, 16608, 16592, 16576, 16572, 16564</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Alphaville Barueri</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">196 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>176</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>10</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>7</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 8882, 8854, 8844, 8838, 8816, 8809, 8764/65, 8756, 8745, 8729, 8722,26, 8714,8715,8713, 8700/1, 8685/86, 8665, 8651, 8641, 8634, 8625, 8617</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Itatiba</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">510 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>420</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>37</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>47</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 7952, 7944, 7922, 7906, 7896, 7890, 7879, 7872, 7861, 7842, 7826, 7821, 7808, 7792, 13592, 7790, 7773, 7768, 7752, 7748, 7739, 7720, 7703, 7698, 7692, 7687, 7679, 7656, 7639, 7634, 7603/22, 7592</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Termal</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">395 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>331</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>39</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>4</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>21</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 36654, 36648, 36596, 36591/36592, 19723, 36582, 36579, 36559, 36550, 36542, 36532, 36510,11, 36476, 36470, 36458, 36422, Ficha, 34608, 36392, 36380, 36363, 36352</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Teodoro Sampaio</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">567 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>476</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>29</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>6</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>56</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 25160, 20571, 25130, Ficha, 25106, 25090, 25066, 25057, 25033, 25002, 24986, 24974, 24952, 24916, 24899, 24886, 24852, 24809, 24799, 24789, 24755, 24704, 24689, 24671</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Centro</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">296 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>243</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>26</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>3</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>24</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 35541, 3552/3553, 35525, 35520/35521, 35509/11, 35493/92, 35481, 35471/35470, 35460/59, 35448/50, 35441/40, 35431, 35426/27/28, 35416,17, 35402, 35397, 35391, 35381, 35373, 35368, 35361, 35352, 35343/4, 35333/34/35/36, 35329, Ficha, 35309</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Americana 1</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">342 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>299</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>24</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>17</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 30858, 30848, 30843, 30828, 30817, 30810, Ficha, 30807, 30796, 30793, 30780, 30775, 30765, 30760, 30748, 30744, 30738, 30734, 30712, 30702, 30689, 30675, 30672, 30667, 30649, 30683, 30630, 30622, 30619, 33494</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Americana 2</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">294 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>257</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>18</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>18</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 33729, 33722, Ficha, 33708, 33697, 33684, 33678, 33664, 33660, 33646, 33643, 33634, 33624, 33618, 33613, 30738, 33605, 33597, 33591, 33585, 33582, 33572, 33566, 33553, 33544, 33536, 33527, 33518, 33508, 33500, 30590</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Alphaville</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">755 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>602</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>68</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>8</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Euro: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>76</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 19519, 19514/19489, 19479, 19463, 19453, 19443, 19441, 19428, 19396/19417, 19375, 1938/61, 19342, 19336, 19328, 19311, 19300, 19287, Ficha, 19248, 19233, 19221, 19208, 19196, 19187, 19168, 19154, 19147, 19133, 19120</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Anália Franco</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">332 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>278</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Descartável: <strong>26</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">CHEP: <strong>1</strong></span><span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">Gaiola: <strong>27</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 31258, 31193, 31192, 31155, 31148, 31116, 31063, 31056, 31003, 30996</span>
-              </div>
-            </div>
-          
-            <div style="background:#fff;border:1px solid #aed6f1;border-radius:var(--radius-sm);padding:8px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <strong style="font-size:12px;color:#154360;">Produção</strong>
-                <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy)">1 un.</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                <span style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:3px;padding:2px 7px;font-size:10px;color:#1a5276;">PBR: <strong>1</strong></span>
-                <span style="background:#fef9e7;border:1px solid #f9e79f;border-radius:3px;padding:2px 7px;font-size:10px;color:#7d6608;">NF: 452979</span>
-              </div>
-            </div>
-          
-        </div>
-        <div style="font-size:10px;color:#5d6d7e;margin-top:8px;">* Informativo — a triagem é feita por modelo individualmente.</div>
-      </div>
-  <div class="form-card">
-    <div class="section-title" style="margin-bottom:14px">🔍 Triagem de Paletes — por Modelo</div>
-    <div class="form-grid">
-      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="tr-data" type="date" value="2026-05-17"></div>
-      <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="tr-user" value="Administrador"></div>
-    </div>
-    
-    <div style="margin-top:14px;overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr style="background:var(--navy);color:#fff;">
-            <th style="padding:9px 12px;text-align:left;white-space:nowrap;">Modelo</th>
-            <th style="padding:9px 12px;text-align:center;white-space:nowrap;">Na Fila</th>
-            <th style="padding:9px 12px;text-align:center;white-space:nowrap;background:#1e8449;">✅ Operação</th>
-            <th style="padding:9px 12px;text-align:center;white-space:nowrap;background:#935116;">🔧 Reforma</th>
-            <th style="padding:9px 12px;text-align:center;white-space:nowrap;background:#922b21;">🗑️ Descarte</th>
-            <th style="padding:9px 12px;text-align:center;white-space:nowrap;">✔</th>
-          </tr>
-        </thead>
-        <tbody><tr style="border-bottom:1.5px solid var(--border);">
-      <td style="padding:10px 12px;vertical-align:middle;"><span class="mbadge mbadge-pbr">Palete PBR</span></td>
-      <td style="padding:10px 12px;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:center;">1839</td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tp-PBR" type="number" min="0" max="1839" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#eafaf1;border-color:#a9dfbf;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tr-PBR" type="number" min="0" max="1839" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fdebd0;border-color:#f8c471;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="td-PBR" type="number" min="0" max="1839" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fadbd8;border-color:#e74c3c;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 10px;" id="tv-PBR"></td>
-    </tr><tr style="border-bottom:1.5px solid var(--border);">
-      <td style="padding:10px 12px;vertical-align:middle;"><span class="mbadge mbadge-desc">Palete Descartável</span></td>
-      <td style="padding:10px 12px;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:center;">174</td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tp-DESCARTAVEL" type="number" min="0" max="174" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#eafaf1;border-color:#a9dfbf;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tr-DESCARTAVEL" type="number" min="0" max="174" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fdebd0;border-color:#f8c471;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="td-DESCARTAVEL" type="number" min="0" max="174" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fadbd8;border-color:#e74c3c;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 10px;" id="tv-DESCARTAVEL"></td>
-    </tr><tr style="border-bottom:1.5px solid var(--border);">
-      <td style="padding:10px 12px;vertical-align:middle;"><span class="mbadge mbadge-chep">Palete CHEP</span></td>
-      <td style="padding:10px 12px;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:center;">22</td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tp-CHEP" type="number" min="0" max="22" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#eafaf1;border-color:#a9dfbf;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tr-CHEP" type="number" min="0" max="22" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fdebd0;border-color:#f8c471;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="td-CHEP" type="number" min="0" max="22" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fadbd8;border-color:#e74c3c;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 10px;" id="tv-CHEP"></td>
-    </tr><tr style="border-bottom:1.5px solid var(--border);">
-      <td style="padding:10px 12px;vertical-align:middle;"><span class="mbadge mbadge-euro">Palete Euro</span></td>
-      <td style="padding:10px 12px;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:center;">6</td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tp-EURO" type="number" min="0" max="6" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#eafaf1;border-color:#a9dfbf;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tr-EURO" type="number" min="0" max="6" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fdebd0;border-color:#f8c471;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="td-EURO" type="number" min="0" max="6" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fadbd8;border-color:#e74c3c;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 10px;" id="tv-EURO"></td>
-    </tr><tr style="border-bottom:1.5px solid var(--border);">
-      <td style="padding:10px 12px;vertical-align:middle;"><span class="mbadge mbadge-gaiola">Gaiola de Madeira</span></td>
-      <td style="padding:10px 12px;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:center;">145</td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tp-GAIOLA" type="number" min="0" max="145" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#eafaf1;border-color:#a9dfbf;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="tr-GAIOLA" type="number" min="0" max="145" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fdebd0;border-color:#f8c471;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 8px;">
-        <input class="form-control" id="td-GAIOLA" type="number" min="0" max="145" placeholder="0" style="text-align:center;font-size:14px;font-weight:700;background:#fadbd8;border-color:#e74c3c;" oninput="calcTr()">
-      </td>
-      <td style="padding:6px 10px;" id="tv-GAIOLA"></td>
-    </tr></tbody>
-        <tfoot>
-          <tr style="background:#f8fbff;border-top:2px solid var(--border-dark);">
-            <td style="padding:8px 12px;font-weight:700;font-size:12px;">TOTAL</td>
-            <td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-weight:700;color:var(--navy);">2186</td>
-            <td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-weight:700;color:#1e8449;" id="tot-op">0</td>
-            <td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-weight:700;color:#935116;" id="tot-ref">0</td>
-            <td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-weight:700;color:#922b21;" id="tot-desc">0</td>
-            <td id="tot-val" style="padding:8px 12px;font-size:11px;font-weight:700;"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="form-group full" style="margin-top:12px"><label class="form-label">Observação</label><textarea class="form-control" id="tr-obs"></textarea></div>
-    <div class="form-actions"><button class="btn btn-primary" onclick="doTriagem()">✓ Registrar Triagem</button></div>
-  </div>
-  <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Triagens</span></div>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Total</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>Detalhes</th><th>Usuário</th><th></th></tr></thead>
-    <tbody><tr>
-      <td class="td-mono">2026-05-11</td>
-      <td class="td-bold">72</td>
-      <td style="color:var(--green);font-weight:700">72</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Euro: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅5 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅65 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(0,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(0,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-10</td>
-      <td class="td-bold">56</td>
-      <td style="color:var(--green);font-weight:700">56</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅6 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅46 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(1,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(1,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-09</td>
-      <td class="td-bold">1594</td>
-      <td style="color:var(--green);font-weight:700">1468</td>
-      <td style="color:var(--amber);font-weight:700">94</td>
-      <td style="color:var(--red);font-weight:700">32</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅17 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅124 🔧0 🗑️0</span> · <span style="white-space:nowrap">Euro: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅87 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅1239 🔧94 🗑️32</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(2,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(2,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-01</td>
-      <td class="td-bold">690</td>
-      <td style="color:var(--green);font-weight:700">690</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅7 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅45 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅37 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅601 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(3,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(3,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-07</td>
-      <td class="td-bold">690</td>
-      <td style="color:var(--green);font-weight:700">690</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅7 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅45 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅37 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅601 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(4,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(4,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-08</td>
-      <td class="td-bold">1399</td>
-      <td style="color:var(--green);font-weight:700">1200</td>
-      <td style="color:var(--amber);font-weight:700">144</td>
-      <td style="color:var(--red);font-weight:700">55</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅13 🔧0 🗑️0</span> · <span style="white-space:nowrap">CHEP Euro: ✅4 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅89 🔧0 🗑️0</span> · <span style="white-space:nowrap">Euro: ✅12 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅84 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅998 🔧144 🗑️55</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(5,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(5,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-06</td>
-      <td class="td-bold">1133</td>
-      <td style="color:var(--green);font-weight:700">1011</td>
-      <td style="color:var(--amber);font-weight:700">122</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅12 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅80 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅94 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅825 🔧122 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(6,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(6,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-03</td>
-      <td class="td-bold">52</td>
-      <td style="color:var(--green);font-weight:700">52</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">Gaiola: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅50 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(7,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(7,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-05-02</td>
-      <td class="td-bold">781</td>
-      <td style="color:var(--green);font-weight:700">781</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅6 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅63 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅59 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅653 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(8,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(8,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-30</td>
-      <td class="td-bold">986</td>
-      <td style="color:var(--green);font-weight:700">986</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅9 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅55 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅65 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅857 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(9,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(9,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-29</td>
-      <td class="td-bold">804</td>
-      <td style="color:var(--green);font-weight:700">641</td>
-      <td style="color:var(--amber);font-weight:700">163</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅70 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅52 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅517 🔧163 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(10,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(10,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-28</td>
-      <td class="td-bold">638</td>
-      <td style="color:var(--green);font-weight:700">495</td>
-      <td style="color:var(--amber);font-weight:700">143</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅6 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅67 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅59 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅363 🔧143 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(11,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(11,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-27</td>
-      <td class="td-bold">1338</td>
-      <td style="color:var(--green);font-weight:700">1237</td>
-      <td style="color:var(--amber);font-weight:700">101</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅12 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅126 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅106 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅993 🔧101 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(12,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(12,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-26</td>
-      <td class="td-bold">62</td>
-      <td style="color:var(--green);font-weight:700">62</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅3 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅6 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅52 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(13,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(13,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-25</td>
-      <td class="td-bold">992</td>
-      <td style="color:var(--green);font-weight:700">940</td>
-      <td style="color:var(--amber);font-weight:700">52</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅11 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅141 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅48 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅740 🔧52 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(14,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(14,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-24</td>
-      <td class="td-bold">785</td>
-      <td style="color:var(--green);font-weight:700">696</td>
-      <td style="color:var(--amber);font-weight:700">89</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅5 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅55 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅54 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅582 🔧89 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(15,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(15,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-23</td>
-      <td class="td-bold">747</td>
-      <td style="color:var(--green);font-weight:700">589</td>
-      <td style="color:var(--amber);font-weight:700">158</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅47 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅80 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅460 🔧158 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(16,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(16,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-22</td>
-      <td class="td-bold">741</td>
-      <td style="color:var(--green);font-weight:700">603</td>
-      <td style="color:var(--amber);font-weight:700">138</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅6 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅48 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅64 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅485 🔧138 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(17,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(17,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-21</td>
-      <td class="td-bold">517</td>
-      <td style="color:var(--green);font-weight:700">517</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅19 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅33 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅463 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(18,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(18,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-20</td>
-      <td class="td-bold">1095</td>
-      <td style="color:var(--green);font-weight:700">1005</td>
-      <td style="color:var(--amber);font-weight:700">90</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅71 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅108 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅818 🔧90 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(19,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(19,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-19</td>
-      <td class="td-bold">118</td>
-      <td style="color:var(--green);font-weight:700">118</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅1 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅14 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅102 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(20,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(20,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-18</td>
-      <td class="td-bold">47</td>
-      <td style="color:var(--green);font-weight:700">0</td>
-      <td style="color:var(--amber);font-weight:700">47</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">Gaiola: ✅0 🔧47 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(21,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(21,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-17</td>
-      <td class="td-bold">884</td>
-      <td style="color:var(--green);font-weight:700">723</td>
-      <td style="color:var(--amber);font-weight:700">114</td>
-      <td style="color:var(--red);font-weight:700">47</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅64 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅0 🔧0 🗑️47</span> · <span style="white-space:nowrap">PBR: ✅651 🔧114 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(22,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(22,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-16</td>
-      <td class="td-bold">753</td>
-      <td style="color:var(--green);font-weight:700">644</td>
-      <td style="color:var(--amber);font-weight:700">78</td>
-      <td style="color:var(--red);font-weight:700">31</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅38 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅17 🔧0 🗑️31</span> · <span style="white-space:nowrap">PBR: ✅581 🔧78 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(23,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(23,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-15</td>
-      <td class="td-bold">982</td>
-      <td style="color:var(--green);font-weight:700">770</td>
-      <td style="color:var(--amber);font-weight:700">137</td>
-      <td style="color:var(--red);font-weight:700">75</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅76 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅0 🔧0 🗑️75</span> · <span style="white-space:nowrap">PBR: ✅686 🔧137 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(24,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(24,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-14</td>
-      <td class="td-bold">848</td>
-      <td style="color:var(--green);font-weight:700">639</td>
-      <td style="color:var(--amber);font-weight:700">209</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅16 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅77 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅53 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅493 🔧209 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(25,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(25,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-13</td>
-      <td class="td-bold">1304</td>
-      <td style="color:var(--green);font-weight:700">1101</td>
-      <td style="color:var(--amber);font-weight:700">203</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅11 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅90 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅100 🔧17 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅900 🔧186 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(26,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(26,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-12</td>
-      <td class="td-bold">88</td>
-      <td style="color:var(--green);font-weight:700">72</td>
-      <td style="color:var(--amber);font-weight:700">16</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">Gaiola: ✅2 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅70 🔧16 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(27,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(27,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-11</td>
-      <td class="td-bold">973</td>
-      <td style="color:var(--green);font-weight:700">722</td>
-      <td style="color:var(--amber);font-weight:700">216</td>
-      <td style="color:var(--red);font-weight:700">35</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅10 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅62 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅50 🔧16 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅600 🔧200 🗑️35</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(28,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(28,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-10</td>
-      <td class="td-bold">1095</td>
-      <td style="color:var(--green);font-weight:700">913</td>
-      <td style="color:var(--amber);font-weight:700">182</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅7 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅58 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅73 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅775 🔧182 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(29,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(29,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-09</td>
-      <td class="td-bold">822</td>
-      <td style="color:var(--green);font-weight:700">726</td>
-      <td style="color:var(--amber);font-weight:700">96</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅11 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅62 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅76 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅577 🔧96 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(30,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(30,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-08</td>
-      <td class="td-bold">14</td>
-      <td style="color:var(--green);font-weight:700">14</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">PBR: ✅14 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(31,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(31,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-07</td>
-      <td class="td-bold">674</td>
-      <td style="color:var(--green);font-weight:700">549</td>
-      <td style="color:var(--amber);font-weight:700">125</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅48 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅44 🔧24 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅449 🔧101 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(32,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(32,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-06</td>
-      <td class="td-bold">958</td>
-      <td style="color:var(--green);font-weight:700">785</td>
-      <td style="color:var(--amber);font-weight:700">173</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅11 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅67 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅117 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅590 🔧173 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(33,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(33,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-05</td>
-      <td class="td-bold">1004</td>
-      <td style="color:var(--green);font-weight:700">829</td>
-      <td style="color:var(--amber);font-weight:700">175</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅8 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅59 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅83 🔧13 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅679 🔧162 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(34,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(34,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-04</td>
-      <td class="td-bold">10</td>
-      <td style="color:var(--green);font-weight:700">10</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">PBR: ✅10 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(35,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(35,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-03</td>
-      <td class="td-bold">129</td>
-      <td style="color:var(--green);font-weight:700">129</td>
-      <td style="color:var(--amber);font-weight:700">0</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">Gaiola: ✅7 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅122 🔧0 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(36,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(36,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-02</td>
-      <td class="td-bold">1270</td>
-      <td style="color:var(--green);font-weight:700">1184</td>
-      <td style="color:var(--amber);font-weight:700">86</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅12 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅70 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅126 🔧0 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅976 🔧86 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(37,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(37,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr><tr>
-      <td class="td-mono">2026-04-01</td>
-      <td class="td-bold">868</td>
-      <td style="color:var(--green);font-weight:700">818</td>
-      <td style="color:var(--amber);font-weight:700">50</td>
-      <td style="color:var(--red);font-weight:700">0</td>
-      <td style="max-width:220px;font-size:10px"><span style="white-space:nowrap">CHEP: ✅5 🔧0 🗑️0</span> · <span style="white-space:nowrap">Descartável: ✅69 🔧0 🗑️0</span> · <span style="white-space:nowrap">Gaiola: ✅49 🔧6 🗑️0</span> · <span style="white-space:nowrap">PBR: ✅695 🔧44 🗑️0</span></td>
-      <td>Administrador</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(38,&#39;triagem&#39;)" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(38,&#39;triagem&#39;)" title="Excluir">🗑️</button></td>
-    </tr></tbody>
-  </table></div></div></div>
+    <div class="content" id="content-area"></div>
   </main>
 
-  <nav class="mob-nav" id="mob-nav"><div class="mob-nav-items"><div class="mob-nav-item" data-screen="dashboard" id="mob-dashboard"><span class="mob-nav-icon">📊</span>Dashboard</div><div class="mob-nav-item" data-screen="estoque" id="mob-estoque"><span class="mob-nav-icon">📦</span>Estoque</div><div class="mob-nav-item" data-screen="compra" id="mob-compra"><span class="mob-nav-icon">🛒</span>Compra</div><div class="mob-nav-item" data-screen="distribuicao" id="mob-distribuicao"><span class="mob-nav-icon">🔀</span>Distribuição</div><div class="mob-nav-item active" data-screen="triagem" id="mob-triagem"><span class="mob-nav-icon">🔍</span>Triagem</div></div></nav>
+  <nav class="mob-nav" id="mob-nav"></nav>
 </div>
 
 <!-- MODAL: RETORNO REFORMA -->
 <div class="modal-overlay" id="modal-retorno">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">↩ Retorno de Reforma</div><button class="modal-close" onclick="closeModal(&#39;modal-retorno&#39;)">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title">↩ Retorno de Reforma</div><button class="modal-close" onclick="closeModal('modal-retorno')">✕</button></div>
     <div class="modal-body">
       <div id="mref-info" style="font-size:12px;margin-bottom:12px;color:var(--text-mid);"></div>
-      <div class="form-group" style="margin-bottom:10px"><label class="form-label">Modelo</label><input class="form-control" id="mref-modelo" readonly=""></div>
+      <div class="form-group" style="margin-bottom:10px"><label class="form-label">Modelo</label><input class="form-control" id="mref-modelo" readonly></div>
       <div class="form-group" style="margin-bottom:10px"><label class="form-label">Qtd Retornada *</label><input class="form-control" id="mref-qtd" type="number" min="1" placeholder="0"></div>
       <div class="form-group" style="margin-bottom:10px"><label class="form-label">Data *</label><input class="form-control" id="mref-data" type="date"></div>
       <div class="form-group"><label class="form-label">Observação</label><textarea class="form-control" id="mref-obs" style="min-height:55px"></textarea></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal(&#39;modal-retorno&#39;)">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-retorno')">Cancelar</button>
       <button class="btn btn-success btn-sm" onclick="confirmarRetornoReforma()">✓ Confirmar</button>
     </div>
   </div>
@@ -1587,7 +373,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <!-- MODAL: ALTERAR SENHA -->
 <div class="modal-overlay" id="modal-pwd">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">🔑 Alterar Senha</div><button class="modal-close" onclick="closeModal(&#39;modal-pwd&#39;)">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title">🔑 Alterar Senha</div><button class="modal-close" onclick="closeModal('modal-pwd')">✕</button></div>
     <div class="modal-body">
       <div class="warn-box">A nova senha substituirá a senha atual desta área/loja. Guarde em local seguro.</div>
       <div class="form-group" style="margin-bottom:10px"><label class="form-label">Senha Atual *</label><input class="form-control" id="pwd-atual" type="password" placeholder="Senha atual"></div>
@@ -1596,7 +382,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
       <div class="login-error" id="pwd-error" style="margin-top:10px"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal(&#39;modal-pwd&#39;)">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pwd')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="alterarSenha()">✓ Alterar Senha</button>
     </div>
   </div>
@@ -1606,9 +392,9 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <!-- MODAL: EDITAR MOVIMENTAÇÃO -->
 <div class="modal-overlay" id="modal-edit-mov">
   <div class="modal" style="max-width:520px">
-    <div class="modal-hdr"><div class="modal-title">✏️ Editar Movimentação</div><button class="modal-close" onclick="closeModal(&#39;modal-edit-mov&#39;)">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title">✏️ Editar Movimentação</div><button class="modal-close" onclick="closeModal('modal-edit-mov')">✕</button></div>
     <div class="modal-body">
-      <div id="edit-mov-info" style="font-size:12px;color:var(--text-mid);margin-bottom:12px;padding:8px 12px;background:#f8fbff;border-radius:6px;border:1px solid var(--border-dark);"><strong>MOV-10008</strong> · Retorno de Loja · 14/05/2026, 15:13:18</div>
+      <div id="edit-mov-info" style="font-size:12px;color:var(--text-mid);margin-bottom:12px;padding:8px 12px;background:#f8fbff;border-radius:6px;border:1px solid var(--border-dark);"></div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="edit-mov-data" type="date"></div>
         <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="edit-mov-user" placeholder="Usuário"></div>
@@ -1619,30 +405,12 @@ textarea.form-control{resize:vertical;min-height:60px;}
       </div>
       <div style="margin-top:12px">
         <label class="form-label" style="margin-bottom:6px;display:block;">Quantidades por Modelo</label>
-        <div id="edit-mov-modelos" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fbff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;"><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Palete PBR</label>
-    <input class="form-control" id="emod-PBR" type="number" min="0" value="18" style="padding:6px;font-size:12px;text-align:center;">
-  </div><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Palete Descartável</label>
-    <input class="form-control" id="emod-DESCARTAVEL" type="number" min="0" value="4" style="padding:6px;font-size:12px;text-align:center;">
-  </div><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Palete CHEP</label>
-    <input class="form-control" id="emod-CHEP" type="number" min="0" value="0" style="padding:6px;font-size:12px;text-align:center;">
-  </div><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Palete Euro</label>
-    <input class="form-control" id="emod-EURO" type="number" min="0" value="0" style="padding:6px;font-size:12px;text-align:center;">
-  </div><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Palete CHEP Euro</label>
-    <input class="form-control" id="emod-CHEP_EURO" type="number" min="0" value="0" style="padding:6px;font-size:12px;text-align:center;">
-  </div><div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">Gaiola de Madeira</label>
-    <input class="form-control" id="emod-GAIOLA" type="number" min="0" value="3" style="padding:6px;font-size:12px;text-align:center;">
-  </div></div>
+        <div id="edit-mov-modelos" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fbff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;"></div>
       </div>
       <div class="warn-box" style="margin-top:12px;font-size:11px;">⚠️ A edição altera apenas os dados do registro. O estoque <strong>não é recalculado</strong> automaticamente — use com cuidado.</div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal(&#39;modal-edit-mov&#39;)">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-edit-mov')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmarEditMov()">✓ Salvar Edição</button>
     </div>
   </div>
@@ -1651,7 +419,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <!-- MODAL: EDITAR TRIAGEM -->
 <div class="modal-overlay" id="modal-edit-triagem">
   <div class="modal" style="max-width:420px">
-    <div class="modal-hdr"><div class="modal-title">✏️ Editar Triagem</div><button class="modal-close" onclick="closeModal(&#39;modal-edit-triagem&#39;)">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title">✏️ Editar Triagem</div><button class="modal-close" onclick="closeModal('modal-edit-triagem')">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="edit-tr-data" type="date"></div>
@@ -1663,7 +431,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
       <div class="warn-box" style="margin-top:12px;font-size:11px;">⚠️ Apenas os dados do histórico são alterados. O estoque não é recalculado.</div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal(&#39;modal-edit-triagem&#39;)">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-edit-triagem')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmarEditTriagem()">✓ Salvar</button>
     </div>
   </div>
@@ -1672,7 +440,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <!-- MODAL: EDITAR SOLICITAÇÃO -->
 <div class="modal-overlay" id="modal-edit-solic">
   <div class="modal" style="max-width:400px">
-    <div class="modal-hdr"><div class="modal-title">✏️ Editar Solicitação</div><button class="modal-close" onclick="closeModal(&#39;modal-edit-solic&#39;)">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title">✏️ Editar Solicitação</div><button class="modal-close" onclick="closeModal('modal-edit-solic')">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Data</label><input class="form-control" id="edit-sol-data" type="date"></div>
@@ -1681,7 +449,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal(&#39;modal-edit-solic&#39;)">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-edit-solic')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmarEditSolic()">✓ Salvar</button>
     </div>
   </div>
@@ -4373,34 +3141,9 @@ function salvarAjuste(){
 }
 function excluirTriagem(idx,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
-  if(!confirm('Excluir este registro de triagem? As alterações no estoque serão desfeitas.'))return;
-  
-  const trg=S.triagens[idx];
-  if(!trg)return;
-  
-  // Desfaz as alterações no estoque
-  for(const m of MODELOS){
-    const det=trg.detModelos?.[m]||{op:0,ref:0,desc:0};
-    // Volta os itens para a fila
-    S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+trg.total;
-    // Remove de REV
-    S.est.REV[m]=(S.est.REV[m]||0)-(det.op||0);
-    // Remove de Reforma
-    S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)-(det.ref||0);
-    // Remove de Descarte
-    S.est.Descartado[m]=(S.est.Descartado[m]||0)-(det.desc||0);
-  }
-  
-  // Remove o registro de triagem
-  S.triagens.splice(idx,1);
-  
-  // Remove as movimentações relacionadas
-  S.movs=S.movs.filter(m=>!(m.tipo==='Triagem'&&m.obs?.includes(trg.usuario)&&m.data===trg.data));
-  
-  syncEst();
-  save();
-  toast('✓ Triagem excluída e estoque restaurado.','warn');
-  if(screen)renderScreen(screen);
+  if(!confirm('Excluir este registro de triagem?'))return;
+  S.triagens.splice(idx,1);save();
+  toast('✓ Triagem excluída.','warn');if(screen)renderScreen(screen);
 }
 function excluirRecebForn(id,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
@@ -4717,6 +3460,5 @@ load().then(()=>{updateClock();});
 updateClock();
 setInterval(updateClock,1000);
 </script>
-
-
-</body></html>
+</body>
+</html>
