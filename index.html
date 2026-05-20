@@ -738,10 +738,9 @@ function calcEst(movs){
       case 'Devolução Interna':MODELOS.forEach(k=>{if(est[m.origem])est[m.origem][k]=Math.max(0,(est[m.origem][k]||0)-(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
       case 'Triagem':
         MODELOS.forEach(k=>{
-          const total = (mds.op||0) + (mds.ref||0) + (mds.desc||0);
-          est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-total);
-          est.REV[k]=(est.REV[k]||0)+(mds.op||0);
-          est.ReformaFila[k]=(est.ReformaFila[k]||0)+(mds.ref||0);
+          est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));
+          est.REV[k]=(est.REV[k]||0)+(mds[k]||0);
+          if(m.destino==='Fila Reforma')est.ReformaFila[k]=(est.ReformaFila[k]||0)+(mds[k]||0);
         });
         break;
       case 'Descarte':MODELOS.forEach(k=>{est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));});break;
@@ -1772,9 +1771,9 @@ function doTriagem(){
     S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)+(reforma[m]||0);
   });
   
-  // Registra triagem com o TOTAL completo (op + ref + desc)
+  // Registra UMA movimentação com valores por modelo
   const totalTriagem = tp + tr + td;
-  addMov('Triagem','Triagem','Triagem',null,null,totalTriagem,user,`Triagem: ${tp} operação | ${tr} reforma | ${td} descarte`,{op:tp,ref:tr,desc:td},v('tr-data'));
+  addMov('Triagem','Triagem','Triagem',null,null,totalTriagem,user,`Triagem: ${tp} op | ${tr} ref | ${td} desc`,prontos,v('tr-data'));
   
   S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
   syncEst();
