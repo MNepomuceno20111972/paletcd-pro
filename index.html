@@ -639,7 +639,7 @@ const LOJAS_BASE=[
   {d:74,n:"Itaim",cc:1710372},{d:75,n:"Nova Campinas",cc:1710377},{d:76,n:"Santos",cc:1812392},
   {d:79,n:"Sorocaba 3",cc:1898423},{d:80,n:"Itu",cc:1898422},{d:81,n:"Pamplona",cc:1898420},
   {d:84,n:"Tatuapé 3",cc:1934156},{d:86,n:"São Jose Do Rio Preto",cc:1990455},{d:87,n:"Itatiba",cc:2034187},
-  {d:88,n:"Cotia",cc:2060714},{d:92,n:"Restaurante",cc:54969},{d:97,n:"Cd Sumaré",cc:46705},
+  {d:88,n:"Granja Viana",cc:2060714},{d:92,n:"Restaurante",cc:54969},{d:97,n:"Cd Sumaré",cc:46705},
   {d:99,n:"Produção",cc:25},{d:100,n:"Cd Brasília",cc:171062},{d:104,n:"Indaiatuba",cc:32016},
   {d:107,n:"Americana 2",cc:32017},{d:108,n:"Limeira",cc:32018},{d:120,n:"Ouro Verde",cc:42183},
   {d:121,n:"Arborais",cc:2097977},{d:122,n:"Bauru",cc:2114443},{d:123,n:"Nova Cantareira",cc:2147546},
@@ -736,7 +736,14 @@ function calcEst(movs){
       case 'Envio para Loja':MODELOS.forEach(k=>{if(est[m.origem])est[m.origem][k]=Math.max(0,(est[m.origem][k]||0)-(mds[k]||0));est.Lojas[k]=(est.Lojas[k]||0)+(mds[k]||0);});break;
       case 'Retorno de Loja':MODELOS.forEach(k=>{est.Lojas[k]=Math.max(0,(est.Lojas[k]||0)-(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
       case 'Devolução Interna':MODELOS.forEach(k=>{if(est[m.origem])est[m.origem][k]=Math.max(0,(est[m.origem][k]||0)-(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
-      case 'Triagem':MODELOS.forEach(k=>{est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));if(m.destino==='Fila Reforma')est.ReformaFila[k]=(est.ReformaFila[k]||0)+(mds[k]||0);else est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
+      case 'Triagem':
+        MODELOS.forEach(k=>{
+          const total = (mds.op||0) + (mds.ref||0) + (mds.desc||0);
+          est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-total);
+          est.REV[k]=(est.REV[k]||0)+(mds.op||0);
+          est.ReformaFila[k]=(est.ReformaFila[k]||0)+(mds.ref||0);
+        });
+        break;
       case 'Descarte':MODELOS.forEach(k=>{est.TriagemFila[k]=Math.max(0,(est.TriagemFila[k]||0)-(mds[k]||0));});break;
       case 'Envio para Reforma':MODELOS.forEach(k=>{est.ReformaFila[k]=Math.max(0,(est.ReformaFila[k]||0)-(mds[k]||0));est.Reforma[k]=(est.Reforma[k]||0)+(mds[k]||0);});break;
       case 'Retorno de Reforma':MODELOS.forEach(k=>{est.Reforma[k]=Math.max(0,(est.Reforma[k]||0)-(mds[k]||0));est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
@@ -1764,9 +1771,11 @@ function doTriagem(){
     S.est.REV[m]=(S.est.REV[m]||0)+(prontos[m]||0);
     S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)+(reforma[m]||0);
   });
-  if(tp>0)addMov('Triagem','Triagem','REV',null,null,tp,user,`Triagem: ${tp} operação`,prontos,v('tr-data'));
-  if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
-  if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
+  
+  // Registra triagem com o TOTAL completo (op + ref + desc)
+  const totalTriagem = tp + tr + td;
+  addMov('Triagem','Triagem','Triagem',null,null,totalTriagem,user,`Triagem: ${tp} operação | ${tr} reforma | ${td} descarte`,{op:tp,ref:tr,desc:td},v('tr-data'));
+  
   S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
   syncEst();
   save();
@@ -3141,31 +3150,9 @@ function salvarAjuste(){
 }
 function excluirTriagem(idx,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
-  if(!confirm('Excluir este registro de triagem? As alterações no estoque serão desfeitas.'))return;
-  
-  const trg=S.triagens[idx];
-  if(!trg)return;
-  
-  // Desfaz as alterações no estoque modelo por modelo
-  for(const m of MODELOS){
-    const det=trg.detModelos?.[m]||{op:0,ref:0,desc:0};
-    // Volta os itens para a fila
-    S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+(det.op||0)+(det.ref||0)+(det.desc||0);
-    // Remove de REV
-    S.est.REV[m]=(S.est.REV[m]||0)-(det.op||0);
-    // Remove de Reforma
-    S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)-(det.ref||0);
-    // Remove de Descarte
-    S.est.Descartado[m]=(S.est.Descartado[m]||0)-(det.desc||0);
-  }
-  
-  // Remove o registro de triagem
-  S.triagens.splice(idx,1);
-  
-  syncEst();
-  save();
-  toast('✓ Triagem excluída e estoque restaurado.','warn');
-  if(screen)renderScreen(screen);
+  if(!confirm('Excluir este registro de triagem?'))return;
+  S.triagens.splice(idx,1);save();
+  toast('✓ Triagem excluída.','warn');if(screen)renderScreen(screen);
 }
 function excluirRecebForn(id,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
