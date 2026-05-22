@@ -664,6 +664,40 @@ const PERFIL_DEF = {
 // ═══════════════════════════════════════════════════════
 // MENUS POR PERFIL
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// DETECÇÃO MOBILE — BLOQUEIA ACESSO
+// ═══════════════════════════════════════════════════════
+function isMobileDevice(){
+  const ua=navigator.userAgent.toLowerCase();
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(ua) ||
+         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
+         window.innerWidth < 768;
+}
+
+if(isMobileDevice()){
+  document.body.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0052CC 0%,#9933FF 100%);padding:20px;font-family:DM Sans,sans-serif;">
+      <div style="background:#fff;border-radius:16px;padding:40px 32px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+        <div style="font-size:64px;margin-bottom:20px;">🖥️</div>
+        <h1 style="color:#0052CC;font-size:24px;font-weight:700;margin-bottom:12px;">Acesso Desktop Only</h1>
+        <p style="color:#34495e;font-size:14px;line-height:1.6;margin-bottom:24px;">
+          PaletCD está configurado para <strong>Desktop apenas</strong>.<br><br>
+          Por favor, abra em um <strong>computador</strong> para continuar.
+        </p>
+        <div style="background:#fef9e7;border:1px solid #f39c12;border-radius:8px;padding:16px;margin-bottom:24px;font-size:13px;color:#7d6608;">
+          <strong>⚠️ Motivo:</strong> Garantir integridade dos dados e evitar conflitos de sincronização.
+        </div>
+        <button onclick="location.reload()" style="background:#0052CC;color:#fff;border:none;border-radius:6px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">
+          Tentar Novamente
+        </button>
+      </div>
+    </div>
+  `;
+  document.documentElement.style.margin=0;
+  document.documentElement.style.padding=0;
+  throw new Error('Mobile bloqueado - Desktop only');
+}
+
 const MENUS={
   adm:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
