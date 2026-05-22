@@ -678,13 +678,6 @@ const MENUS={
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
     ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
-  area:[
-    ['minha-area','📊','🟢 Saldo da Reversa (View)'],
-    ['estoque','📦','📊 Estoque Geral (View)'],
-  ],
-  loja:[
-    ['loja-dash','📊','🟢 Saldo da Loja (View)'],['movimentacoes','📋','📋 Histórico (View)'],
-  ],
 };
 
 // ═══════════════════════════════════════════════════════
@@ -708,7 +701,7 @@ let S={
   est:emptyEst(),
   movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],
   nMov:1,nRef:1,nSol:1,nForn:1,nRecForn:1,
-  senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
+  senhas:{ADM:'ADM@2024',REV:'REV@2024'},
 };
 
 let CU=null; // currentUser
@@ -1536,11 +1529,6 @@ function rRetornoLoja(el){
   </table></div></div>`;
 }
 function doRetornoLoja(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
-  if(CU.role !== 'adm' && CU.role !== 'rev') {
-    return toast('❌ Lançamentos apenas no DESKTOP!','err');
-  }
-  
   const lojaDigito=parseInt(v('rl-loja')),modelos=parseModelos(),tot=totalModelos(modelos),user=v('rl-user');
   if(!lojaDigito)return toast('Selecione a loja.','err');
   if(tot<1)return toast('Informe as quantidades.','err');
@@ -1575,11 +1563,6 @@ function rDevolucao(el){
   </div>`;
 }
 function doDevolucao(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
-  if(CU.role !== 'adm' && CU.role !== 'rev') {
-    return toast('❌ Lançamentos apenas no DESKTOP!','err');
-  }
-  
   const area=CU.role==='area'?CU.area:v('dev-area');
   const modelos=parseModelos(),tot=totalModelos(modelos),user=v('dev-user');
   if(!area)return toast('Selecione a área.','err');
@@ -1751,11 +1734,6 @@ function calcTr(){
   }
 }
 function doTriagem(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
-  if(CU.role !== 'adm' && CU.role !== 'rev') {
-    return toast('❌ Lançamentos apenas no DESKTOP!','err');
-  }
-  
   const totFila=totalEst('TriagemFila'),user=v('tr-user');
   if(totFila===0)return toast('Não há itens em fila.','err');
   if(!user)return toast('Informe o usuário.','err');
@@ -3144,11 +3122,6 @@ function renderAjusteModelos(){
   const ac=document.getElementById('aj-actions');if(ac)ac.style.display='flex';
 }
 function salvarAjuste(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
-  if(CU.role !== 'adm' && CU.role !== 'rev') {
-    return toast('❌ Ajustes apenas no DESKTOP!','err');
-  }
-  
   const area=v('aj-area');
   if(!area)return toast('Selecione a área.','err');
   MODELOS.forEach(m=>{
