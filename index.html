@@ -679,12 +679,11 @@ const MENUS={
     ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   area:[
-    ['minha-area','📦','Meu Estoque'],
-    ['devolucao','🔄','Devolver'],
-    ['receb-forn','📥','Receb. Fornecedor'],
+    ['minha-area','📊','🟢 Saldo da Reversa (View)'],
+    ['estoque','📦','📊 Estoque Geral (View)'],
   ],
   loja:[
-    ['loja-dash','📊','Resumo'],['devolucao-loja','↩️','Devolver'],['loja-hist','📋','Histórico'],
+    ['loja-dash','📊','🟢 Saldo da Loja (View)'],['movimentacoes','📋','📋 Histórico (View)'],
   ],
 };
 
@@ -1537,6 +1536,11 @@ function rRetornoLoja(el){
   </table></div></div>`;
 }
 function doRetornoLoja(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const lojaDigito=parseInt(v('rl-loja')),modelos=parseModelos(),tot=totalModelos(modelos),user=v('rl-user');
   if(!lojaDigito)return toast('Selecione a loja.','err');
   if(tot<1)return toast('Informe as quantidades.','err');
@@ -1571,6 +1575,11 @@ function rDevolucao(el){
   </div>`;
 }
 function doDevolucao(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const area=CU.role==='area'?CU.area:v('dev-area');
   const modelos=parseModelos(),tot=totalModelos(modelos),user=v('dev-user');
   if(!area)return toast('Selecione a área.','err');
@@ -1742,6 +1751,11 @@ function calcTr(){
   }
 }
 function doTriagem(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const totFila=totalEst('TriagemFila'),user=v('tr-user');
   if(totFila===0)return toast('Não há itens em fila.','err');
   if(!user)return toast('Informe o usuário.','err');
@@ -1768,6 +1782,7 @@ function doTriagem(){
   if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
   if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
   S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
+  syncEst();
   save();
   toast(`✓ Triagem: ${tp} operação | ${tr} reforma | ${td} descarte.`);
   renderScreen('triagem');
@@ -3129,6 +3144,11 @@ function renderAjusteModelos(){
   const ac=document.getElementById('aj-actions');if(ac)ac.style.display='flex';
 }
 function salvarAjuste(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Ajustes apenas no DESKTOP!','err');
+  }
+  
   const area=v('aj-area');
   if(!area)return toast('Selecione a área.','err');
   MODELOS.forEach(m=>{
