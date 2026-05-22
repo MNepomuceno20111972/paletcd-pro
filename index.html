@@ -664,40 +664,6 @@ const PERFIL_DEF = {
 // ═══════════════════════════════════════════════════════
 // MENUS POR PERFIL
 // ═══════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════
-// DETECÇÃO MOBILE — BLOQUEIA ACESSO
-// ═══════════════════════════════════════════════════════
-function isMobileDevice(){
-  const ua=navigator.userAgent.toLowerCase();
-  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(ua) ||
-         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
-         window.innerWidth < 768;
-}
-
-if(isMobileDevice()){
-  document.body.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0052CC 0%,#9933FF 100%);padding:20px;font-family:DM Sans,sans-serif;">
-      <div style="background:#fff;border-radius:16px;padding:40px 32px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);">
-        <div style="font-size:64px;margin-bottom:20px;">🖥️</div>
-        <h1 style="color:#0052CC;font-size:24px;font-weight:700;margin-bottom:12px;">Acesso Desktop Only</h1>
-        <p style="color:#34495e;font-size:14px;line-height:1.6;margin-bottom:24px;">
-          PaletCD está configurado para <strong>Desktop apenas</strong>.<br><br>
-          Por favor, abra em um <strong>computador</strong> para continuar.
-        </p>
-        <div style="background:#fef9e7;border:1px solid #f39c12;border-radius:8px;padding:16px;margin-bottom:24px;font-size:13px;color:#7d6608;">
-          <strong>⚠️ Motivo:</strong> Garantir integridade dos dados e evitar conflitos de sincronização.
-        </div>
-        <button onclick="location.reload()" style="background:#0052CC;color:#fff;border:none;border-radius:6px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">
-          Tentar Novamente
-        </button>
-      </div>
-    </div>
-  `;
-  document.documentElement.style.margin=0;
-  document.documentElement.style.padding=0;
-  throw new Error('Mobile bloqueado - Desktop only');
-}
-
 const MENUS={
   adm:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
@@ -711,6 +677,13 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
     ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
+  ],
+  area:[
+    ['minha-area','📊','🟢 Saldo da Reversa (View)'],
+    ['estoque','📦','📊 Estoque Geral (View)'],
+  ],
+  loja:[
+    ['loja-dash','📊','🟢 Saldo da Loja (View)'],['movimentacoes','📋','📋 Histórico (View)'],
   ],
 };
 
@@ -735,7 +708,7 @@ let S={
   est:emptyEst(),
   movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],
   nMov:1,nRef:1,nSol:1,nForn:1,nRecForn:1,
-  senhas:{ADM:'ADM@2024',REV:'REV@2024'},
+  senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
 };
 
 let CU=null; // currentUser
@@ -1563,6 +1536,11 @@ function rRetornoLoja(el){
   </table></div></div>`;
 }
 function doRetornoLoja(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const lojaDigito=parseInt(v('rl-loja')),modelos=parseModelos(),tot=totalModelos(modelos),user=v('rl-user');
   if(!lojaDigito)return toast('Selecione a loja.','err');
   if(tot<1)return toast('Informe as quantidades.','err');
@@ -1570,9 +1548,8 @@ function doRetornoLoja(){
   const nf=v('rl-nf');
   MODELOS.forEach(m=>{const q=modelos[m]||0;S.est.Lojas[m]=Math.max(0,(S.est.Lojas[m]||0)-q);S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+q;});
   const mov=addMov('Retorno de Loja',lojaNome(lojaDigito),'Triagem',lojaDigito,null,tot,user,v('rl-obs'),modelos,v('rl-data'));
-  // salva NF no registro
   if(nf&&S.movs[0])S.movs[0].nf=nf;
-  syncEst();
+  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
   save();
   toast(`✓ ${tot} paletes retornados → Triagem.${nf?' NF:'+nf:''}`);renderScreen('retorno-loja');
 }
@@ -1597,6 +1574,11 @@ function rDevolucao(el){
   </div>`;
 }
 function doDevolucao(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const area=CU.role==='area'?CU.area:v('dev-area');
   const modelos=parseModelos(),tot=totalModelos(modelos),user=v('dev-user');
   if(!area)return toast('Selecione a área.','err');
@@ -1724,24 +1706,22 @@ function rTriagem(el){
   </div>
   <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Triagens</span></div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Entrou</th><th>Triou</th><th>Restam</th><th>✅ Op</th><th>🔧 Ref</th><th>🗑️ Desc</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
+    <thead><tr><th>Data</th><th>Total</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
     <tbody>${S.triagens.length?S.triagens.map((t,i)=>`<tr>
       <td class="td-mono">${t.data}</td>
-      <td class="td-bold" style="color:var(--navy)">${t.entrou||t.total}</td>
-      <td class="td-bold" style="color:#1e8449;font-weight:700">${t.triou}</td>
-      <td class="td-bold" style="color:#935116;font-weight:700">${t.restante}</td>
+      <td class="td-bold">${t.total}</td>
       <td style="color:var(--green);font-weight:700">${t.prontos}</td>
       <td style="color:var(--amber);font-weight:700">${t.reforma}</td>
       <td style="color:var(--red);font-weight:700">${t.descarte}</td>
       <td style="max-width:220px;font-size:10px">${t.detModelos?Object.entries(t.detModelos).filter(([,v])=>v.op+v.ref+v.desc>0).map(([m,v])=>`<span style="white-space:nowrap">${MODELO_LABELS[m]?.replace('Palete ','').replace('Gaiola de Madeira','Gaiola')||m}: ✅${v.op} 🔧${v.ref} 🗑️${v.desc}</span>`).join(' · '):'—'}</td>
       <td>${t.usuario}</td>
       ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(${i},'triagem')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(${i},'triagem')" title="Excluir">🗑️</button></td>`:''}
-    </tr>`).join(''):emptyRow(canDelete()?10:9)}</tbody>
+    </tr>`).join(''):emptyRow(canDelete()?8:7)}</tbody>
   </table></div></div>`;
 }
 function calcTr(){
   const modelosNaFila=MODELOS.filter(m=>(S.est.TriagemFila[m]||0)>0);
-  let totOp=0,totRef=0,totDesc=0;
+  let totOp=0,totRef=0,totDesc=0,allOk=true;
   modelosNaFila.forEach(m=>{
     const fila=S.est.TriagemFila[m]||0;
     const op=parseInt(document.getElementById('tp-'+m)?.value)||0;
@@ -1751,11 +1731,10 @@ function calcTr(){
     totOp+=op;totRef+=ref;totDesc+=desc;
     const box=document.getElementById('tv-'+m);
     if(box){
-      // ✅ ALTERADO: Permite triagem parcial (não precisa ser igual)
-      if(soma>fila){box.innerHTML=`<span style="color:#922b21;font-size:10px;">✗ +${soma-fila}</span>`;}
-      else if(soma===fila&&fila>0){box.innerHTML='<span style="color:#1e8449;font-size:13px;">✓</span>';}
-      else if(soma>0){box.innerHTML=`<span style="color:#1e8449;font-size:10px;">✓ ${soma}/${fila}</span>`;}
-      else{box.innerHTML='';}
+      if(soma===fila&&fila>0){box.innerHTML='<span style="color:#1e8449;font-size:13px;">✓</span>';}
+      else if(soma>fila){box.innerHTML=`<span style="color:#922b21;font-size:10px;">+${soma-fila}</span>`;allOk=false;}
+      else if(soma>0){box.innerHTML=`<span style="color:#935116;font-size:10px;">${soma}/${fila}</span>`;allOk=false;}
+      else{box.innerHTML='';allOk=false;}
     }
   });
   const elOp=document.getElementById('tot-op');if(elOp)elOp.textContent=totOp;
@@ -1765,13 +1744,17 @@ function calcTr(){
   if(totVal){
     const totFila=totalEst('TriagemFila');
     const soma=totOp+totRef+totDesc;
-    if(soma===totFila&&totFila>0)totVal.innerHTML='<span style="color:#1e8449;">✓ OK</span>';
+    if(soma===totFila&&totFila>0&&allOk)totVal.innerHTML='<span style="color:#1e8449;">✓ OK</span>';
     else if(soma>totFila)totVal.innerHTML=`<span style="color:#922b21;">✗ +${soma-totFila}</span>`;
-    else if(soma>0)totVal.innerHTML=`<span style="color:#1e8449;">✓ ${soma}/${totFila}</span>`;
-    else totVal.innerHTML='';
+    else totVal.innerHTML=`<span style="color:#935116;">${soma}/${totFila}</span>`;
   }
 }
 function doTriagem(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Lançamentos apenas no DESKTOP!','err');
+  }
+  
   const totFila=totalEst('TriagemFila'),user=v('tr-user');
   if(totFila===0)return toast('Não há itens em fila.','err');
   if(!user)return toast('Informe o usuário.','err');
@@ -1783,16 +1766,16 @@ function doTriagem(){
     const p=parseInt(document.getElementById('tp-'+m)?.value)||0;
     const r=parseInt(document.getElementById('tr-'+m)?.value)||0;
     const d=parseInt(document.getElementById('td-'+m)?.value)||0;
-    // ✅ ALTERADO: Permite triagem parcial (não precisa ser igual à fila)
+    // ✅ CORREÇÃO #2b: Permite triagem parcial (não precisa ser 100%)
     if(p+r+d>fila)return toast(`${MODELO_LABELS[m]}: soma (${p+r+d}) > fila (${fila}).`,'err');
     if(p+r+d<1)return toast(`${MODELO_LABELS[m]}: informe pelo menos 1 unidade.`,'err');
     prontos[m]=p;reforma[m]=r;descarte[m]=d;
     detModelos[m]={op:p,ref:r,desc:d};
     tp+=p;tr+=r;td+=d;
   }
-  // ✅ ALTERADO: Diminui TriagemFila (não zera)
+  // ✅ CORREÇÃO #2c: Diminui TriagemFila (não zera)
   modelosNaFila.forEach(m=>{
-    const triado=prontos[m]||0+reforma[m]||0+descarte[m]||0;
+    const triado=(prontos[m]||0)+(reforma[m]||0)+(descarte[m]||0);
     S.est.TriagemFila[m]=Math.max(0,(S.est.TriagemFila[m]||0)-triado);
     S.est.REV[m]=(S.est.REV[m]||0)+(prontos[m]||0);
     S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)+(reforma[m]||0);
@@ -1801,12 +1784,13 @@ function doTriagem(){
   if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
   if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
   
-  // ✅ NOVO: Calcula restante
+  // ✅ NOVO: Calcula restante para histórico
   const entrou=totFila;
   const triou=tp+tr+td;
   const restante=entrou-triou;
   
   S.triagens.unshift({data:v('tr-data')||hoje(),entrou:entrou,triou:triou,restante:restante,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
+  // ✅ CORREÇÃO #2: REMOVIDO syncEst() — não reconstrói
   save();
   toast(`✓ Triagem: Entrou ${entrou} | Triou ${triou} | Restam ${restante}.`);
   renderScreen('triagem');
@@ -1979,7 +1963,7 @@ function confirmarRetornoReforma(){
     totalDistribuido+=retMFinal;
   });
   addMov('Retorno de Reforma',ref.fornNome,'REV',null,ref.fornId,qtd,CU?.nome||'Sistema',obs,modelosRetorno,document.getElementById('mref-data')?.value||null);
-  syncEst();
+  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
   save();
   toast(`✓ ${qtd} paletes retornados → REV.`);
   closeModal('modal-retorno');
@@ -2301,7 +2285,7 @@ function doDevolucaoLoja(){
   const lNome=lojaNome(lojaDigito);
   const obs=motivo+(v('dl-obs')?' — '+v('dl-obs'):'');
   addMov('Retorno de Loja',lNome,'Triagem',lojaDigito,null,tot,user,obs,modelos,v('dl-data'));
-  syncEst();
+  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
   save();
   toast(`✓ ${tot} paletes devolvidos → Fila de Triagem.`);
   renderScreen('devolucao-loja');
@@ -2598,7 +2582,7 @@ function confirmarPagForn(){
     S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-qAbate);
   });
   addMov('Pagamento Fornecedor',r.fornecedor,'Fornecedor',null,null,qtd,CU.nome,obs,r.modelos);
-  syncEst();
+  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
   save();toast(`✓ Pagamento de ${qtd} paletes registrado → saiu da REV.`);closeModal('modal-retorno');renderScreen('receb-forn');
 }
 
@@ -3168,6 +3152,11 @@ function renderAjusteModelos(){
   const ac=document.getElementById('aj-actions');if(ac)ac.style.display='flex';
 }
 function salvarAjuste(){
+  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
+  if(CU.role !== 'adm' && CU.role !== 'rev') {
+    return toast('❌ Ajustes apenas no DESKTOP!','err');
+  }
+  
   const area=v('aj-area');
   if(!area)return toast('Selecione a área.','err');
   MODELOS.forEach(m=>{
