@@ -1548,8 +1548,9 @@ function doRetornoLoja(){
   const nf=v('rl-nf');
   MODELOS.forEach(m=>{const q=modelos[m]||0;S.est.Lojas[m]=Math.max(0,(S.est.Lojas[m]||0)-q);S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+q;});
   const mov=addMov('Retorno de Loja',lojaNome(lojaDigito),'Triagem',lojaDigito,null,tot,user,v('rl-obs'),modelos,v('rl-data'));
+  // salva NF no registro
   if(nf&&S.movs[0])S.movs[0].nf=nf;
-  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
+  syncEst();
   save();
   toast(`✓ ${tot} paletes retornados → Triagem.${nf?' NF:'+nf:''}`);renderScreen('retorno-loja');
 }
@@ -1766,33 +1767,24 @@ function doTriagem(){
     const p=parseInt(document.getElementById('tp-'+m)?.value)||0;
     const r=parseInt(document.getElementById('tr-'+m)?.value)||0;
     const d=parseInt(document.getElementById('td-'+m)?.value)||0;
-    // ✅ CORREÇÃO #2b: Permite triagem parcial (não precisa ser 100%)
-    if(p+r+d>fila)return toast(`${MODELO_LABELS[m]}: soma (${p+r+d}) > fila (${fila}).`,'err');
-    if(p+r+d<1)return toast(`${MODELO_LABELS[m]}: informe pelo menos 1 unidade.`,'err');
+    if(p+r+d!==fila)return toast(`${MODELO_LABELS[m]}: soma (${p+r+d}) ≠ fila (${fila}).`,'err');
     prontos[m]=p;reforma[m]=r;descarte[m]=d;
     detModelos[m]={op:p,ref:r,desc:d};
     tp+=p;tr+=r;td+=d;
   }
-  // ✅ CORREÇÃO #2c: Diminui TriagemFila (não zera)
+  // Aplica ao estoque
   modelosNaFila.forEach(m=>{
-    const triado=(prontos[m]||0)+(reforma[m]||0)+(descarte[m]||0);
-    S.est.TriagemFila[m]=Math.max(0,(S.est.TriagemFila[m]||0)-triado);
+    S.est.TriagemFila[m]=0;
     S.est.REV[m]=(S.est.REV[m]||0)+(prontos[m]||0);
     S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)+(reforma[m]||0);
   });
   if(tp>0)addMov('Triagem','Triagem','REV',null,null,tp,user,`Triagem: ${tp} operação`,prontos,v('tr-data'));
   if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
   if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
-  
-  // ✅ NOVO: Calcula restante para histórico
-  const entrou=totFila;
-  const triou=tp+tr+td;
-  const restante=entrou-triou;
-  
-  S.triagens.unshift({data:v('tr-data')||hoje(),entrou:entrou,triou:triou,restante:restante,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
-  // ✅ CORREÇÃO #2: REMOVIDO syncEst() — não reconstrói
+  S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
+  syncEst();
   save();
-  toast(`✓ Triagem: Entrou ${entrou} | Triou ${triou} | Restam ${restante}.`);
+  toast(`✓ Triagem: ${tp} operação | ${tr} reforma | ${td} descarte.`);
   renderScreen('triagem');
 }
 
@@ -1963,7 +1955,7 @@ function confirmarRetornoReforma(){
     totalDistribuido+=retMFinal;
   });
   addMov('Retorno de Reforma',ref.fornNome,'REV',null,ref.fornId,qtd,CU?.nome||'Sistema',obs,modelosRetorno,document.getElementById('mref-data')?.value||null);
-  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
+  syncEst();
   save();
   toast(`✓ ${qtd} paletes retornados → REV.`);
   closeModal('modal-retorno');
@@ -2285,7 +2277,7 @@ function doDevolucaoLoja(){
   const lNome=lojaNome(lojaDigito);
   const obs=motivo+(v('dl-obs')?' — '+v('dl-obs'):'');
   addMov('Retorno de Loja',lNome,'Triagem',lojaDigito,null,tot,user,obs,modelos,v('dl-data'));
-  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
+  syncEst();
   save();
   toast(`✓ ${tot} paletes devolvidos → Fila de Triagem.`);
   renderScreen('devolucao-loja');
@@ -2582,7 +2574,7 @@ function confirmarPagForn(){
     S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-qAbate);
   });
   addMov('Pagamento Fornecedor',r.fornecedor,'Fornecedor',null,null,qtd,CU.nome,obs,r.modelos);
-  // ✅ REMOVIDO: syncEst() — não reconstrói, mantém ajuste manual
+  syncEst();
   save();toast(`✓ Pagamento de ${qtd} paletes registrado → saiu da REV.`);closeModal('modal-retorno');renderScreen('receb-forn');
 }
 
@@ -3391,8 +3383,8 @@ function filtrarDashboard(){
   // Restaura filtro depois (renderScreen limpa os campos)
   setTimeout(()=>{
     const de2=document.getElementById('dash-de');const ate2b=document.getElementById('dash-ate');
-    if(de2&&de)de2.value=document.getElementById('dash-de')?._lastVal||'';
-    if(ate2b&&ate)ate2b.value=document.getElementById('dash-ate')?._lastVal||'';
+    if(de2&&de)de2.value=de?`${String(de.getDate()).padStart(2,'0')}/${String(de.getMonth()+1).padStart(2,'0')}/${de.getFullYear()}`:'';
+    if(ate2b&&ate)ate2b.value=ate?`${String(ate.getDate()).padStart(2,'0')}/${String(ate.getMonth()+1).padStart(2,'0')}/${ate.getFullYear()}`:'';
   },10);
 }
 function limparFiltroDash(){
