@@ -771,6 +771,11 @@ function parseDate(str){
   if(!str)return null;
   const[y,m,d]=str.split('-');return new Date(y,m-1,d);
 }
+function formatDate(date){
+  if(!date)return '';
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
 
 
 function fixEst(est){
@@ -1197,7 +1202,14 @@ function rDashboard(el){
   
   // Usa estoque filtrado se disponível
   const estOrig=S.est;
-  if(window._dashEstTemp){S.est=window._dashEstTemp;}
+  // Limpa filtros ao trocar de tela
+if(_lastScreen && _lastScreen !== s) {
+  window._dashEstTemp = null;
+  window._estoqueEstTemp = null;
+}
+_lastScreen = s;
+// Aplica filtro temporário se estiver na mesma tela
+if(window._dashEstTemp){S.est=window._dashEstTemp;}
   const totRev=totalEst('REV'), totLojas=totalEst('Lojas'), totRef=totalEst('Reforma');
   const totTr=totalEst('TriagemFila'), totGeral=AREAS_ALL.reduce((s,a)=>s+totalEst(a),0)+totLojas+totRef;
   const movHoje=(S.movs||[]).filter(m=>m.ts.includes(new Date().toLocaleDateString('pt-BR'))).length;
@@ -2690,9 +2702,7 @@ function rSaldoForn(el){
   const totalPago=itens.reduce((s,[,v])=>s+v.pago,0);
 
   // Estoque filtrado por data
-  const estOrigEst=S.est;
-  if(window._estoqueEstTemp){S.est=window._estoqueEstTemp;}
-  el.innerHTML=`
+  const estOrigEst=S.est;  el.innerHTML=`
   <div class="card" style="margin-bottom:14px;padding:14px 16px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Ver saldo em data específica</div>
@@ -3367,6 +3377,11 @@ function excluirAbertura(id){
 function filtrarDashboard(){
   const de=parseDate(document.getElementById('dash-de')?.value);
   const ate=parseDate(document.getElementById('dash-ate')?.value);
+  
+  // Grava valores ANTES de renderizar
+  const _savedDE=formatDate(de);
+  const _savedATE=formatDate(ate);
+  
   if(!de&&!ate)return renderScreen('dashboard');
   // Recalcula com período
   const ate2=ate||new Date();
@@ -3380,11 +3395,11 @@ function filtrarDashboard(){
   // Recarrega tela com estoque filtrado (temporário)
   window._dashEstTemp=estFiltrado;
   renderScreen('dashboard');
-  // Restaura filtro depois (renderScreen limpa os campos)
+  // Restaura com valores salvos (formato correto para input type="date")
   setTimeout(()=>{
     const de2=document.getElementById('dash-de');const ate2b=document.getElementById('dash-ate');
-    if(de2&&de)de2.value=de?`${de.getFullYear()}-${String(de.getMonth()+1).padStart(2,'0')}-${String(de.getDate()).padStart(2,'0')}`:'';
-    if(ate2b&&ate)ate2b.value=ate?`${ate.getFullYear()}-${String(ate.getMonth()+1).padStart(2,'0')}-${String(ate.getDate()).padStart(2,'0')}`:'';
+    if(de2&&_savedDE)de2.value=_savedDE;
+    if(ate2b&&_savedATE)ate2b.value=_savedATE;
   },10);
 }
 function limparFiltroDash(){
@@ -3398,6 +3413,11 @@ function limparFiltroDash(){
 function filtrarEstoque(){
   const de=parseDate(document.getElementById('est-de')?.value);
   const ate=parseDate(document.getElementById('est-ate')?.value);
+  
+  // Grava valores ANTES de renderizar
+  const _savedDE=formatDate(de);
+  const _savedATE=formatDate(ate);
+  
   if(!de&&!ate){window._estoqueEstTemp=null;renderScreen('estoque');return;}
   const ate2=ate||new Date();
   window._estoqueEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
@@ -3405,6 +3425,12 @@ function filtrarEstoque(){
   const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
   if(lbl)lbl.textContent=de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
   renderScreen('estoque');
+  // Restaura com valores salvos (formato correto para input type="date")
+  setTimeout(()=>{
+    const de2=document.getElementById('est-de');const ate2b=document.getElementById('est-ate');
+    if(de2&&_savedDE)de2.value=_savedDE;
+    if(ate2b&&_savedATE)ate2b.value=_savedATE;
+  },10);
 }
 function limparFiltroEstoque(){
   window._estoqueEstTemp=null;
@@ -3475,6 +3501,7 @@ document.getElementById('ll-pwd').addEventListener('keydown',e=>{if(e.key==='Ent
   LOJAS_BASE.forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
 })();
 
+let _lastScreen = null;
 load().then(()=>{updateClock();});
 updateClock();
 setInterval(updateClock,1000);
