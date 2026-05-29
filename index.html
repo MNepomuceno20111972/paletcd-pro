@@ -718,9 +718,10 @@ let charts={};
 function save(){
   localStorage.setItem('paletcd_v4',JSON.stringify(S));
   if(_syncTimeout)clearTimeout(_syncTimeout);
+  // ✅ CORREÇÃO: delay reduzido de 2000ms para 500ms — minimiza janela de inconsistência
   _syncTimeout=setTimeout(async()=>{
-    if(_supaReady){const ok=await supaSave(S);if(!ok){_supaReady=false;updateSyncBadge();}}
-  },2000);
+    if(firebaseReady){const ok=await firebaseSave(S);if(!ok){console.warn('Falha ao salvar no Firebase');}}
+  },500);
 }
 
 // Garante que todas as áreas e modelos existem corretamente na estrutura de estoque
@@ -771,11 +772,6 @@ function parseDate(str){
   if(!str)return null;
   const[y,m,d]=str.split('-');return new Date(y,m-1,d);
 }
-function formatDate(date){
-  if(!date)return '';
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-}
-
 
 
 function fixEst(est){
@@ -818,8 +814,12 @@ function fixState(s){
 
 async function load(){
   const stored = localStorage.getItem('paletcd_v4');
+  let localState = null;
   if(stored) {
-    try { S = fixState(JSON.parse(stored)); }
+    try {
+      localState = fixState(JSON.parse(stored));
+      S = localState;
+    }
     catch(e) { console.error('Erro ao carregar localStorage'); }
   }
   
@@ -827,17 +827,33 @@ async function load(){
   await initFirebase();
   
   // Tenta carregar do Firebase primeiro, depois do GitHub
-  let data = null;
+  let remoteData = null;
   if(firebaseReady) {
-    data = await firebaseLoad();
+    remoteData = await firebaseLoad();
   }
-  if(!data) {
-    data = await githubLoad();
+  if(!remoteData) {
+    remoteData = await githubLoad();
   }
   
-  if(data) {
-    S = fixState(data);
-    localStorage.setItem('paletcd_v4', JSON.stringify(S));
+  if(remoteData) {
+    const localMovs  = localState?.movs?.length  || 0;
+    const remoteMovs = remoteData?.movs?.length  || 0;
+    const localNMov  = localState?.nMov  || 1;
+    const remoteNMov = remoteData?.nMov  || 1;
+
+    // Firebase só vence se tiver MAIS movimentos ou nMov maior que o local
+    // Isso evita que uma versão desatualizada do Firebase sobrescreva dados locais recentes
+    if(remoteMovs > localMovs || remoteNMov > localNMov) {
+      S = fixState(remoteData);
+      localStorage.setItem('paletcd_v4', JSON.stringify(S));
+      console.log(`Firebase venceu: remote ${remoteMovs} movs / local ${localMovs} movs`);
+    } else {
+      // Local é igual ou mais novo — sobe o local para o Firebase sincronizar
+      console.log(`Local venceu: local ${localMovs} movs / remote ${remoteMovs} movs`);
+      if(firebaseReady && localState && localMovs > 0) {
+        firebaseSave(S).catch(e=>console.warn('Erro ao sincronizar local→Firebase:',e));
+      }
+    }
   }
   
   setTimeout(()=>{
@@ -1555,7 +1571,7 @@ function doRetornoLoja(){
   const mov=addMov('Retorno de Loja',lojaNome(lojaDigito),'Triagem',lojaDigito,null,tot,user,v('rl-obs'),modelos,v('rl-data'));
   // salva NF no registro
   if(nf&&S.movs[0])S.movs[0].nf=nf;
-  syncEst();
+  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();
   toast(`✓ ${tot} paletes retornados → Triagem.${nf?' NF:'+nf:''}`);renderScreen('retorno-loja');
 }
@@ -1602,6 +1618,7 @@ function doDevolucao(){
   }
   MODELOS.forEach(m=>{const q=modelos[m]||0;S.est[area][m]=(S.est[area][m]||0)-q;S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+q;});
   addMov('Devolução Interna',area,'Triagem',null,null,tot,user,v('dev-obs'),modelos,v('dev-data'));
+  save(); // ✅ SEM syncEst() — delta direto
   toast(`✓ ${tot} paletes devolvidos → Triagem.`);renderScreen('devolucao');
 }
 
@@ -1712,22 +1729,23 @@ function rTriagem(el){
   </div>
   <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Triagens</span></div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Total</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
+    <thead><tr><th>Data</th><th>Triado</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>↩ Restante</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
     <tbody>${S.triagens.length?S.triagens.map((t,i)=>`<tr>
       <td class="td-mono">${t.data}</td>
       <td class="td-bold">${t.total}</td>
       <td style="color:var(--green);font-weight:700">${t.prontos}</td>
       <td style="color:var(--amber);font-weight:700">${t.reforma}</td>
       <td style="color:var(--red);font-weight:700">${t.descarte}</td>
+      <td style="color:${(t.restante||0)>0?'var(--orange)':'var(--text-light)'};font-weight:700">${t.restante||0}</td>
       <td style="max-width:220px;font-size:10px">${t.detModelos?Object.entries(t.detModelos).filter(([,v])=>v.op+v.ref+v.desc>0).map(([m,v])=>`<span style="white-space:nowrap">${MODELO_LABELS[m]?.replace('Palete ','').replace('Gaiola de Madeira','Gaiola')||m}: ✅${v.op} 🔧${v.ref} 🗑️${v.desc}</span>`).join(' · '):'—'}</td>
       <td>${t.usuario}</td>
       ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(${i},'triagem')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(${i},'triagem')" title="Excluir">🗑️</button></td>`:''}
-    </tr>`).join(''):emptyRow(canDelete()?8:7)}</tbody>
+    </tr>`).join(''):emptyRow(canDelete()?9:8)}</tbody>
   </table></div></div>`;
 }
 function calcTr(){
   const modelosNaFila=MODELOS.filter(m=>(S.est.TriagemFila[m]||0)>0);
-  let totOp=0,totRef=0,totDesc=0,allOk=true;
+  let totOp=0,totRef=0,totDesc=0;
   modelosNaFila.forEach(m=>{
     const fila=S.est.TriagemFila[m]||0;
     const op=parseInt(document.getElementById('tp-'+m)?.value)||0;
@@ -1738,9 +1756,10 @@ function calcTr(){
     const box=document.getElementById('tv-'+m);
     if(box){
       if(soma===fila&&fila>0){box.innerHTML='<span style="color:#1e8449;font-size:13px;">✓</span>';}
-      else if(soma>fila){box.innerHTML=`<span style="color:#922b21;font-size:10px;">+${soma-fila}</span>`;allOk=false;}
-      else if(soma>0){box.innerHTML=`<span style="color:#935116;font-size:10px;">${soma}/${fila}</span>`;allOk=false;}
-      else{box.innerHTML='';allOk=false;}
+      else if(soma>fila){box.innerHTML=`<span style="color:#922b21;font-size:10px;">+${soma-fila}</span>`;}
+      // ✅ CORREÇÃO: parcial não é erro — mostra em laranja como aviso, não bloqueia
+      else if(soma>0&&soma<fila){box.innerHTML=`<span style="color:#935116;font-size:10px;">${soma}/${fila} parcial</span>`;}
+      else{box.innerHTML='';}
     }
   });
   const elOp=document.getElementById('tot-op');if(elOp)elOp.textContent=totOp;
@@ -1750,13 +1769,13 @@ function calcTr(){
   if(totVal){
     const totFila=totalEst('TriagemFila');
     const soma=totOp+totRef+totDesc;
-    if(soma===totFila&&totFila>0&&allOk)totVal.innerHTML='<span style="color:#1e8449;">✓ OK</span>';
+    if(soma===totFila&&totFila>0)totVal.innerHTML='<span style="color:#1e8449;">✓ OK</span>';
     else if(soma>totFila)totVal.innerHTML=`<span style="color:#922b21;">✗ +${soma-totFila}</span>`;
-    else totVal.innerHTML=`<span style="color:#935116;">${soma}/${totFila}</span>`;
+    else if(soma>0)totVal.innerHTML=`<span style="color:#935116;">${soma}/${totFila} parcial</span>`;
+    else totVal.innerHTML='';
   }
 }
 function doTriagem(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
   if(CU.role !== 'adm' && CU.role !== 'rev') {
     return toast('❌ Lançamentos apenas no DESKTOP!','err');
   }
@@ -1766,30 +1785,48 @@ function doTriagem(){
   if(!user)return toast('Informe o usuário.','err');
   const modelosNaFila=MODELOS.filter(m=>(S.est.TriagemFila[m]||0)>0);
   const prontos={},reforma={},descarte={},detModelos={};
-  let tp=0,tr=0,td=0;
+  let tp=0,tr=0,td=0,ttriado=0;
   for(const m of modelosNaFila){
     const fila=S.est.TriagemFila[m]||0;
     const p=parseInt(document.getElementById('tp-'+m)?.value)||0;
     const r=parseInt(document.getElementById('tr-'+m)?.value)||0;
     const d=parseInt(document.getElementById('td-'+m)?.value)||0;
-    if(p+r+d!==fila)return toast(`${MODELO_LABELS[m]}: soma (${p+r+d}) ≠ fila (${fila}).`,'err');
+    const soma=p+r+d;
+    // ✅ CORREÇÃO: permite parcial (soma <= fila), bloqueia apenas excesso
+    if(soma>fila)return toast(`${MODELO_LABELS[m]}: total (${soma}) excede a fila (${fila}).`,'err');
     prontos[m]=p;reforma[m]=r;descarte[m]=d;
     detModelos[m]={op:p,ref:r,desc:d};
-    tp+=p;tr+=r;td+=d;
+    tp+=p;tr+=r;td+=d;ttriado+=soma;
   }
-  // Aplica ao estoque
+  if(ttriado===0)return toast('Informe ao menos uma quantidade para triar.','err');
+
+  // ✅ CORREÇÃO: aplica ao estoque SEM syncEst() — apenas delta direto
   modelosNaFila.forEach(m=>{
-    S.est.TriagemFila[m]=0;
+    const triado=(prontos[m]||0)+(reforma[m]||0)+(descarte[m]||0);
+    // Diminui a fila apenas pelo que foi triado (parcial é válido)
+    S.est.TriagemFila[m]=Math.max(0,(S.est.TriagemFila[m]||0)-triado);
     S.est.REV[m]=(S.est.REV[m]||0)+(prontos[m]||0);
     S.est.ReformaFila[m]=(S.est.ReformaFila[m]||0)+(reforma[m]||0);
+    // descarte some da fila (já subtraído acima) sem ir a lugar nenhum
   });
+
   if(tp>0)addMov('Triagem','Triagem','REV',null,null,tp,user,`Triagem: ${tp} operação`,prontos,v('tr-data'));
   if(tr>0)addMov('Triagem','Triagem','Fila Reforma',null,null,tr,user,'',reforma,v('tr-data'));
   if(td>0)addMov('Descarte','Triagem','Descartado',null,null,td,user,'',descarte,v('tr-data'));
-  S.triagens.unshift({data:v('tr-data')||hoje(),total:totFila,prontos:tp,reforma:tr,descarte:td,detModelos,usuario:user});
-  syncEst();
+
+  const restante=totFila-ttriado;
+  S.triagens.unshift({
+    data:v('tr-data')||hoje(),
+    total:ttriado,
+    prontos:tp,reforma:tr,descarte:td,
+    restante,
+    detModelos,
+    usuario:user
+  });
+  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();
-  toast(`✓ Triagem: ${tp} operação | ${tr} reforma | ${td} descarte.`);
+  const msgRestante=restante>0?` | Restam ${restante} na fila`:'';
+  toast(`✓ Triagem: ${tp} operação | ${tr} reforma | ${td} descarte${msgRestante}.`);
   renderScreen('triagem');
 }
 
@@ -1960,7 +1997,7 @@ function confirmarRetornoReforma(){
     totalDistribuido+=retMFinal;
   });
   addMov('Retorno de Reforma',ref.fornNome,'REV',null,ref.fornId,qtd,CU?.nome||'Sistema',obs,modelosRetorno,document.getElementById('mref-data')?.value||null);
-  syncEst();
+  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();
   toast(`✓ ${qtd} paletes retornados → REV.`);
   closeModal('modal-retorno');
@@ -2282,7 +2319,7 @@ function doDevolucaoLoja(){
   const lNome=lojaNome(lojaDigito);
   const obs=motivo+(v('dl-obs')?' — '+v('dl-obs'):'');
   addMov('Retorno de Loja',lNome,'Triagem',lojaDigito,null,tot,user,obs,modelos,v('dl-data'));
-  syncEst();
+  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();
   toast(`✓ ${tot} paletes devolvidos → Fila de Triagem.`);
   renderScreen('devolucao-loja');
@@ -2579,7 +2616,7 @@ function confirmarPagForn(){
     S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-qAbate);
   });
   addMov('Pagamento Fornecedor',r.fornecedor,'Fornecedor',null,null,qtd,CU.nome,obs,r.modelos);
-  syncEst();
+  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();toast(`✓ Pagamento de ${qtd} paletes registrado → saiu da REV.`);closeModal('modal-retorno');renderScreen('receb-forn');
 }
 
@@ -3149,7 +3186,6 @@ function renderAjusteModelos(){
   const ac=document.getElementById('aj-actions');if(ac)ac.style.display='flex';
 }
 function salvarAjuste(){
-  // ✅ NOVO: Proteção - lançamentos apenas no DESKTOP
   if(CU.role !== 'adm' && CU.role !== 'rev') {
     return toast('❌ Ajustes apenas no DESKTOP!','err');
   }
@@ -3160,7 +3196,16 @@ function salvarAjuste(){
     const el=document.getElementById('aj-'+m);
     if(el)S.est[area][m]=Math.max(0,parseInt(el.value)||0);
   });
-  save();toast(`✓ Estoque de "${area}" ajustado com sucesso!`);
+  save();
+  // Força sincronização imediata com Firebase após ajuste manual
+  if(firebaseReady){
+    firebaseSave(S).then(ok=>{
+      if(ok)toast(`✓ Estoque de "${area}" ajustado e sincronizado com a nuvem!`);
+      else toast(`✓ Estoque de "${area}" ajustado (salvo localmente).`);
+    }).catch(()=>toast(`✓ Estoque de "${area}" ajustado.`));
+  } else {
+    toast(`✓ Estoque de "${area}" ajustado com sucesso!`);
+  }
   renderAjusteModelos();
 }
 function excluirTriagem(idx,screen){
@@ -3372,24 +3417,24 @@ function excluirAbertura(id){
 function filtrarDashboard(){
   const de=parseDate(document.getElementById('dash-de')?.value);
   const ate=parseDate(document.getElementById('dash-ate')?.value);
-  
-  const _savedDE=formatDate(de);
-  const _savedATE=formatDate(ate);
-  
   if(!de&&!ate)return renderScreen('dashboard');
+  // Recalcula com período
   const ate2=ate||new Date();
   const estFiltrado=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
+  // Atualiza label
   const lbl=document.getElementById('dash-periodo-label');
   if(lbl){
     const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     lbl.textContent=de?`Saldo em ${fmt(ate2)} (de ${fmt(de)} até ${fmt(ate2)})`:`Saldo até ${fmt(ate2)}`;
   }
+  // Recarrega tela com estoque filtrado (temporário)
   window._dashEstTemp=estFiltrado;
   renderScreen('dashboard');
+  // Restaura filtro depois (renderScreen limpa os campos)
   setTimeout(()=>{
     const de2=document.getElementById('dash-de');const ate2b=document.getElementById('dash-ate');
-    if(de2&&_savedDE)de2.value=_savedDE;
-    if(ate2b&&_savedATE)ate2b.value=_savedATE;
+    if(de2&&de)de2.value=document.getElementById('dash-de')?._lastVal||'';
+    if(ate2b&&ate)ate2b.value=document.getElementById('dash-ate')?._lastVal||'';
   },10);
 }
 function limparFiltroDash(){
@@ -3403,10 +3448,6 @@ function limparFiltroDash(){
 function filtrarEstoque(){
   const de=parseDate(document.getElementById('est-de')?.value);
   const ate=parseDate(document.getElementById('est-ate')?.value);
-  
-  const _savedDE=formatDate(de);
-  const _savedATE=formatDate(ate);
-  
   if(!de&&!ate){window._estoqueEstTemp=null;renderScreen('estoque');return;}
   const ate2=ate||new Date();
   window._estoqueEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
@@ -3414,11 +3455,6 @@ function filtrarEstoque(){
   const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
   if(lbl)lbl.textContent=de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
   renderScreen('estoque');
-  setTimeout(()=>{
-    const de2=document.getElementById('est-de');const ate2b=document.getElementById('est-ate');
-    if(de2&&_savedDE)de2.value=_savedDE;
-    if(ate2b&&_savedATE)ate2b.value=_savedATE;
-  },10);
 }
 function limparFiltroEstoque(){
   window._estoqueEstTemp=null;
@@ -3489,7 +3525,6 @@ document.getElementById('ll-pwd').addEventListener('keydown',e=>{if(e.key==='Ent
   LOJAS_BASE.forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
 })();
 
-let _lastScreen = null;
 load().then(()=>{updateClock();});
 updateClock();
 setInterval(updateClock,1000);
