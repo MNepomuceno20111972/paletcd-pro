@@ -845,7 +845,7 @@ async function load(){
     // Isso evita que uma versão desatualizada do Firebase sobrescreva dados locais recentes
     if(remoteMovs > localMovs || remoteNMov > localNMov) {
   S = fixState(remoteData);
-  syncEst();  // ← adiciona esta linha
+  // ← sem syncEst() aqui
   localStorage.setItem('paletcd_v4', JSON.stringify(S));
       console.log(`Firebase venceu: remote ${remoteMovs} movs / local ${localMovs} movs`);
     } else {
