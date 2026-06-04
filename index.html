@@ -844,8 +844,9 @@ async function load(){
     // Firebase só vence se tiver MAIS movimentos ou nMov maior que o local
     // Isso evita que uma versão desatualizada do Firebase sobrescreva dados locais recentes
     if(remoteMovs > localMovs || remoteNMov > localNMov) {
-      S = fixState(remoteData);
-      localStorage.setItem('paletcd_v4', JSON.stringify(S));
+  S = fixState(remoteData);
+  syncEst();  // ← adiciona esta linha
+  localStorage.setItem('paletcd_v4', JSON.stringify(S));
       console.log(`Firebase venceu: remote ${remoteMovs} movs / local ${localMovs} movs`);
     } else {
       // Local é igual ou mais novo — sobe o local para o Firebase sincronizar
