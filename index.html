@@ -460,37 +460,34 @@ textarea.form-control{resize:vertical;min-height:60px;}
 <script>
 
 // ═══════════════════════════════════════════════════════
-// GITHUB CONFIG - Backup e Sincronização
+// SYNC v2 — GRANULAR + TEMPO REAL (Firebase RTDB)
+// ───────────────────────────────────────────────────────
+// Fim do blob único com last-write-wins:
+//  • Cada registro (mov, triagem, reforma, débito, fornecedor,
+//    abertura) é um NÓ FILHO próprio em palet_app/v2.
+//  • Estoque sincroniza por DELTA via transaction → comutativo:
+//    dois dispositivos lançando ao mesmo tempo SOMAM, nunca
+//    se sobrescrevem.
+//  • Exclusão remove apenas o nó do registro → nunca ressuscita.
+//  • Alterações offline ficam pendentes (diff entre S e o último
+//    estado confirmado) e são reenviadas automaticamente, mesmo
+//    depois de fechar e reabrir o navegador.
+//  • Listener em tempo real mantém todos os dispositivos iguais.
 // ═══════════════════════════════════════════════════════
 const GITHUB_OWNER = 'MNepomuceno20111972';
 const GITHUB_REPO = 'paletcd-controle-de-paletes';
 const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN = ''; // Deixar vazio - usar raw.githubusercontent.com
 const GITHUB_FILE = 'paletcd_backup.json';
 
+// Usado SOMENTE como fonte alternativa na migração legada
 async function githubLoad() {
   try {
     const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${GITHUB_FILE}`;
     const resp = await fetch(url);
-    if(resp.ok) {
-      const data = await resp.json();
-      console.log('✓ Dados carregados do GitHub');
-      return data;
-    }
-  } catch(e) {
-    console.log('GitHub indisponível, usando localStorage');
-  }
+    if(resp.ok) return await resp.json();
+  } catch(e) {}
   return null;
 }
-
-async function githubSave(data) {
-  console.log('💾 Dados salvos localmente (GitHub requer push manual)');
-  return false;
-}
-const SUPA_URL='https://pbjggmxbfkudnsfkaxqw.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiamdnbXhiZmt1ZG5zZmtheHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NDIyODYsImV4cCI6MjA5MjIxODI4Nn0.mx0KHCs81eGYN8NJycIfYnhjquwz0mPRSgPeESiDSzg';
-const SUPA_TABLE='paletcd_state';
-const SUPA_ID='main';
 
 // ═══════════════════════════════════════════════════════
 // FIREBASE CONFIGURATION
@@ -505,15 +502,26 @@ const FIREBASE_CONFIG = {
   appId: "1:431517046970:web:e03e0ff01e1b898275ca83"
 };
 
+const V2_PATH = 'palet_app/v2';
+const LEGACY_BLOB = 'palet_app/state';
+const LS_KEY = 'paletcd_v4';
+const LS_SYNCED = 'paletcd_v4_synced';
+const COLECOES = ['movs','triagens','reformas','recebForn','forns','aberturaDiaria'];
+const CONTADORES = ['nMov','nRef','nSol','nForn','nRecForn'];
+
 let db = null;
 let firebaseReady = false;
 let _firebaseInitPromise = null;
-let _supaReady = false;
 let _syncTimeout = null;
+let _cloudOK = false;        // conectado à nuvem
+let _dirty = false;          // há alterações locais não confirmadas
+let _syncing = false;        // syncDiff em andamento
+let _applyingRemote = false; // aplicando snapshot remoto em S
+let _currentScreen = null;   // tela atual (para re-render seguro)
 
 async function initFirebase() {
   if(_firebaseInitPromise) return _firebaseInitPromise;
-  
+
   _firebaseInitPromise = new Promise((resolve) => {
     const checkFirebase = setInterval(() => {
       if(typeof firebase !== 'undefined' && firebase.initializeApp) {
@@ -524,7 +532,6 @@ async function initFirebase() {
           }
           db = firebase.database();
           firebaseReady = true;
-          _supaReady = true;
           console.log("✓ Firebase inicializado");
           resolve(true);
         } catch(e) {
@@ -534,7 +541,7 @@ async function initFirebase() {
         }
       }
     }, 100);
-    
+
     setTimeout(() => {
       clearInterval(checkFirebase);
       if(!firebaseReady) {
@@ -543,62 +550,267 @@ async function initFirebase() {
       }
     }, 8000);
   });
-  
+
   return _firebaseInitPromise;
 }
 
-async function firebaseLoad() {
+// Leitura do blob legado (apenas para migração única)
+async function firebaseLoadLegacy() {
   if(!firebaseReady || !db) return null;
   try {
-    const snapshot = await db.ref('palet_app/state').once('value');
-    const data = snapshot.val();
-    if(data) console.log("✓ Dados carregados do Firebase");
-    return data;
+    const snapshot = await db.ref(LEGACY_BLOB).once('value');
+    return snapshot.val();
   } catch(err) {
-    console.error("Erro ao carregar do Firebase:", err);
+    console.error("Erro ao ler blob legado:", err);
     return null;
   }
 }
 
-async function firebaseSave(data) {
-  if(!firebaseReady || !db) return false;
-  try {
-    await db.ref('palet_app/state').set({
-      ...data,
-      lastSync: new Date().toISOString()
+// ── Helpers do motor de sync ───────────────────────────
+function fbKey(s){return String(s).replace(/[.#$\[\]\/]/g,'_');}
+function movNum(id){const m=String(id||'').match(/(\d+)(?:-[A-Z0-9]+)?$/i);return m?parseInt(m[1],10):0;}
+// JSON normalizado: chaves ordenadas, sem null/undefined → comparação estável
+function normJson(o){
+  if(o===null||o===undefined)return undefined;
+  if(Array.isArray(o)){return o.map(x=>{const v=normJson(x);return v===undefined?null:v;});}
+  if(typeof o==='object'){
+    const r={};
+    Object.keys(o).sort().forEach(k=>{const v=normJson(o[k]);if(v!==undefined)r[k]=v;});
+    return r;
+  }
+  return o;
+}
+function normStr(o){const n=normJson(o);return n===undefined?'null':JSON.stringify(n);}
+function cleanFb(o){return JSON.parse(JSON.stringify(o===undefined?null:o));} // remove undefined p/ Firebase
+function snapState(){return JSON.parse(JSON.stringify(S));}
+function loadSynced(){
+  try{const s=localStorage.getItem(LS_SYNCED);return s?JSON.parse(s):null;}catch(e){return null;}
+}
+function saveSynced(snap){
+  try{localStorage.setItem(LS_SYNCED,JSON.stringify(snap));}catch(e){}
+}
+
+// ── Diff puro: o que mudou entre o estado atual e o último
+//    confirmado na nuvem (testável isoladamente) ─────────
+function computarDiffs(atual,base){
+  base=base||{};
+  const updates={};   // alterações + remoções (multi-path update)
+  const novos=[];     // registros novos: [colecao, registro] (gravados com proteção anticolisão)
+  const contDiff=[];  // contadores a elevar via transaction
+  const estDeltas=[]; // [area, modelo, delta] via transaction
+  COLECOES.forEach(c=>{
+    const loc=(atual[c]||[]).filter(x=>x&&x.id);
+    const rem=(base[c]||[]).filter(x=>x&&x.id);
+    const lmap=new Map(loc.map(x=>[String(x.id),x]));
+    const rmap=new Map(rem.map(x=>[String(x.id),x]));
+    lmap.forEach((x,id)=>{
+      const old=rmap.get(id);
+      if(!old)novos.push([c,x]);
+      else if(normStr(old)!==normStr(x))updates[`${c}/${fbKey(id)}`]=cleanFb(x);
     });
-    console.log("✓ Dados salvos no Firebase");
+    rmap.forEach((x,id)=>{if(!lmap.has(id))updates[`${c}/${fbKey(id)}`]=null;});
+  });
+  ['senhas','fornNomes','solics'].forEach(k=>{
+    if(normStr(atual[k])!==normStr(base[k]))updates[k]=cleanFb(atual[k]===undefined?null:atual[k]);
+  });
+  if(!!atual.modoMigracao!==!!base.modoMigracao)updates['meta/modoMigracao']=!!atual.modoMigracao;
+  CONTADORES.forEach(c=>{
+    const lv=atual[c]||1;
+    if(lv!==(base[c]||1))contDiff.push([c,lv]);
+  });
+  const areas=new Set([...Object.keys(atual.est||{}),...Object.keys(base.est||{})]);
+  areas.forEach(a=>{
+    const mods=new Set([...Object.keys(atual.est?.[a]||{}),...Object.keys(base.est?.[a]||{})]);
+    mods.forEach(m=>{
+      const delta=(atual.est?.[a]?.[m]||0)-(base.est?.[a]?.[m]||0);
+      if(delta!==0)estDeltas.push([a,m,delta]);
+    });
+  });
+  return {updates,novos,contDiff,estDeltas};
+}
+
+// Grava registro NOVO sem sobrescrever id já existente
+// (colisão de contador entre dispositivos offline)
+async function pushNovo(colecao,reg,atualSnap){
+  const ref=db.ref(`${V2_PATH}/${colecao}/${fbKey(reg.id)}`);
+  const res=await ref.transaction(cur=>cur===null?cleanFb(reg):undefined);
+  if(res.committed)return reg.id;
+  const existente=res.snapshot?res.snapshot.val():null;
+  if(normStr(existente)===normStr(reg))return reg.id; // retry do mesmo registro
+  // Colisão real: renumera localmente e grava com novo id
+  const antigo=reg.id;
+  const novoId=antigo+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  console.warn(`⚠ Colisão de ID ${antigo} → renumerado para ${novoId}`);
+  const noS=(S[colecao]||[]).find(o=>o&&o.id===antigo&&normStr(o)===normStr(reg));
+  if(noS)noS.id=novoId;
+  const noSnap=(atualSnap[colecao]||[]).find(o=>o&&o.id===antigo);
+  if(noSnap)noSnap.id=novoId;
+  reg.id=novoId;
+  await db.ref(`${V2_PATH}/${colecao}/${fbKey(novoId)}`).set(cleanFb(reg));
+  try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
+  return novoId;
+}
+
+// ── Núcleo: envia apenas o que mudou ───────────────────
+async function syncDiff(){
+  if(!firebaseReady||!db){updateSyncBadge();return false;}
+  if(_syncing){_dirty=true;return false;}
+  _syncing=true;
+  updateSyncBadge();
+  try{
+    const atual=snapState();
+    const base=loadSynced()||{};
+    const {updates,novos,contDiff,estDeltas}=computarDiffs(atual,base);
+
+    if(Object.keys(updates).length){
+      await db.ref(V2_PATH).update(updates);
+    }
+    for(const [c,reg] of novos){
+      await pushNovo(c,reg,atual);
+    }
+    for(const [c,lv] of contDiff){
+      await db.ref(`${V2_PATH}/counters/${c}`).transaction(cur=>Math.max(cur||1,lv));
+    }
+    await Promise.all(estDeltas.map(([a,m,delta])=>
+      db.ref(`${V2_PATH}/est/${fbKey(a)}/${fbKey(m)}`)
+        .transaction(cur=>Math.max(0,(cur||0)+delta))
+    ));
+
+    saveSynced(atual);
+    _dirty=normStr(snapState())!==normStr(atual); // mudou algo durante o envio?
+    _cloudOK=true;
+    updateSyncBadge();
+    if(_dirty){scheduleSync(200);}
+    else{
+      // Alinha S com o estado remoto consolidado (pega merges de outros dispositivos)
+      db.ref(V2_PATH).once('value').then(s2=>applyRemote(s2.val())).catch(()=>{});
+    }
+    console.log(`✓ Sync v2: ${Object.keys(updates).length} alterações, ${novos.length} novos, ${estDeltas.length} deltas de estoque`);
     return true;
-  } catch(err) {
-    console.error("Erro ao salvar no Firebase:", err);
+  }catch(e){
+    console.error('Erro syncDiff:',e);
+    _cloudOK=false;
+    updateSyncBadge();
     return false;
+  }finally{
+    _syncing=false;
   }
 }
 
-async function supaCheck(){return false;}
-
-async function supaLoad(){
-  const data = await githubLoad();
-  if(firebaseReady) {
-    const fbData = await firebaseLoad();
-    if(fbData) return fbData;
+function scheduleSync(ms){
+  if(_syncTimeout)clearTimeout(_syncTimeout);
+  _syncTimeout=setTimeout(()=>{syncDiff();},ms==null?400:ms);
+}
+function flushSync(){
+  if(_dirty&&firebaseReady){
+    if(_syncTimeout)clearTimeout(_syncTimeout);
+    syncDiff();
   }
-  return data;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSync();});
+window.addEventListener('beforeunload',flushSync);
+window.addEventListener('online',()=>{if(_dirty)scheduleSync(300);});
+
+// ── Conversão nuvem v2 → estado S ──────────────────────
+function colToArr(obj,sortFn){
+  if(!obj)return[];
+  const arr=Object.values(obj).filter(x=>x&&typeof x==='object');
+  if(sortFn)arr.sort(sortFn);
+  return arr;
+}
+function fromV2(v2){
+  v2=v2||{};
+  const s={};
+  s.movs=colToArr(v2.movs,(a,b)=>movNum(b.id)-movNum(a.id));
+  s.triagens=colToArr(v2.triagens,(a,b)=>(b._seq||0)-(a._seq||0));
+  s.reformas=colToArr(v2.reformas,(a,b)=>movNum(b.id)-movNum(a.id));
+  s.recebForn=colToArr(v2.recebForn,(a,b)=>movNum(b.id)-movNum(a.id));
+  s.forns=colToArr(v2.forns,(a,b)=>movNum(a.id)-movNum(b.id));
+  s.aberturaDiaria=colToArr(v2.aberturaDiaria,(a,b)=>movNum(b.id)-movNum(a.id));
+  s.fornNomes=Array.isArray(v2.fornNomes)?v2.fornNomes:Object.values(v2.fornNomes||{});
+  s.solics=Array.isArray(v2.solics)?v2.solics:Object.values(v2.solics||{});
+  if(v2.senhas)s.senhas=v2.senhas;
+  s.est={};
+  Object.keys(v2.est||{}).forEach(a=>{s.est[a]=Object.assign({},v2.est[a]);});
+  CONTADORES.forEach(c=>{s[c]=(v2.counters&&v2.counters[c])||1;});
+  s.modoMigracao=!!(v2.meta&&v2.meta.modoMigracao);
+  return fixState(s);
 }
 
-async function supaSave(data){
-  if(firebaseReady) {
-    const ok = await firebaseSave(data);
-    if(ok) return true;
+// ── Aplicação de snapshot remoto (tempo real) ──────────
+function applyRemote(v2){
+  if(!v2)return;
+  if(_dirty||_syncing)return; // pendências locais primeiro; convergimos após o sync
+  _applyingRemote=true;
+  try{
+    const novo=fromV2(v2);
+    CONTADORES.forEach(c=>{novo[c]=Math.max(novo[c]||1,S[c]||1);}); // ids já alocados localmente
+    const mudou=normStr(novo)!==normStr(S);
+    S=novo;
+    try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
+    saveSynced(snapState());
+    _cloudOK=true;
+    updateSyncBadge();
+    if(mudou&&CU){
+      renderBannerMigracao();
+      const telasLeitura=['dashboard','estoque','movimentacoes','saldo-forn','minha-area','loja-dash','loja-hist'];
+      if(telasLeitura.includes(_currentScreen))renderScreen(_currentScreen);
+    }
+  }finally{
+    _applyingRemote=false;
   }
-  return githubSave(data);
+}
+
+function attachRealtime(){
+  if(!firebaseReady||!db)return;
+  db.ref(V2_PATH).on('value',
+    snap=>{applyRemote(snap.val());},
+    err=>{console.warn('Listener desconectado:',err);_cloudOK=false;updateSyncBadge();}
+  );
+  db.ref('.info/connected').on('value',s=>{
+    const on=!!s.val();
+    _cloudOK=on&&firebaseReady;
+    updateSyncBadge();
+    if(on&&_dirty)scheduleSync(300);
+  });
+}
+
+// ── Migração única: blob legado → v2 granular ──────────
+async function migrarParaV2(localState){
+  // Reivindica a migração atomicamente (evita 2 dispositivos migrando juntos)
+  const claim=await db.ref(`${V2_PATH}/meta/migrated`).transaction(cur=>cur===null?true:undefined);
+  if(!claim.committed)return null; // outro dispositivo está migrando
+  let fonte=await firebaseLoadLegacy();
+  if(!fonte)fonte=await githubLoad();
+  if(!fonte)fonte=localState;
+  if(!fonte)fonte={};
+  fonte=fixState(JSON.parse(JSON.stringify(fonte)));
+  const updates={};
+  COLECOES.forEach(c=>{(fonte[c]||[]).forEach(x=>{if(x&&x.id)updates[`${c}/${fbKey(x.id)}`]=cleanFb(x);});});
+  updates['senhas']=cleanFb(fonte.senhas);
+  updates['fornNomes']=cleanFb(fonte.fornNomes||[]);
+  updates['solics']=cleanFb(fonte.solics||[]);
+  CONTADORES.forEach(c=>{updates[`counters/${c}`]=fonte[c]||1;});
+  updates['meta/modoMigracao']=!!fonte.modoMigracao;
+  updates['est']=cleanFb(fixEst(fonte.est));
+  await db.ref(V2_PATH).update(updates);
+  console.log('✓ Migração v2 concluída — dados granulares na nuvem');
+  return fonte;
 }
 
 function updateSyncBadge(){
   const b=document.getElementById('sync-badge');
   if(!b)return;
-  b.innerHTML=_supaReady?'☁️ <span style="color:#1e8449;font-weight:700">Nuvem</span>':'💾 <span style="color:#935116;font-weight:700">Local</span>';
-  b.title=_supaReady?'Conectado ao Supabase':'Sem conexão — dados salvos localmente';
+  if(_cloudOK&&!_dirty&&!_syncing){
+    b.innerHTML='☁️ <span style="color:#1e8449;font-weight:700">Nuvem</span>';
+    b.title='Sincronizado em tempo real (Firebase v2)';
+  }else if(firebaseReady&&(_dirty||_syncing)){
+    b.innerHTML='🔄 <span style="color:#935116;font-weight:700">Enviando…</span>';
+    b.title='Enviando alterações para a nuvem';
+  }else{
+    b.innerHTML='💾 <span style="color:#935116;font-weight:700">Local</span>';
+    b.title='Sem conexão — alterações guardadas e reenviadas ao reconectar';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -716,19 +928,28 @@ let currentRefId=null;
 let charts={};
 
 function save(){
-  localStorage.setItem('paletcd_v4',JSON.stringify(S));
-  if(_syncTimeout)clearTimeout(_syncTimeout);
-  // ✅ CORREÇÃO: delay reduzido de 2000ms para 500ms — minimiza janela de inconsistência
-  _syncTimeout=setTimeout(async()=>{
-    if(firebaseReady){const ok=await firebaseSave(S);if(!ok){console.warn('Falha ao salvar no Firebase');}}
-  },500);
+  if(_applyingRemote)return; // nunca salvar durante aplicação de snapshot remoto
+  localStorage.setItem(LS_KEY,JSON.stringify(S));
+  _dirty=true;
+  updateSyncBadge();
+  scheduleSync(400); // envia apenas o DIFF (deltas + nós alterados), nunca o blob inteiro
 }
 
 // Garante que todas as áreas e modelos existem corretamente na estrutura de estoque
 
 function calcEst(movs){
   const est=emptyEst();
-  const s=[...movs].sort((a,b)=>{try{const[da,ma,ya]=(a.ts||'').split(',')[0].split('/');const[db,mb,yb]=(b.ts||'').split(',')[0].split('/');return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);}catch(e){return 0;}});
+  // ✅ FIX: mesmo dia ordenado pela sequência de lançamento (nº do MOV).
+  // Antes, o sort estável preservava a ordem do array (unshift = mais novo
+  // primeiro), processando o mesmo dia em ordem INVERSA e distorcendo
+  // saldos de período por causa dos clamps em zero.
+  const s=[...movs].sort((a,b)=>{
+    let da=0,dbb=0;
+    try{const[d1,m1,y1]=(a.ts||'').split(',')[0].split('/');da=new Date(y1,m1-1,d1).getTime()||0;}catch(e){}
+    try{const[d2,m2,y2]=(b.ts||'').split(',')[0].split('/');dbb=new Date(y2,m2-1,d2).getTime()||0;}catch(e){}
+    if(da!==dbb)return da-dbb;
+    return movNum(a.id)-movNum(b.id);
+  });
   s.forEach(m=>{const mds=m.modelos||{};
     switch(m.tipo){
       case 'Compra':MODELOS.forEach(k=>{est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
@@ -809,54 +1030,78 @@ function fixState(s){
   if(!s.nRecForn||s.nRecForn<1)s.nRecForn=1;
   if(s.modoMigracao===undefined)s.modoMigracao=false;
   if(!s.aberturaDiaria)s.aberturaDiaria=[];
+  // ✅ v2: triagens precisam de id próprio para virar nó na nuvem
+  (s.triagens||[]).forEach((t,i)=>{
+    if(!t.id)t.id='TRI-L'+String(s.triagens.length-i).padStart(5,'0');
+    if(t._seq===undefined)t._seq=s.triagens.length-i;
+  });
   return s;
 }
 
 async function load(){
-  const stored = localStorage.getItem('paletcd_v4');
+  // 1) Estado local (cache offline)
+  const stored = localStorage.getItem(LS_KEY);
   let localState = null;
   if(stored) {
-    try {
-      localState = fixState(JSON.parse(stored));
-      S = localState;
-    }
+    try { localState = fixState(JSON.parse(stored)); S = localState; }
     catch(e) { console.error('Erro ao carregar localStorage'); }
   }
-  
-  // Inicializa Firebase
-  await initFirebase();
-  
-  // Tenta carregar do Firebase primeiro, depois do GitHub
-  let remoteData = null;
-  if(firebaseReady) {
-    remoteData = await firebaseLoad();
-  }
-  if(!remoteData) {
-    remoteData = await githubLoad();
-  }
-  
-  if(remoteData) {
-    const localMovs  = localState?.movs?.length  || 0;
-    const remoteMovs = remoteData?.movs?.length  || 0;
-    const localNMov  = localState?.nMov  || 1;
-    const remoteNMov = remoteData?.nMov  || 1;
+  const synced = loadSynced();
 
-    // Firebase só vence se tiver MAIS movimentos ou nMov maior que o local
-    // Isso evita que uma versão desatualizada do Firebase sobrescreva dados locais recentes
-    if(remoteMovs > localMovs || remoteNMov > localNMov) {
-  S = fixState(remoteData);
-  // ← sem syncEst() aqui
-  localStorage.setItem('paletcd_v4', JSON.stringify(S));
-      console.log(`Firebase venceu: remote ${remoteMovs} movs / local ${localMovs} movs`);
-    } else {
-      // Local é igual ou mais novo — sobe o local para o Firebase sincronizar
-      console.log(`Local venceu: local ${localMovs} movs / remote ${remoteMovs} movs`);
-      if(firebaseReady && localState && localMovs > 0) {
-        firebaseSave(S).catch(e=>console.warn('Erro ao sincronizar local→Firebase:',e));
+  // 2) Nuvem
+  await initFirebase();
+  if(firebaseReady) {
+    try {
+      let snap = await db.ref(V2_PATH).once('value');
+      let v2 = snap.val();
+      const temDados = x => !!(x && (x.counters || x.est || x.movs));
+
+      if(!temDados(v2)) {
+        // Primeira execução do v2: migra o blob legado (ou os dados locais)
+        const migrado = await migrarParaV2(localState);
+        if(migrado) { S = migrado; }
+        else {
+          // Outro dispositivo está migrando agora — aguarda os dados
+          for(let i = 0; i < 10; i++) {
+            await new Promise(r => setTimeout(r, 800));
+            snap = await db.ref(V2_PATH).once('value');
+            v2 = snap.val();
+            if(temDados(v2)) break;
+          }
+          if(temDados(v2)) S = fromV2(v2);
+        }
+        localStorage.setItem(LS_KEY, JSON.stringify(S));
+        saveSynced(snapState());
+      } else {
+        // 3) Alterações offline pendentes? Sobem ANTES de aceitar o remoto.
+        //    (deltas de estoque + nós alterados — nada se perde, nada ressuscita)
+        const pendente = localState && synced && normStr(localState) !== normStr(synced);
+        if(pendente) {
+          console.log('↻ Reenviando alterações offline pendentes…');
+          _dirty = true;
+          await syncDiff();
+          snap = await db.ref(V2_PATH).once('value');
+          v2 = snap.val();
+        } else if(localState && !synced && localState.movs && localState.movs.length) {
+          // localStorage pré-v2: a nuvem v2 (migrada do blob) é a verdade.
+          // Empurrar este estado antigo por cima duplicaria/ressuscitaria dados.
+          console.warn('Estado local pré-v2 ignorado em favor do v2 remoto. Use Exportar/Importar Backup se precisar resgatar algo.');
+        }
+        S = fromV2(v2);
+        localStorage.setItem(LS_KEY, JSON.stringify(S));
+        saveSynced(snapState());
       }
+      attachRealtime();
+      _cloudOK = true;
+    } catch(e) {
+      console.error('Erro ao carregar da nuvem:', e);
+      _cloudOK = false;
+      // Sem nuvem: opera local; diffs pendentes sobem na próxima conexão
+      if(localState && synced && normStr(localState) !== normStr(synced)) _dirty = true;
     }
   }
-  
+  updateSyncBadge();
+
   setTimeout(()=>{
     const div = document.getElementById('supa-loading');
     if(div) div.remove();
@@ -890,8 +1135,10 @@ function addMov(tipo,origem,destino,loja,forn,qtd,usuario,obs,modelos,dataForm){
   } else {
     ts=new Date().toLocaleString('pt-BR');
   }
-  S.movs.unshift({id,tipo,origem,destino,loja:loja||'',forn:forn||'',qtd,usuario,obs:obs||'',modelos:modelos||null,ts});
+  const mov={id,tipo,origem,destino,loja:loja||'',forn:forn||'',qtd,usuario,obs:obs||'',modelos:modelos||null,ts};
+  S.movs.unshift(mov);
   save();
+  return mov; // ✅ FIX: retorna o registro criado
 }
 
 function parseModelos(){
@@ -1195,6 +1442,7 @@ function navigate(screen){
 // RENDER
 // ═══════════════════════════════════════════════════════
 function renderScreen(s){
+  _currentScreen=s;
   const el=document.getElementById('content-area');el.innerHTML='';
   const fn={
     dashboard:rDashboard,estoque:rEstoque,
@@ -1570,8 +1818,8 @@ function doRetornoLoja(){
   const nf=v('rl-nf');
   MODELOS.forEach(m=>{const q=modelos[m]||0;S.est.Lojas[m]=Math.max(0,(S.est.Lojas[m]||0)-q);S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+q;});
   const mov=addMov('Retorno de Loja',lojaNome(lojaDigito),'Triagem',lojaDigito,null,tot,user,v('rl-obs'),modelos,v('rl-data'));
-  // salva NF no registro
-  if(nf&&S.movs[0])S.movs[0].nf=nf;
+  // ✅ FIX: NF gravada direto no registro retornado (antes dependia de S.movs[0])
+  if(nf&&mov)mov.nf=nf;
   // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
   save();
   toast(`✓ ${tot} paletes retornados → Triagem.${nf?' NF:'+nf:''}`);renderScreen('retorno-loja');
@@ -1817,6 +2065,7 @@ function doTriagem(){
 
   const restante=totFila-ttriado;
   S.triagens.unshift({
+    id:'TRI-'+Date.now(),_seq:Date.now(),
     data:v('tr-data')||hoje(),
     total:ttriado,
     prontos:tp,reforma:tr,descarte:td,
@@ -2914,9 +3163,9 @@ function rReset(el){
   </div>`;
   setTimeout(()=>{
     const box=document.getElementById('sync-status-box');
-    if(box)box.innerHTML=_supaReady
-      ?'<strong style="color:var(--green)">☁️ Conectado ao Supabase</strong> — dados em tempo real'
-      :'<strong style="color:var(--amber)">💾 Modo Offline</strong> — dados apenas neste dispositivo';
+    if(box)box.innerHTML=_cloudOK
+      ?'<strong style="color:var(--green)">☁️ Conectado ao Firebase</strong> — sincronização granular em tempo real'
+      :'<strong style="color:var(--amber)">💾 Modo Offline</strong> — alterações serão reenviadas ao reconectar';
   },100);
 }
 
@@ -2954,7 +3203,37 @@ function doResetEstoque(){
 
 
 // ── EDIÇÃO DE REGISTROS ────────────────
-let _editMovId=null, _editTriIdx=null, _editSolId=null;
+// ✅ FIX CRÍTICO: aplica (sign=+1) ou estorna (sign=-1) o efeito de uma
+// movimentação no estoque — espelha exatamente as regras de calcEst().
+// Antes, editar quantidades alterava o histórico SEM tocar no estoque,
+// dessincronizando os dois silenciosamente (origem de "valores fantasmas").
+function aplicarEfeitoMov(mov,sign){
+  S.est=fixEst(S.est);
+  const mds=mov.modelos||{};
+  const aj=(area,m,q)=>{
+    if(!q)return;
+    if(!S.est[area])return;
+    S.est[area][m]=Math.max(0,(S.est[area][m]||0)+sign*q);
+  };
+  switch(mov.tipo){
+    case 'Compra':MODELOS.forEach(m=>aj('REV',m,mds[m]||0));break;
+    case 'Distribuição Interna':MODELOS.forEach(m=>{const q=mds[m]||0;aj('REV',m,-q);aj(mov.destino,m,q);});break;
+    case 'Envio para Loja':MODELOS.forEach(m=>{const q=mds[m]||0;aj(mov.origem,m,-q);aj('Lojas',m,q);});break;
+    case 'Retorno de Loja':MODELOS.forEach(m=>{const q=mds[m]||0;aj('Lojas',m,-q);aj('TriagemFila',m,q);});break;
+    case 'Devolução Interna':MODELOS.forEach(m=>{const q=mds[m]||0;aj(mov.origem,m,-q);aj('TriagemFila',m,q);});break;
+    case 'Triagem':MODELOS.forEach(m=>{const q=mds[m]||0;aj('TriagemFila',m,-q);if(mov.destino==='Fila Reforma')aj('ReformaFila',m,q);else aj('REV',m,q);});break;
+    case 'Descarte':MODELOS.forEach(m=>aj('TriagemFila',m,-(mds[m]||0)));break;
+    case 'Envio para Reforma':MODELOS.forEach(m=>{const q=mds[m]||0;aj('ReformaFila',m,-q);aj('Reforma',m,q);});break;
+    case 'Retorno de Reforma':MODELOS.forEach(m=>{const q=mds[m]||0;aj('Reforma',m,-q);aj('REV',m,q);});break;
+    case 'Pagamento Fornecedor':MODELOS.forEach(m=>aj('REV',m,-(mds[m]||0)));break;
+    case 'Envio Descartável Reforma':aj('REV','DESCARTAVEL',-(mds.DESCARTAVEL||mov.qtd||0));break;
+  }
+}
+// Tipos com vínculos externos ao estoque (saldo de fornecedor / lotes de reforma):
+// edição de quantidade ajusta o estoque, mas NÃO reabre vínculos — para esses,
+// o caminho correto é excluir (estorno completo) e relançar.
+const TIPOS_VINCULO=['Pagamento Fornecedor','Recebimento Fornecedor','Envio para Reforma','Retorno de Reforma','Envio Descartável Reforma'];
+let _editMovId=null, _editTriIdx=null, _editTriId=null, _editSolId=null;
 
 function abrirEditMov(id,screen){
   if(!canDelete())return toast('Sem permissão para editar.','err');
@@ -2981,22 +3260,32 @@ function abrirEditMov(id,screen){
 }
 function confirmarEditMov(screen){
   const m=S.movs.find(x=>x.id===_editMovId);if(!m)return;
+  const novosMod={};let novoTot=0;
+  MODELOS.forEach(md=>{const q=parseInt(document.getElementById('emod-'+md)?.value)||0;if(q>0){novosMod[md]=q;novoTot+=q;}});
+  const novaOrigem=document.getElementById('edit-mov-origem').value||m.origem;
+  const novoDestino=document.getElementById('edit-mov-destino').value||m.destino;
+  const mudouEfeito=(novoTot>0&&normStr(novosMod)!==normStr(m.modelos||{}))||novaOrigem!==m.origem||novoDestino!==m.destino;
+  if(mudouEfeito&&TIPOS_VINCULO.includes(m.tipo)){
+    if(!confirm(`"${m.tipo}" tem vínculos com saldo de fornecedor/lotes de reforma que esta edição NÃO reajusta. O estoque será corrigido, mas o vínculo não. Para corrigir tudo, exclua e relance. Continuar mesmo assim?`))return;
+  }
+  // ✅ FIX CRÍTICO: estorna o efeito ANTIGO no estoque antes de alterar
+  if(mudouEfeito)aplicarEfeitoMov(m,-1);
   const dataVal=document.getElementById('edit-mov-data').value;
   if(dataVal){const [y,mo,d]=dataVal.split('-');const hora=m.ts.split(', ')[1]||'00:00:00';m.ts=`${d}/${mo}/${y}, ${hora}`;}
   m.usuario=document.getElementById('edit-mov-user').value||m.usuario;
-  m.origem=document.getElementById('edit-mov-origem').value||m.origem;
-  m.destino=document.getElementById('edit-mov-destino').value||m.destino;
+  m.origem=novaOrigem;
+  m.destino=novoDestino;
   m.nf=document.getElementById('edit-mov-nf').value;
   m.obs=document.getElementById('edit-mov-obs').value;
-  const novosMod={};let novoTot=0;
-  MODELOS.forEach(md=>{const q=parseInt(document.getElementById('emod-'+md)?.value)||0;if(q>0){novosMod[md]=q;novoTot+=q;}});
   if(novoTot>0){m.modelos=novosMod;m.qtd=novoTot;}
-  save();toast('✓ Movimentação editada.');closeModal('modal-edit-mov');if(screen)renderScreen(screen);
+  // ✅ FIX CRÍTICO: aplica o efeito NOVO — estoque e histórico nunca mais divergem ao editar
+  if(mudouEfeito)aplicarEfeitoMov(m,1);
+  save();toast('✓ Movimentação editada (estoque ajustado).');closeModal('modal-edit-mov');if(screen)renderScreen(screen);
 }
 function abrirEditTriagem(idx,screen){
   if(!canDelete())return toast('Sem permissão para editar.','err');
   const t=S.triagens[idx];if(!t)return;
-  _editTriIdx=idx;
+  _editTriIdx=idx;_editTriId=t.id||null; // id sobrevive a reordenação por sync remoto
   document.getElementById('edit-tr-data').value=t.data||'';
   document.getElementById('edit-tr-user').value=t.usuario||'';
   document.getElementById('edit-tr-op').value=t.prontos||0;
@@ -3006,7 +3295,13 @@ function abrirEditTriagem(idx,screen){
   openModal('modal-edit-triagem');
 }
 function confirmarEditTriagem(screen){
-  const t=S.triagens[_editTriIdx];if(!t)return;
+  const t=(_editTriId?S.triagens.find(x=>x.id===_editTriId):null)||S.triagens[_editTriIdx];if(!t)return;
+  const novoOp=parseInt(document.getElementById('edit-tr-op').value)||0;
+  const novoRef=parseInt(document.getElementById('edit-tr-ref').value)||0;
+  const novoDesc=parseInt(document.getElementById('edit-tr-desc').value)||0;
+  if(novoOp!==(t.prontos||0)||novoRef!==(t.reforma||0)||novoDesc!==(t.descarte||0)){
+    if(!confirm('Atenção: este ajuste altera apenas o REGISTRO do log de triagem. O estoque NÃO é alterado aqui — para corrigir o estoque, edite ou exclua as movimentações de Triagem/Descarte correspondentes na tela Movimentações. Continuar?'))return;
+  }
   t.data=document.getElementById('edit-tr-data').value||t.data;
   t.usuario=document.getElementById('edit-tr-user').value||t.usuario;
   t.prontos=parseInt(document.getElementById('edit-tr-op').value)||0;
@@ -3198,14 +3493,12 @@ function salvarAjuste(){
     if(el)S.est[area][m]=Math.max(0,parseInt(el.value)||0);
   });
   save();
-  // Força sincronização imediata com Firebase após ajuste manual
+  // Sincronização imediata: o ajuste vira DELTA na nuvem (comutativo, multi-dispositivo)
   if(firebaseReady){
-    firebaseSave(S).then(ok=>{
-      if(ok)toast(`✓ Estoque de "${area}" ajustado e sincronizado com a nuvem!`);
-      else toast(`✓ Estoque de "${area}" ajustado (salvo localmente).`);
-    }).catch(()=>toast(`✓ Estoque de "${area}" ajustado.`));
+    flushSync();
+    toast(`✓ Estoque de "${area}" ajustado e sincronizando com a nuvem.`);
   } else {
-    toast(`✓ Estoque de "${area}" ajustado com sucesso!`);
+    toast(`✓ Estoque de "${area}" ajustado (offline — será sincronizado ao reconectar).`);
   }
   renderAjusteModelos();
 }
@@ -3465,15 +3758,11 @@ function limparFiltroEstoque(){
 // ── BACKUP & SYNC ──────────────────────
 async function forceSyncNuvem(){
   if(!canDelete())return toast('Sem permissão.','err');
+  if(!firebaseReady)return toast('Sem conexão com o Firebase.','err');
   toast('Sincronizando...','warn');
-  const ok=console.log("App iniciado");
-  if(!ok)return toast('Sem conexão com Supabase.','err');
-  // Só sobe se tiver dados reais
-  if(!S.movs||S.movs.length===0){
-    if(!confirm('O sistema está vazio. Confirma sincronização mesmo assim?'))return;
-  }
-  const saved=await supaSave(S);
-  if(saved){_supaReady=true;updateSyncBadge();toast('✓ Dados sincronizados com a nuvem!');}
+  _dirty=true;
+  const ok=await syncDiff();
+  if(ok)toast('✓ Dados sincronizados com a nuvem!');
   else toast('Erro ao sincronizar.','err');
 }
 function exportBackup(){
@@ -3495,8 +3784,9 @@ function importBackup(event){
       if(!confirm(`Importar backup com ${data.movs.length} movimentações? Dados atuais serão substituídos.`))return;
       S=fixState(data);
       save();
-      // Sobe para nuvem
-      if(_supaReady)await supaSave(S);
+      // Sobe para a nuvem como diff: registros ausentes no backup são
+      // removidos lá, novos são criados, estoque vira delta
+      if(firebaseReady)await syncDiff();
       toast('✓ Backup importado e sincronizado!');
       navigate('dashboard');
     }catch(err){toast('Erro ao ler o arquivo.','err');}
