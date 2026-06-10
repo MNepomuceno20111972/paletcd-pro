@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --navy:#0052CC;--navy-dark:#003DBB;--navy-light:#0066FF;
@@ -531,9 +532,21 @@ async function initFirebase() {
             firebase.initializeApp(FIREBASE_CONFIG);
           }
           db = firebase.database();
-          firebaseReady = true;
-          console.log("✓ Firebase inicializado");
-          resolve(true);
+          // Login anônimo: exigido pelas regras de segurança do RTDB.
+          // Se a autenticação falhar (ex.: provedor ainda não habilitado no
+          // console), segue sem auth — com regras abertas funciona; com
+          // regras fechadas o app cai em modo Local e reenviará ao corrigir.
+          firebase.auth().signInAnonymously()
+            .then(() => {
+              firebaseReady = true;
+              console.log("✓ Firebase autenticado (anônimo)");
+              resolve(true);
+            })
+            .catch(e => {
+              console.warn("Auth anônimo indisponível — tentando sem auth:", e && e.code);
+              firebaseReady = true;
+              resolve(true);
+            });
         } catch(e) {
           console.error("Erro Firebase:", e);
           firebaseReady = false;
