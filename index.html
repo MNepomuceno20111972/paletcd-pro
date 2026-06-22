@@ -623,7 +623,7 @@ function computarDiffs(atual,base){
     });
     rmap.forEach((x,id)=>{if(!lmap.has(id))updates[`${c}/${fbKey(id)}`]=null;});
   });
-  ['senhas','fornNomes','solics'].forEach(k=>{
+  ['senhas','fornNomes','solics','lojasExtra'].forEach(k=>{
     if(normStr(atual[k])!==normStr(base[k]))updates[k]=cleanFb(atual[k]===undefined?null:atual[k]);
   });
   if(!!atual.modoMigracao!==!!base.modoMigracao)updates['meta/modoMigracao']=!!atual.modoMigracao;
@@ -742,6 +742,7 @@ function fromV2(v2){
   s.aberturaDiaria=colToArr(v2.aberturaDiaria,(a,b)=>movNum(b.id)-movNum(a.id));
   s.fornNomes=Array.isArray(v2.fornNomes)?v2.fornNomes:Object.values(v2.fornNomes||{});
   s.solics=Array.isArray(v2.solics)?v2.solics:Object.values(v2.solics||{});
+  s.lojasExtra=Array.isArray(v2.lojasExtra)?v2.lojasExtra:Object.values(v2.lojasExtra||{});
   if(v2.senhas)s.senhas=v2.senhas;
   s.est={};
   Object.keys(v2.est||{}).forEach(a=>{s.est[a]=Object.assign({},v2.est[a]);});
@@ -764,6 +765,7 @@ function applyRemote(v2){
     saveSynced(snapState());
     _cloudOK=true;
     updateSyncBadge();
+    popularSelectLojas();
     if(mudou&&CU){
       renderBannerMigracao();
       const telasLeitura=['dashboard','estoque','movimentacoes','saldo-forn','minha-area','loja-dash','loja-hist'];
@@ -872,6 +874,13 @@ const LOJAS_BASE=[
   {d:136,n:"São Carlos",cc:3370612},{d:139,n:"Itaim Bibi 2",cc:3536394}
 ];
 
+// Lojas fixas (LOJAS_BASE) + lojas cadastradas pelo ADM (sincronizadas via S.lojasExtra)
+function getLojas(){
+  const extra=(typeof S!=='undefined'&&Array.isArray(S.lojasExtra))?S.lojasExtra:[];
+  const base=LOJAS_BASE.filter(b=>!extra.some(e=>Number(e.d)===Number(b.d)));
+  return [...base,...extra];
+}
+
 // ═══════════════════════════════════════════════════════
 // PERFIS & SENHAS PADRÃO
 // ═══════════════════════════════════════════════════════
@@ -895,7 +904,7 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['lojas-adm','🏪','Lojas'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
@@ -931,7 +940,7 @@ function emptyEst(){
 
 let S={
   est:emptyEst(),
-  movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],
+  movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],lojasExtra:[],
   nMov:1,nRef:1,nSol:1,nForn:1,nRecForn:1,
   senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
 };
@@ -1030,6 +1039,7 @@ function fixState(s){
   if(!s.forns)s.forns=[];
   if(!s.recebForn)s.recebForn=[];
   if(!s.fornNomes)s.fornNomes=[];
+  if(!Array.isArray(s.lojasExtra))s.lojasExtra=[];
   
   s.est=fixEst(s.est);
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
@@ -1134,7 +1144,7 @@ function seedData(){
 function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
 function vn(id){return parseInt(v(id))||0;}
 function hoje(){return new Date().toISOString().split('T')[0];}
-function lojaNome(d){const l=LOJAS_BASE.find(x=>x.d===Number(d));return l?l.n:String(d);}
+function lojaNome(d){const l=getLojas().find(x=>x.d===Number(d));return l?l.n:String(d);}
 function totalEst(area){return MODELOS.reduce((s,m)=>s+(S.est[area]?.[m]||0),0);}
 function totalEstModelo(modelo){return[...AREAS_ALL,'Lojas','Reforma','TriagemFila','ReformaFila'].reduce((s,a)=>s+(S.est[a]?.[modelo]||0),0);}
 
@@ -1227,7 +1237,7 @@ function lojaSearch(id){
   const dd=document.getElementById(id+'-dd');
   if(!dd)return;
   if(q.length<3){dd.style.display='none';return;}
-  const matches=LOJAS_BASE.filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
+  const matches=getLojas().filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
   if(!matches.length){dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--text-light);">Nenhuma loja encontrada</div>';dd.style.display='block';return;}
   // guarda matches para navegação
   dd._matches=matches;
@@ -1368,7 +1378,7 @@ function loginLoja(){
   const dig=v('ll-loja'), pwd=v('ll-pwd');
   const err=document.getElementById('login-error');err.style.display='none';
   if(!dig){err.textContent='Selecione a loja.';err.style.display='block';return;}
-  const loja=LOJAS_BASE.find(l=>String(l.d)===String(dig));
+  const loja=getLojas().find(l=>String(l.d)===String(dig));
   if(!loja){err.textContent='Loja não encontrada.';err.style.display='block';return;}
   if(String(pwd)!==String(loja.cc)){err.textContent='Código do cliente incorreto.';err.style.display='block';return;}
   CU={area:loja.n,nome:loja.n,role:'loja',icon:'🏪',tipo:'loja',lojaDigito:loja.d,lojaCc:loja.cc};
@@ -1436,6 +1446,7 @@ const PAGE_INFO={
   'devolucao-loja':['Devolução ao CD','Retorno de paletes ao Centro de Distribuição'],
   'receb-forn':['Recebimento de Fornecedores','Débitos de paletes'],'saldo-forn':['Saldo — Fornecedores','Contas a pagar de paletes'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
+  'lojas-adm':['Gerenciar Lojas','Cadastrar novas lojas sem pedir atualização'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
 };
 
@@ -1464,7 +1475,7 @@ function renderScreen(s){
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
     'minha-area':rMinhaArea,'loja-dash':rLojaDash,'loja-hist':rLojaHist,'devolucao-loja':rDevolucaoLoja,
-    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
+    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'lojas-adm':rLojasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
   };
   if(fn[s]) fn[s](el);
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
@@ -2931,6 +2942,58 @@ function doAlterarSenhaAdm(){
   toast(`✓ Senha de ${PERFIL_DEF[area].nome} alterada.`);renderScreen('senhas-adm');
 }
 
+// ── GESTÃO DE LOJAS (ADM) ──────────────────
+function rLojasAdm(el){
+  const extra=(S.lojasExtra||[]).slice().sort((a,b)=>a.d-b.d);
+  el.innerHTML=`
+  <div class="info-box">Lojas adicionadas aqui passam a aparecer no login e em todos os lançamentos automaticamente — e sincronizam para todos os dispositivos. As 72 lojas originais do sistema não aparecem nesta lista e não podem ser apagadas.</div>
+  <div class="form-card" style="max-width:520px">
+    <div class="section-title" style="margin-bottom:14px">➕ Adicionar Loja</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Dígito (nº) *</label><input class="form-control" id="nl-dig" type="number" min="1" placeholder="Ex: 140"></div>
+      <div class="form-group"><label class="form-label">Nome da Loja *</label><input class="form-control" id="nl-nome" type="text" placeholder="Ex: Campinas Shopping"></div>
+      <div class="form-group"><label class="form-label">Centro de Custo (opcional)</label><input class="form-control" id="nl-cc" type="number" placeholder="Ex: 4567890"></div>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="addLojaExtra()">✓ Adicionar Loja</button></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">🏪 Lojas Adicionadas (${extra.length})</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Dígito</th><th>Nome</th><th>C. Custo</th><th>Ação</th></tr></thead>
+      <tbody>${extra.length?extra.map(l=>`<tr>
+        <td class="td-mono">${String(l.d).padStart(3,'0')}</td>
+        <td class="td-bold">${l.n}</td>
+        <td class="td-mono">${l.cc||'—'}</td>
+        <td><button class="btn btn-ghost btn-xs" onclick="removerLojaExtra(${l.d})">🗑️ Remover</button></td>
+      </tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:18px">Nenhuma loja adicionada ainda.</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+function addLojaExtra(){
+  const dig=parseInt(v('nl-dig'))||0;
+  const nome=(v('nl-nome')||'').trim();
+  const cc=parseInt(v('nl-cc'))||0;
+  if(!dig||dig<1)return toast('Informe um dígito válido.','err');
+  if(!nome)return toast('Informe o nome da loja.','err');
+  if(getLojas().some(l=>Number(l.d)===dig))return toast(`Já existe loja com o dígito ${String(dig).padStart(3,'0')}.`,'err');
+  S.lojasExtra=S.lojasExtra||[];
+  S.lojasExtra.push({d:dig,n:nome,cc:cc||0});
+  save();
+  popularSelectLojas();
+  toast(`✓ Loja ${String(dig).padStart(3,'0')} · ${nome} adicionada.`);
+  renderScreen('lojas-adm');
+}
+function removerLojaExtra(dig){
+  const l=(S.lojasExtra||[]).find(x=>Number(x.d)===Number(dig));
+  if(!l)return;
+  if(!confirm(`Remover a loja ${String(l.d).padStart(3,'0')} · ${l.n}?\n\nO histórico de movimentações já lançado não é apagado.`))return;
+  S.lojasExtra=(S.lojasExtra||[]).filter(x=>Number(x.d)!==Number(dig));
+  save();
+  popularSelectLojas();
+  toast(`✓ Loja ${l.n} removida.`);
+  renderScreen('lojas-adm');
+}
+
 // ── EXPORT EXCEL ───────────────────────
 function exportMovimentacoes(){
   const rows=[
@@ -3824,10 +3887,14 @@ document.getElementById('la-pwd').addEventListener('keydown',e=>{if(e.key==='Ent
 document.getElementById('ll-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')loginLoja();});
 
 // Populate loja select
-(function(){
-  const sel=document.getElementById('ll-loja');
-  LOJAS_BASE.forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
-})();
+function popularSelectLojas(){
+  const sel=document.getElementById('ll-loja');if(!sel)return;
+  const atual=sel.value;
+  sel.innerHTML='<option value="">— Selecionar —</option>';
+  getLojas().slice().sort((a,b)=>a.d-b.d).forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
+  if([...sel.options].some(o=>o.value===atual))sel.value=atual;
+}
+popularSelectLojas();
 
 load().then(()=>{updateClock();});
 updateClock();
