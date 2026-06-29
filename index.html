@@ -623,7 +623,7 @@ function computarDiffs(atual,base){
     });
     rmap.forEach((x,id)=>{if(!lmap.has(id))updates[`${c}/${fbKey(id)}`]=null;});
   });
-  ['senhas','fornNomes','solics','lojasExtra'].forEach(k=>{
+  ['senhas','fornNomes','solics'].forEach(k=>{
     if(normStr(atual[k])!==normStr(base[k]))updates[k]=cleanFb(atual[k]===undefined?null:atual[k]);
   });
   if(!!atual.modoMigracao!==!!base.modoMigracao)updates['meta/modoMigracao']=!!atual.modoMigracao;
@@ -742,7 +742,6 @@ function fromV2(v2){
   s.aberturaDiaria=colToArr(v2.aberturaDiaria,(a,b)=>movNum(b.id)-movNum(a.id));
   s.fornNomes=Array.isArray(v2.fornNomes)?v2.fornNomes:Object.values(v2.fornNomes||{});
   s.solics=Array.isArray(v2.solics)?v2.solics:Object.values(v2.solics||{});
-  s.lojasExtra=Array.isArray(v2.lojasExtra)?v2.lojasExtra:Object.values(v2.lojasExtra||{});
   if(v2.senhas)s.senhas=v2.senhas;
   s.est={};
   Object.keys(v2.est||{}).forEach(a=>{s.est[a]=Object.assign({},v2.est[a]);});
@@ -765,7 +764,6 @@ function applyRemote(v2){
     saveSynced(snapState());
     _cloudOK=true;
     updateSyncBadge();
-    popularSelectLojas();
     if(mudou&&CU){
       renderBannerMigracao();
       const telasLeitura=['dashboard','estoque','movimentacoes','saldo-forn','minha-area','loja-dash','loja-hist'];
@@ -844,42 +842,46 @@ function modeloBadge(m){
 }
 
 // ═══════════════════════════════════════════════════════
-// LOJAS BASE — 72 lojas
+// LOJAS BASE — 108 lojas
 // ═══════════════════════════════════════════════════════
 const LOJAS_BASE=[
   {d:1,n:"Carolina",cc:1},{d:2,n:"Ponte Preta",cc:6},{d:3,n:"Bonfim",cc:7},
-  {d:5,n:"Amoreiras",cc:9},{d:6,n:"Americana 1",cc:10},{d:9,n:"Tatuapé",cc:13},
-  {d:10,n:"Sorocaba 1",cc:2},{d:11,n:"Butantã",cc:14},{d:12,n:"Ibitirama",cc:15},
+  {d:5,n:"Amoreiras",cc:9},{d:6,n:"Americana",cc:10},{d:9,n:"Tatuapé",cc:13},
+  {d:10,n:"Sorocaba 1",cc:2},{d:11,n:"Butanta",cc:14},{d:12,n:"Ibitirama",cc:15},
   {d:13,n:"Moema",cc:16},{d:14,n:"Penha",cc:17},{d:15,n:"Santana Pujol",cc:18},
-  {d:16,n:"Taquaral",cc:19},{d:17,n:"Termal",cc:20},{d:19,n:"Morumbi",cc:22},
+  {d:16,n:"Taquaral",cc:19},{d:17,n:"The Mall",cc:20},{d:19,n:"Morumbi",cc:22},
   {d:21,n:"Centro",cc:24},{d:23,n:"Cambuí",cc:34198},{d:24,n:"Santana Ataliba",cc:35087},
   {d:25,n:"Santana Tolle",cc:38443},{d:26,n:"Sorocaba 2",cc:35093},{d:29,n:"Mooca",cc:68862},
   {d:30,n:"Piracicaba",cc:76411},{d:31,n:"Sousas",cc:85213},{d:32,n:"Vila Mariana",cc:85221},
-  {d:33,n:"Galleria",cc:93602},{d:34,n:"Anália Franco",cc:93940},{d:35,n:"São José",cc:94084},
+  {d:33,n:"Galleria",cc:93602},{d:34,n:"Anália Franco",cc:93940},{d:35,n:"São José Dos Campos",cc:94084},
   {d:36,n:"Angelica",cc:95643},{d:37,n:"Teodoro Sampaio",cc:96035},{d:38,n:"Ribeirão Preto",cc:97455},
-  {d:39,n:"Interlargos",cc:97908},{d:40,n:"Market Place",cc:97910},{d:41,n:"Leopoldina",cc:97911},
-  {d:42,n:"Santo André",cc:99976},{d:43,n:"Perdizes",cc:112990},{d:55,n:"Campo Belo",cc:1729640},
-  {d:56,n:"Vila Mascote",cc:181177},{d:57,n:"Jundiai Farm",cc:181257},{d:62,n:"Shop Piracicaba",cc:361886},
-  {d:63,n:"Shop Jundiai",cc:345609},{d:64,n:"Alphaville Barueri",cc:1462053},{d:65,n:"Ribeirao 2",cc:1622913},
-  {d:67,n:"São Bernardo",cc:386394},{d:69,n:"Alphaville",cc:329082},{d:70,n:"Frigorifico",cc:358669},
-  {d:71,n:"Apucarana",cc:367442},{d:72,n:"Shop Tatuapé",cc:1786048},{d:73,n:"Cambui 2",cc:1674031},
-  {d:74,n:"Itaim",cc:1710372},{d:75,n:"Nova Campinas",cc:1710377},{d:76,n:"Santos",cc:1812392},
-  {d:79,n:"Sorocaba 3",cc:1898423},{d:80,n:"Itu",cc:1898422},{d:81,n:"Pamplona",cc:1898420},
-  {d:84,n:"Tatuapé 3",cc:1934156},{d:86,n:"São Jose Do Rio Preto",cc:1990455},{d:87,n:"Itatiba",cc:2034187},
-  {d:88,n:"Cotia",cc:2060714},{d:92,n:"Restaurante",cc:54969},{d:97,n:"Cd Sumaré",cc:46705},
+  {d:39,n:"Interlagos",cc:97908},{d:40,n:"Market Place",cc:97910},{d:41,n:"Leopoldina",cc:97911},
+  {d:42,n:"Santo André",cc:99976},{d:43,n:"Perdizes",cc:112990},{d:44,n:"306 Nort",cc:165863},
+  {d:45,n:"Colorad",cc:165896},{d:46,n:"302 Sud",cc:165960},{d:47,n:"Qi09 La",cc:165982},
+  {d:48,n:"212 Sul",cc:166008},{d:49,n:"Castanh",cc:166053},{d:50,n:"D Bosco",cc:169269},
+  {d:51,n:"Aracaurias",cc:169280},{d:52,n:"209 Nor",cc:173327},{d:53,n:"Flamboy",cc:169289},
+  {d:54,n:"T63",cc:171182},{d:55,n:"Campo Belo",cc:1729640},{d:56,n:"Vila Mascote",cc:181177},
+  {d:57,n:"Jundiai",cc:181257},{d:58,n:"VictPires",cc:320662},{d:59,n:"Asa Sul",cc:365732},
+  {d:61,n:"ShpIgutDF",cc:379352},{d:62,n:"Pira Way",cc:361886},{d:63,n:"Shop Jundiai",cc:345609},
+  {d:64,n:"Alphaville Barueri",cc:1462053},{d:65,n:"Ribeirão Preto 2",cc:1622913},{d:67,n:"São Bernardo",cc:386394},
+  {d:69,n:"Alphaville",cc:329082},{d:70,n:"Frigorifico",cc:358669},{d:71,n:"Apucarana",cc:367442},
+  {d:72,n:"Shopping Tatuapé",cc:1786048},{d:73,n:"Cambui 2",cc:1674031},{d:74,n:"Itaim Bibi",cc:1710372},
+  {d:75,n:"Nova Campinas",cc:1710377},{d:76,n:"Santos",cc:1812392},{d:79,n:"Sorocaba 3",cc:1898423},
+  {d:80,n:"Itu",cc:1898422},{d:81,n:"Pamplona",cc:1898420},{d:84,n:"Tatuapé 3",cc:1934156},
+  {d:86,n:"São José Do Rio Preto",cc:1990455},{d:87,n:"Itatiba",cc:2034187},{d:88,n:"Granja Viana",cc:2060714},
+  {d:92,n:"Restaurante",cc:54969},{d:94,n:"Caixaria",cc:30496},{d:97,n:"Cd Sumaré",cc:46705},
   {d:99,n:"Produção",cc:25},{d:100,n:"Cd Brasília",cc:171062},{d:104,n:"Indaiatuba",cc:32016},
   {d:107,n:"Americana 2",cc:32017},{d:108,n:"Limeira",cc:32018},{d:120,n:"Ouro Verde",cc:42183},
   {d:121,n:"Arborais",cc:2097977},{d:122,n:"Bauru",cc:2114443},{d:123,n:"Nova Cantareira",cc:2147546},
-  {d:127,n:"Franca",cc:2779648},{d:134,n:"Damha",cc:2968843},{d:135,n:"Vila Mariana 2",cc:3305395},
-  {d:136,n:"São Carlos",cc:3370612},{d:139,n:"Itaim Bibi 2",cc:3536394}
+  {d:124,n:"Cd Bahia",cc:2237725},{d:125,n:"Cd São Miguel",cc:2510681},{d:127,n:"Franca",cc:2779648},
+  {d:128,n:"Urbanova",cc:3383727},{d:130,n:"São Mateus",cc:3029789},{d:131,n:"203 Asa Sul",cc:3035082},
+  {d:132,n:"Produção",cc:3033349},{d:133,n:"Holambra",cc:3151907},{d:134,n:"Damha",cc:2968843},
+  {d:135,n:"Vila Mariana 2",cc:3305935},{d:136,n:"São Carlos",cc:3370612},{d:139,n:"Itaim Bibi 2",cc:3536394},
+  {d:140,n:"Swiss Park",cc:3519954},{d:141,n:"Rio Claro",cc:3555187},{d:142,n:"Mascote 2",cc:3673767},
+  {d:143,n:"Rio Grande",cc:3673769},{d:144,n:"São Bernardo 2",cc:3673771},{d:145,n:"Embare",cc:3673776},
+  {d:146,n:"Arapanes",cc:3673778},{d:147,n:"Olimpia",cc:3673780},{d:148,n:"Paraiso",cc:3673781},
+  {d:149,n:"Interlagos",cc:3673783},{d:150,n:"Corujas",cc:3673786},{d:151,n:"J Cachoeiras",cc:3673788}
 ];
-
-// Lojas fixas (LOJAS_BASE) + lojas cadastradas pelo ADM (sincronizadas via S.lojasExtra)
-function getLojas(){
-  const extra=(typeof S!=='undefined'&&Array.isArray(S.lojasExtra))?S.lojasExtra:[];
-  const base=LOJAS_BASE.filter(b=>!extra.some(e=>Number(e.d)===Number(b.d)));
-  return [...base,...extra];
-}
 
 // ═══════════════════════════════════════════════════════
 // PERFIS & SENHAS PADRÃO
@@ -904,7 +906,7 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['lojas-adm','🏪','Lojas'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
@@ -940,7 +942,7 @@ function emptyEst(){
 
 let S={
   est:emptyEst(),
-  movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],lojasExtra:[],
+  movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],
   nMov:1,nRef:1,nSol:1,nForn:1,nRecForn:1,
   senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
 };
@@ -1039,7 +1041,6 @@ function fixState(s){
   if(!s.forns)s.forns=[];
   if(!s.recebForn)s.recebForn=[];
   if(!s.fornNomes)s.fornNomes=[];
-  if(!Array.isArray(s.lojasExtra))s.lojasExtra=[];
   
   s.est=fixEst(s.est);
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
@@ -1144,7 +1145,7 @@ function seedData(){
 function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
 function vn(id){return parseInt(v(id))||0;}
 function hoje(){return new Date().toISOString().split('T')[0];}
-function lojaNome(d){const l=getLojas().find(x=>x.d===Number(d));return l?l.n:String(d);}
+function lojaNome(d){const l=LOJAS_BASE.find(x=>x.d===Number(d));return l?l.n:String(d);}
 function totalEst(area){return MODELOS.reduce((s,m)=>s+(S.est[area]?.[m]||0),0);}
 function totalEstModelo(modelo){return[...AREAS_ALL,'Lojas','Reforma','TriagemFila','ReformaFila'].reduce((s,a)=>s+(S.est[a]?.[modelo]||0),0);}
 
@@ -1237,7 +1238,7 @@ function lojaSearch(id){
   const dd=document.getElementById(id+'-dd');
   if(!dd)return;
   if(q.length<3){dd.style.display='none';return;}
-  const matches=getLojas().filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
+  const matches=LOJAS_BASE.filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
   if(!matches.length){dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--text-light);">Nenhuma loja encontrada</div>';dd.style.display='block';return;}
   // guarda matches para navegação
   dd._matches=matches;
@@ -1378,7 +1379,7 @@ function loginLoja(){
   const dig=v('ll-loja'), pwd=v('ll-pwd');
   const err=document.getElementById('login-error');err.style.display='none';
   if(!dig){err.textContent='Selecione a loja.';err.style.display='block';return;}
-  const loja=getLojas().find(l=>String(l.d)===String(dig));
+  const loja=LOJAS_BASE.find(l=>String(l.d)===String(dig));
   if(!loja){err.textContent='Loja não encontrada.';err.style.display='block';return;}
   if(String(pwd)!==String(loja.cc)){err.textContent='Código do cliente incorreto.';err.style.display='block';return;}
   CU={area:loja.n,nome:loja.n,role:'loja',icon:'🏪',tipo:'loja',lojaDigito:loja.d,lojaCc:loja.cc};
@@ -1446,7 +1447,6 @@ const PAGE_INFO={
   'devolucao-loja':['Devolução ao CD','Retorno de paletes ao Centro de Distribuição'],
   'receb-forn':['Recebimento de Fornecedores','Débitos de paletes'],'saldo-forn':['Saldo — Fornecedores','Contas a pagar de paletes'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
-  'lojas-adm':['Gerenciar Lojas','Cadastrar novas lojas sem pedir atualização'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
 };
 
@@ -1475,7 +1475,7 @@ function renderScreen(s){
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
     'minha-area':rMinhaArea,'loja-dash':rLojaDash,'loja-hist':rLojaHist,'devolucao-loja':rDevolucaoLoja,
-    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'lojas-adm':rLojasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
+    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
   };
   if(fn[s]) fn[s](el);
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
@@ -2942,58 +2942,6 @@ function doAlterarSenhaAdm(){
   toast(`✓ Senha de ${PERFIL_DEF[area].nome} alterada.`);renderScreen('senhas-adm');
 }
 
-// ── GESTÃO DE LOJAS (ADM) ──────────────────
-function rLojasAdm(el){
-  const extra=(S.lojasExtra||[]).slice().sort((a,b)=>a.d-b.d);
-  el.innerHTML=`
-  <div class="info-box">Lojas adicionadas aqui passam a aparecer no login e em todos os lançamentos automaticamente — e sincronizam para todos os dispositivos. As 72 lojas originais do sistema não aparecem nesta lista e não podem ser apagadas.</div>
-  <div class="form-card" style="max-width:520px">
-    <div class="section-title" style="margin-bottom:14px">➕ Adicionar Loja</div>
-    <div class="form-grid">
-      <div class="form-group"><label class="form-label">Dígito (nº) *</label><input class="form-control" id="nl-dig" type="number" min="1" placeholder="Ex: 140"></div>
-      <div class="form-group"><label class="form-label">Nome da Loja *</label><input class="form-control" id="nl-nome" type="text" placeholder="Ex: Campinas Shopping"></div>
-      <div class="form-group"><label class="form-label">Centro de Custo (opcional)</label><input class="form-control" id="nl-cc" type="number" placeholder="Ex: 4567890"></div>
-    </div>
-    <div class="form-actions"><button class="btn btn-primary" onclick="addLojaExtra()">✓ Adicionar Loja</button></div>
-  </div>
-  <div class="card">
-    <div class="card-hdr"><span class="card-title">🏪 Lojas Adicionadas (${extra.length})</span></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Dígito</th><th>Nome</th><th>C. Custo</th><th>Ação</th></tr></thead>
-      <tbody>${extra.length?extra.map(l=>`<tr>
-        <td class="td-mono">${String(l.d).padStart(3,'0')}</td>
-        <td class="td-bold">${l.n}</td>
-        <td class="td-mono">${l.cc||'—'}</td>
-        <td><button class="btn btn-ghost btn-xs" onclick="removerLojaExtra(${l.d})">🗑️ Remover</button></td>
-      </tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:18px">Nenhuma loja adicionada ainda.</td></tr>'}</tbody>
-    </table></div>
-  </div>`;
-}
-function addLojaExtra(){
-  const dig=parseInt(v('nl-dig'))||0;
-  const nome=(v('nl-nome')||'').trim();
-  const cc=parseInt(v('nl-cc'))||0;
-  if(!dig||dig<1)return toast('Informe um dígito válido.','err');
-  if(!nome)return toast('Informe o nome da loja.','err');
-  if(getLojas().some(l=>Number(l.d)===dig))return toast(`Já existe loja com o dígito ${String(dig).padStart(3,'0')}.`,'err');
-  S.lojasExtra=S.lojasExtra||[];
-  S.lojasExtra.push({d:dig,n:nome,cc:cc||0});
-  save();
-  popularSelectLojas();
-  toast(`✓ Loja ${String(dig).padStart(3,'0')} · ${nome} adicionada.`);
-  renderScreen('lojas-adm');
-}
-function removerLojaExtra(dig){
-  const l=(S.lojasExtra||[]).find(x=>Number(x.d)===Number(dig));
-  if(!l)return;
-  if(!confirm(`Remover a loja ${String(l.d).padStart(3,'0')} · ${l.n}?\n\nO histórico de movimentações já lançado não é apagado.`))return;
-  S.lojasExtra=(S.lojasExtra||[]).filter(x=>Number(x.d)!==Number(dig));
-  save();
-  popularSelectLojas();
-  toast(`✓ Loja ${l.n} removida.`);
-  renderScreen('lojas-adm');
-}
-
 // ── EXPORT EXCEL ───────────────────────
 function exportMovimentacoes(){
   const rows=[
@@ -3887,14 +3835,10 @@ document.getElementById('la-pwd').addEventListener('keydown',e=>{if(e.key==='Ent
 document.getElementById('ll-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')loginLoja();});
 
 // Populate loja select
-function popularSelectLojas(){
-  const sel=document.getElementById('ll-loja');if(!sel)return;
-  const atual=sel.value;
-  sel.innerHTML='<option value="">— Selecionar —</option>';
-  getLojas().slice().sort((a,b)=>a.d-b.d).forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
-  if([...sel.options].some(o=>o.value===atual))sel.value=atual;
-}
-popularSelectLojas();
+(function(){
+  const sel=document.getElementById('ll-loja');
+  LOJAS_BASE.forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
+})();
 
 load().then(()=>{updateClock();});
 updateClock();
