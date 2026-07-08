@@ -1478,8 +1478,10 @@ function rDashboard(el){
   if(!S.reformas) S.reformas=[];
   if(!S.recebForn) S.recebForn=[];
   
-  // Usa estoque filtrado se disponível
+  // Usa estoque filtrado se disponível — RECALCULADO a cada render,
+  // para que movimentações novas (locais ou vindas do Firebase/GODMODE) apareçam
   const estOrig=S.est;
+  window._dashEstTemp=calcEstFiltrado(window._dashDe,window._dashAte);
   if(window._dashEstTemp){S.est=window._dashEstTemp;}
   const totRev=totalEst('REV'), totLojas=totalEst('Lojas'), totRef=totalEst('Reforma');
   const totTr=totalEst('TriagemFila'), totGeral=AREAS_ALL.reduce((s,a)=>s+totalEst(a),0)+totLojas+totRef;
@@ -1496,7 +1498,7 @@ function rDashboard(el){
         <input type="date" id="dash-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" value="${window._dashAte||''}">
         <button class="btn btn-primary btn-sm" onclick="filtrarDashboard()">✓ Aplicar</button>
         <button class="btn btn-ghost btn-sm" onclick="limparFiltroDash()">✕ Limpar</button>
-        <span id="dash-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600"></span>
+        <span id="dash-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${lblPeriodo(window._dashDe,window._dashAte,'dash')}</span>
       </div>
     </div>
   </div>
@@ -1647,8 +1649,9 @@ function rEstoque(el){
   }
 
   const AREAS_RENDER=['REV','Mercearia','Mercearia Recebimento','Mercearia Expedição','FLV','FLV Recebimento','FLV Expedição','Perecível','Perecível Recebimento','Perecível Expedição','Produção','Central de Frios','Frigorífico','Lojas','Reforma','TriagemFila','ReformaFila'];
-  // Estoque filtrado por data — swap ANTES de calcular a tabela detalhada
+  // Estoque filtrado por data — RECALCULADO a cada render (inclui movs do GODMODE)
   const estOrigEst=S.est;
+  window._estoqueEstTemp=calcEstFiltrado(window._estDe,window._estAte);
   if(window._estoqueEstTemp){S.est=window._estoqueEstTemp;}
   const AREAS_PAI_SET=new Set(Object.keys(AREA_PAI));
   const areaRows=AREAS_RENDER.map(a=>estAreaRow(a, AREAS_PAI_SET.has(a))).join('');
@@ -1663,7 +1666,7 @@ function rEstoque(el){
         <input type="date" id="est-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" value="${window._estAte||''}">
         <button class="btn btn-primary btn-sm" onclick="filtrarEstoque()">✓ Aplicar</button>
         <button class="btn btn-ghost btn-sm" onclick="limparFiltroEstoque()">✕ Limpar</button>
-        <span id="est-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${window._estoqueEstTemp?'(período filtrado)':''}</span>
+        <span id="est-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${lblPeriodo(window._estDe,window._estAte)}</span>
       </div>
     </div>
   </div>
@@ -3009,8 +3012,9 @@ function rSaldoForn(el){
   const totalRec=itens.reduce((s,[,v])=>s+v.total,0);
   const totalPago=itens.reduce((s,[,v])=>s+v.pago,0);
 
-  // Estoque filtrado por data
+  // Estoque filtrado por data — RECALCULADO a cada render (inclui movs do GODMODE)
   const estOrigEst=S.est;
+  window._sfEstTemp=calcEstFiltrado(window._sfDe,window._sfAte);
   if(window._sfEstTemp){S.est=window._sfEstTemp;}
   el.innerHTML=`
   <div class="card" style="margin-bottom:14px;padding:14px 16px;">
@@ -3023,7 +3027,7 @@ function rSaldoForn(el){
         <input type="date" id="sf-ate" class="form-control" style="max-width:150px;font-size:12px;padding:6px 10px" value="${window._sfAte||''}">
         <button class="btn btn-primary btn-sm" onclick="filtrarSaldoForn()">✓ Aplicar</button>
         <button class="btn btn-ghost btn-sm" onclick="limparFiltroSaldoForn()">✕ Limpar</button>
-        <span id="sf-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${window._sfEstTemp?'(período filtrado)':''}</span>
+        <span id="sf-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${lblPeriodo(window._sfDe,window._sfAte)}</span>
       </div>
     </div>
   </div>
@@ -3739,23 +3743,28 @@ function excluirAbertura(id){
 
 
 // ── FILTRO DATA DASHBOARD ───────────────
+// O snapshot filtrado é recalculado DENTRO do render (rDashboard/rEstoque/rSaldoForn),
+// nunca congelado aqui — assim, movimentações novas (locais ou do GODMODE via Firebase)
+// entram no cálculo a cada re-render disparado pelo applyRemote.
+function calcEstFiltrado(deStr,ateStr){
+  const de=parseDate(deStr),ate=parseDate(ateStr);
+  if(!de&&!ate)return null;
+  const ate2=ate||new Date();
+  return de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
+}
+function lblPeriodo(deStr,ateStr,estilo){
+  const de=parseDate(deStr),ate=parseDate(ateStr);
+  if(!de&&!ate)return '';
+  const ate2=ate||new Date();
+  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  if(estilo==='dash')return de?`Saldo em ${fmt(ate2)} (de ${fmt(de)} até ${fmt(ate2)})`:`Saldo até ${fmt(ate2)}`;
+  return de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
+}
 function filtrarDashboard(){
   // Persiste os valores ANTES do re-render (renderScreen recria os inputs)
   window._dashDe=document.getElementById('dash-de')?.value||'';
   window._dashAte=document.getElementById('dash-ate')?.value||'';
-  const de=parseDate(window._dashDe);
-  const ate=parseDate(window._dashAte);
-  if(!de&&!ate){window._dashEstTemp=null;renderScreen('dashboard');return;}
-  // Recalcula com período
-  const ate2=ate||new Date();
-  window._dashEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
   renderScreen('dashboard');
-  // Atualiza label após o re-render (o template recria o span)
-  const lbl=document.getElementById('dash-periodo-label');
-  if(lbl){
-    const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-    lbl.textContent=de?`Saldo em ${fmt(ate2)} (de ${fmt(de)} até ${fmt(ate2)})`:`Saldo até ${fmt(ate2)}`;
-  }
 }
 function limparFiltroDash(){
   window._dashEstTemp=null;
@@ -3765,19 +3774,9 @@ function limparFiltroDash(){
 
 
 function filtrarEstoque(){
-  // Persiste os valores ANTES do re-render (renderScreen recria os inputs)
   window._estDe=document.getElementById('est-de')?.value||'';
   window._estAte=document.getElementById('est-ate')?.value||'';
-  const de=parseDate(window._estDe);
-  const ate=parseDate(window._estAte);
-  if(!de&&!ate){window._estoqueEstTemp=null;renderScreen('estoque');return;}
-  const ate2=ate||new Date();
-  window._estoqueEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
   renderScreen('estoque');
-  // Label após o re-render (o template recria o span)
-  const lbl=document.getElementById('est-periodo-label');
-  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  if(lbl)lbl.textContent=de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
 }
 function limparFiltroEstoque(){
   window._estoqueEstTemp=null;
@@ -3789,15 +3788,7 @@ function limparFiltroEstoque(){
 function filtrarSaldoForn(){
   window._sfDe=document.getElementById('sf-de')?.value||'';
   window._sfAte=document.getElementById('sf-ate')?.value||'';
-  const de=parseDate(window._sfDe);
-  const ate=parseDate(window._sfAte);
-  if(!de&&!ate){window._sfEstTemp=null;renderScreen('saldo-forn');return;}
-  const ate2=ate||new Date();
-  window._sfEstTemp=de?calcEstPeriodo(de,ate2).estFinal:calcEstAteDia(ate2);
   renderScreen('saldo-forn');
-  const lbl=document.getElementById('sf-periodo-label');
-  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  if(lbl)lbl.textContent=de?`De ${fmt(de)} até ${fmt(ate2)}`:`Até ${fmt(ate2)}`;
 }
 function limparFiltroSaldoForn(){
   window._sfEstTemp=null;
