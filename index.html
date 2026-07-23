@@ -928,13 +928,13 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['relatorios','📈','Relatórios Mensais'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['relatorios','📈','Relatórios Mensais'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   area:[
     ['minha-area','📊','🟢 Saldo da Reversa (View)'],
@@ -1552,6 +1552,7 @@ function renderScreen(s){
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
     'minha-area':rMinhaArea,'loja-dash':rLojaDash,'loja-hist':rLojaHist,'devolucao-loja':rDevolucaoLoja,
     'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
+    relatorios:rRelatorios,
   };
   if(fn[s]) fn[s](el);
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
@@ -3072,6 +3073,348 @@ function downloadXLSX(rows, filename){
   a.href=url; a.download=filename+'_'+hoje()+'.csv'; a.click();
   URL.revokeObjectURL(url);
   toast('📥 Arquivo exportado com sucesso!');
+}
+
+// ═══════════════════════════════════════════════════════
+// RELATÓRIOS MENSAIS (v30.1)
+// ═══════════════════════════════════════════════════════
+
+// Extrai ano+mês de um ts pt-BR "dd/mm/yyyy, hh:mm:ss"
+function _mesDoTs(ts){
+  if(!ts) return null;
+  const p=ts.split(',')[0].split('/');
+  if(p.length!==3) return null;
+  return {ano:parseInt(p[2],10), mes:parseInt(p[1],10), dia:parseInt(p[0],10)};
+}
+// Extrai ano+mês de uma data ISO yyyy-mm-dd
+function _mesDoIso(iso){
+  if(!iso) return null;
+  const p=iso.split('-');
+  if(p.length<3) return null;
+  return {ano:parseInt(p[0],10), mes:parseInt(p[1],10), dia:parseInt(p[2],10)};
+}
+// Filtra S.movs por tipo + ano/mês (usa ts pt-BR)
+function _movsFiltrar(tipo, ano, mes){
+  return (S.movs||[]).filter(m=>{
+    if(tipo && m.tipo!==tipo) return false;
+    const d=_mesDoTs(m.ts);
+    if(!d) return false;
+    return d.ano===ano && d.mes===mes;
+  });
+}
+// Conta quantos registros de cada tipo no mês
+function _contarPorTipo(ano, mes){
+  const c={};
+  (S.movs||[]).forEach(m=>{
+    const d=_mesDoTs(m.ts); if(!d) return;
+    if(d.ano!==ano || d.mes!==mes) return;
+    c[m.tipo]=(c[m.tipo]||0)+1;
+  });
+  return c;
+}
+// Gera linhas de CSV padronizadas para um tipo de movimentação
+function _linhasMovs(tipo, ano, mes){
+  const movs=_movsFiltrar(tipo, ano, mes);
+  const header=['ID','Data','Hora','Tipo','Origem','Destino','Loja','Qtd Total',
+    ...MODELOS.map(m=>MODELO_LABELS[m]),'Usuário','Observação'];
+  const rows=[header];
+  movs.forEach(m=>{
+    const ts=(m.ts||'').split(', ');
+    rows.push([
+      m.id||'', ts[0]||'', ts[1]||'', m.tipo||'',
+      m.origem||'', m.destino||'',
+      m.loja?lojaNome(m.loja):'',
+      m.qtd||0,
+      ...MODELOS.map(k=>m.modelos?.[k]||0),
+      m.usuario||'', m.obs||''
+    ]);
+  });
+  // Linha de total ao final
+  if(movs.length){
+    const tot=MODELOS.map(k=>movs.reduce((s,m)=>s+(m.modelos?.[k]||0),0));
+    rows.push(['','','','','','','TOTAL', movs.reduce((s,m)=>s+(m.qtd||0),0), ...tot,'','']);
+  }
+  return rows;
+}
+// Nome curto pra arquivo
+function _mesNome(mes){
+  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][mes-1];
+}
+// Exporta um relatório individual
+function exportRelMensal(tipo, ano, mes, sufixo){
+  const rows=_linhasMovs(tipo, ano, mes);
+  if(rows.length<=1){
+    toast(`⚠ Nenhum registro de "${tipo}" em ${_mesNome(mes)}/${ano}.`,'warn');
+    return false;
+  }
+  const tag=(sufixo||tipo).replace(/[^\w]+/g,'_');
+  downloadXLSX(rows, `${tag}_${_mesNome(mes)}_${ano}`);
+  return true;
+}
+// Relatório de reformas ativas/finalizadas no mês (S.reformas)
+function exportRelReformasMes(ano, mes){
+  const regs=(S.reformas||[]).filter(r=>{
+    if(r.status==='Excluído') return false;
+    const d=_mesDoIso(r.data); if(!d) return false;
+    return d.ano===ano && d.mes===mes;
+  });
+  if(!regs.length){
+    toast(`⚠ Nenhuma reforma em ${_mesNome(mes)}/${ano}.`,'warn');
+    return false;
+  }
+  const rows=[
+    ['ID','Data Envio','Fornecedor','Qtd Enviada','Qtd Retornada','Saldo em Reforma','Status',
+      ...MODELOS.map(m=>MODELO_LABELS[m]),'Usuário','Observação'],
+    ...regs.map(r=>[
+      r.id, r.data, r.fornNome, r.qtdEnv, r.qtdRet, r.qtdEnv-r.qtdRet, r.status,
+      ...MODELOS.map(m=>r.modelos?.[m]||0),
+      r.usuario||'', r.obs||''
+    ])
+  ];
+  downloadXLSX(rows, `Reformas_Detalhado_${_mesNome(mes)}_${ano}`);
+  return true;
+}
+// Relatório de débitos com fornecedor no mês (S.recebForn)
+function exportRelRecebFornMes(ano, mes){
+  const regs=(S.recebForn||[]).filter(r=>{
+    const d=_mesDoIso(r.data); if(!d) return false;
+    return d.ano===ano && d.mes===mes;
+  });
+  if(!regs.length){
+    toast(`⚠ Nenhuma entrada de fornecedor em ${_mesNome(mes)}/${ano}.`,'warn');
+    return false;
+  }
+  const rows=[
+    ['ID','Data','Fornecedor','NF','Total','Pago','Débito','Status',
+      ...MODELOS.map(m=>MODELO_LABELS[m]),'Usuário','Observação'],
+    ...regs.map(r=>[
+      r.id, r.data, r.fornecedor, r.nf||'', r.total, r.pago, r.total-r.pago, r.status,
+      ...MODELOS.map(m=>r.modelos?.[m]||0),
+      r.usuario||'', r.obs||''
+    ])
+  ];
+  downloadXLSX(rows, `Entrada_Fornecedores_${_mesNome(mes)}_${ano}`);
+  return true;
+}
+// Consolidado: todas as movs do mês, um CSV só
+function exportRelConsolidado(ano, mes){
+  const movs=(S.movs||[]).filter(m=>{
+    const d=_mesDoTs(m.ts); if(!d) return false;
+    return d.ano===ano && d.mes===mes;
+  });
+  if(!movs.length){
+    toast(`⚠ Nenhuma movimentação em ${_mesNome(mes)}/${ano}.`,'warn');
+    return false;
+  }
+  const rows=[
+    ['ID','Data','Hora','Tipo','Origem','Destino','Loja','Qtd Total',
+      ...MODELOS.map(m=>MODELO_LABELS[m]),'Usuário','Observação'],
+    ...movs.map(m=>{
+      const ts=(m.ts||'').split(', ');
+      return [m.id||'', ts[0]||'', ts[1]||'', m.tipo||'',
+        m.origem||'', m.destino||'',
+        m.loja?lojaNome(m.loja):'',
+        m.qtd||0,
+        ...MODELOS.map(k=>m.modelos?.[k]||0),
+        m.usuario||'', m.obs||''];
+    })
+  ];
+  downloadXLSX(rows, `Consolidado_Movimentacoes_${_mesNome(mes)}_${ano}`);
+  return true;
+}
+// Baixa TODOS os relatórios do mês (com pequeno delay entre downloads)
+async function exportTudoDoMes(ano, mes){
+  const tipos=[
+    ['Retorno de Loja','Retorno_Lojas'],
+    ['Compra','Compras'],
+    ['Retorno de Reforma','Retorno_Reforma'],
+    ['Envio para Reforma','Envio_Reforma'],
+    ['Descarte','Descarte'],
+    ['Pagamento Fornecedor','Pagamento_Fornecedores'],
+    ['Recebimento Fornecedor','Entrada_Fornecedores_Movs'],
+    ['Distribuição Interna','Distribuicao'],
+    ['Envio para Loja','Envio_Lojas'],
+    ['Devolução Interna','Devolucao_Interna'],
+    ['Triagem','Triagem'],
+    ['Envio Descartável Reforma','Envio_Descartavel_Reforma'],
+  ];
+  let baixados=0, ignorados=0;
+  toast('⏳ Gerando pacote de relatórios...','info');
+  for(const [tp,tag] of tipos){
+    const rows=_linhasMovs(tp, ano, mes);
+    if(rows.length>1){
+      downloadXLSX(rows, `${tag}_${_mesNome(mes)}_${ano}`);
+      baixados++;
+      await new Promise(r=>setTimeout(r,350)); // dá tempo do navegador processar cada download
+    } else {
+      ignorados++;
+    }
+  }
+  // Extras: reformas detalhadas e recebForn detalhado
+  if(exportRelReformasMes(ano, mes)){baixados++;await new Promise(r=>setTimeout(r,350));}
+  if(exportRelRecebFornMes(ano, mes)){baixados++;await new Promise(r=>setTimeout(r,350));}
+  if(exportRelConsolidado(ano, mes)){baixados++;}
+  setTimeout(()=>toast(`✅ ${baixados} relatório(s) baixado(s). ${ignorados} sem dados no período.`),400);
+}
+
+// Tela principal de Relatórios
+function rRelatorios(el){
+  const hoje2=new Date();
+  const anoAtual=window._relAno||hoje2.getFullYear();
+  const mesAtual=window._relMes||(hoje2.getMonth()+1);
+  window._relAno=anoAtual; window._relMes=mesAtual;
+  const contagem=_contarPorTipo(anoAtual, mesAtual);
+  const totalMovs=Object.values(contagem).reduce((s,v)=>s+v,0);
+  // Reforma e recebForn extras
+  const nReformas=(S.reformas||[]).filter(r=>{
+    if(r.status==='Excluído') return false;
+    const d=_mesDoIso(r.data); return d && d.ano===anoAtual && d.mes===mesAtual;
+  }).length;
+  const nRecebForn=(S.recebForn||[]).filter(r=>{
+    const d=_mesDoIso(r.data); return d && d.ano===anoAtual && d.mes===mesAtual;
+  }).length;
+
+  // Anos disponíveis nos dados
+  const anosSet=new Set();
+  (S.movs||[]).forEach(m=>{const d=_mesDoTs(m.ts); if(d) anosSet.add(d.ano);});
+  anosSet.add(hoje2.getFullYear());
+  const anos=[...anosSet].sort((a,b)=>b-a);
+  const meses=[[1,'Janeiro'],[2,'Fevereiro'],[3,'Março'],[4,'Abril'],[5,'Maio'],[6,'Junho'],
+    [7,'Julho'],[8,'Agosto'],[9,'Setembro'],[10,'Outubro'],[11,'Novembro'],[12,'Dezembro']];
+
+  // Cards por tipo (todos os relatórios disponíveis)
+  const relatorios=[
+    {tipo:'Retorno de Loja',icon:'↩️',cor:'#3498db',desc:'Paletes que voltaram das lojas'},
+    {tipo:'Compra',icon:'🛒',cor:'#27ae60',desc:'Entradas de compra na REV'},
+    {tipo:'Envio para Reforma',icon:'🔧',cor:'#e67e22',desc:'Paletes enviados para fornecedor reformar'},
+    {tipo:'Retorno de Reforma',icon:'✅',cor:'#2ecc71',desc:'Paletes que voltaram da reforma'},
+    {tipo:'Descarte',icon:'🗑️',cor:'#e74c3c',desc:'Paletes descartados na triagem'},
+    {tipo:'Pagamento Fornecedor',icon:'💰',cor:'#c0392b',desc:'Saída da REV para pagar fornecedor'},
+    {tipo:'Recebimento Fornecedor',icon:'📥',cor:'#8e44ad',desc:'Entrada/débito registrado do fornecedor'},
+    {tipo:'Distribuição Interna',icon:'🔀',cor:'#16a085',desc:'REV → área interna do CD'},
+    {tipo:'Envio para Loja',icon:'🏬',cor:'#2980b9',desc:'CD → loja'},
+    {tipo:'Devolução Interna',icon:'🔄',cor:'#d35400',desc:'Área interna → Triagem'},
+    {tipo:'Triagem',icon:'🔍',cor:'#f39c12',desc:'Movimentações de triagem'},
+    {tipo:'Envio Descartável Reforma',icon:'📦',cor:'#7f8c8d',desc:'Descartável mandado pro fornecedor'},
+  ];
+
+  el.innerHTML=`
+  <div class="section-hdr" style="margin-top:0">
+    <div class="section-title">📈 Relatórios Mensais</div>
+    <div style="font-size:11px;color:var(--text-light);font-weight:500">Extração de dados por período — CSV compatível com Excel</div>
+  </div>
+
+  <!-- SELETOR DE MÊS/ANO -->
+  <div class="card" style="padding:16px;margin-bottom:16px;background:linear-gradient(135deg,#f8fbff 0%,#eaf9f5 100%);border:2px solid var(--teal);">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);">📅 Período:</div>
+      <select id="rel-mes" class="form-control" style="max-width:160px;font-size:13px;padding:8px 12px;font-weight:600;">
+        ${meses.map(([n,lb])=>`<option value="${n}" ${n===mesAtual?'selected':''}>${lb}</option>`).join('')}
+      </select>
+      <select id="rel-ano" class="form-control" style="max-width:110px;font-size:13px;padding:8px 12px;font-weight:600;">
+        ${anos.map(a=>`<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="aplicarFiltroRel()">🔎 Atualizar</button>
+      <div style="margin-left:auto;background:#fff;padding:8px 14px;border-radius:6px;border:1.5px solid var(--border-dark);font-size:12px;">
+        <strong style="color:var(--navy);font-size:15px;">${totalMovs}</strong> <span style="color:var(--text-light)">movs</span>
+        <span style="color:var(--text-light);margin:0 6px">|</span>
+        <strong style="color:var(--orange);font-size:15px;">${nReformas}</strong> <span style="color:var(--text-light)">ref.</span>
+        <span style="color:var(--text-light);margin:0 6px">|</span>
+        <strong style="color:var(--purple);font-size:15px;">${nRecebForn}</strong> <span style="color:var(--text-light)">entradas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAIXAR TUDO -->
+  <div class="card" style="padding:16px;margin-bottom:16px;border-left:5px solid var(--green);">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px">📦 Pacote Completo do Mês</div>
+        <div style="font-size:12px;color:var(--text-light)">Baixa TODOS os relatórios de ${_mesNome(mesAtual)}/${anoAtual} em CSVs separados (um por tipo) + consolidado geral.</div>
+      </div>
+      <button class="btn btn-success" onclick="exportTudoDoMes(${anoAtual},${mesAtual})" style="font-size:13px;padding:10px 20px">⬇ Baixar Tudo</button>
+    </div>
+  </div>
+
+  <!-- CARDS POR TIPO -->
+  <div class="section-hdr" style="margin-top:8px"><div class="section-title">Exportar relatório individual</div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px;">
+    ${relatorios.map(r=>{
+      const qtd=contagem[r.tipo]||0;
+      const ativo=qtd>0;
+      return `<div style="background:${ativo?'#fff':'#f8fbff'};border:${ativo?'2px solid '+r.cor:'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${ativo?'':'opacity:.55'}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:26px">${r.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${r.tipo}</div>
+            <div style="font-size:10px;color:var(--text-light);margin-top:1px">${r.desc}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${ativo?r.cor:'var(--text-light)'}">${qtd}</div>
+            <div style="font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">movs</div>
+          </div>
+        </div>
+        <button class="btn ${ativo?'btn-primary':'btn-ghost'} btn-sm btn-full" ${ativo?'':'disabled'} onclick="exportRelMensal('${r.tipo.replace(/'/g,"\\'")}',${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- EXTRAS (fontes fora de S.movs) -->
+  <div class="section-hdr"><div class="section-title">Relatórios detalhados extras</div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+    <div style="background:${nReformas?'#fff':'#f8fbff'};border:${nReformas?'2px solid #e67e22':'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${nReformas?'':'opacity:.55'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:26px">🔧</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Reformas Detalhadas</div>
+          <div style="font-size:10px;color:var(--text-light);margin-top:1px">Envio + Retorno + Saldo por reforma</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${nReformas?'#e67e22':'var(--text-light)'}">${nReformas}</div>
+          <div style="font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">reformas</div>
+        </div>
+      </div>
+      <button class="btn ${nReformas?'btn-primary':'btn-ghost'} btn-sm btn-full" ${nReformas?'':'disabled'} onclick="exportRelReformasMes(${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
+    </div>
+    <div style="background:${nRecebForn?'#fff':'#f8fbff'};border:${nRecebForn?'2px solid #8e44ad':'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${nRecebForn?'':'opacity:.55'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:26px">📥</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Entradas de Fornecedor</div>
+          <div style="font-size:10px;color:var(--text-light);margin-top:1px">Débitos + status de pagamento</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${nRecebForn?'#8e44ad':'var(--text-light)'}">${nRecebForn}</div>
+          <div style="font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">registros</div>
+        </div>
+      </div>
+      <button class="btn ${nRecebForn?'btn-primary':'btn-ghost'} btn-sm btn-full" ${nRecebForn?'':'disabled'} onclick="exportRelRecebFornMes(${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
+    </div>
+    <div style="background:${totalMovs?'#fff':'#f8fbff'};border:${totalMovs?'2px solid var(--navy)':'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${totalMovs?'':'opacity:.55'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:26px">📋</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Consolidado Geral</div>
+          <div style="font-size:10px;color:var(--text-light);margin-top:1px">Todas as movimentações do mês em um CSV</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${totalMovs?'var(--navy)':'var(--text-light)'}">${totalMovs}</div>
+          <div style="font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">linhas</div>
+        </div>
+      </div>
+      <button class="btn ${totalMovs?'btn-primary':'btn-ghost'} btn-sm btn-full" ${totalMovs?'':'disabled'} onclick="exportRelConsolidado(${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding:12px 16px;background:#eaf4fb;border-radius:var(--radius);border-left:4px solid var(--navy);font-size:11px;color:var(--text-mid);line-height:1.6">
+    <strong style="color:var(--navy)">💡 Dica:</strong> Todos os arquivos saem em CSV com codificação UTF-8 (BOM), abre direto no Excel com acentos corretos. Cada linha traz quantidades separadas por modelo de palete (PBR, DESCARTÁVEL, CHEP, EURO, GAIOLA) + total geral.
+  </div>
+  `;
+}
+function aplicarFiltroRel(){
+  window._relAno=parseInt(document.getElementById('rel-ano').value,10);
+  window._relMes=parseInt(document.getElementById('rel-mes').value,10);
+  renderScreen('relatorios');
 }
 
 // ── SALDO FORNECEDORES ────────────────
