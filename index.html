@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#1b4f72">
 <title>PaletCD v32 — Controle de Paletes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -120,6 +119,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .kpi-card.orange .kpi-value{color:var(--orange);}
 .kpi-card.purple .kpi-value{color:var(--purple);}
 .kpi-sub{font-size:10px;color:var(--text-light);margin-top:3px;}
+/* ── REGRA DE COR ─────────────────────────────────
+   neutro  = informação, sem ação esperada
+   atencao = fila de trabalho, olhar
+   alerta  = exige ação ou investigação
+   Cor não decora. Se nada exige ação, nada fica vermelho. */
+.kpi-card.neutro{border-top-color:var(--slate-light);}
+.kpi-card.neutro .kpi-value{color:var(--text);}
+.kpi-card.atencao{border-top-color:var(--amber);}
+.kpi-card.atencao .kpi-value{color:var(--navy);}
+.kpi-card.alerta{border-top-color:var(--red);background:#fffafa;}
+.kpi-card.alerta .kpi-value{color:var(--red);}
+/* KPIs secundários: mesma informação, menos peso visual */
+.kpi-grid-sec{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px;}
+.kpi-mini{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 13px;display:flex;align-items:baseline;gap:9px;}
+.kpi-mini .km-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-light);}
+.kpi-mini .km-value{font-size:17px;font-weight:700;font-family:var(--mono);color:var(--text);margin-left:auto;}
+.kpi-mini.alerta{border-color:var(--red);background:#fffafa;}
+.kpi-mini.alerta .km-value{color:var(--red);}
 .card{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px;}
 .card-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .card-title{font-size:13px;font-weight:700;color:var(--navy);}
@@ -263,13 +280,8 @@ textarea.form-control{resize:vertical;min-height:60px;}
     <div class="login-logo">
       <div class="login-logo-icon">🪵</div>
       <div class="login-logo-title">PaletCD</div>
-      <div class="login-logo-sub">Controle de Paletes</div>
+      <div class="login-logo-sub">Controle de Paletes · CD</div>
     </div>
-    <div class="login-tabs">
-      <div class="login-tab active" id="tab-area" onclick="switchTab('area')">🏢 Área / CD</div>
-      <div class="login-tab" id="tab-loja" onclick="switchTab('loja')">🏪 Loja</div>
-    </div>
-
     <!-- Área -->
     <div id="form-area">
       <div class="login-section">
@@ -291,19 +303,6 @@ textarea.form-control{resize:vertical;min-height:60px;}
         <input class="login-input" id="la-pwd" type="password" placeholder="Digite sua senha" autocomplete="off">
       </div>
       <button class="login-btn" onclick="loginArea()">Entrar</button>
-    </div>
-
-    <!-- Loja -->
-    <div id="form-loja" style="display:none">
-      <div class="login-section">
-        <label class="login-label">Selecione sua Loja</label>
-        <select class="login-select" id="ll-loja"><option value="">— Selecionar —</option></select>
-      </div>
-      <div class="login-section">
-        <label class="login-label">Senha (Código do Cliente)</label>
-        <input class="login-input" id="ll-pwd" type="password" placeholder="Digite o código do cliente" autocomplete="off">
-      </div>
-      <button class="login-btn" onclick="loginLoja()">Entrar</button>
     </div>
 
     <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
@@ -559,8 +558,8 @@ function lsGet(key){
     return JSON.parse(s); // formato antigo (plano) — compatível
   }catch(e){return null;}
 }
-const COLECOES = ['movs','triagens','reformas','recebForn','forns','aberturaDiaria'];
-const CONTADORES = ['nMov','nRef','nSol','nForn','nRecForn'];
+const COLECOES = ['movs','triagens','reformas','forns','aberturaDiaria'];
+const CONTADORES = ['nMov','nRef','nSol','nForn'];
 
 let db = null;
 let firebaseReady = false;
@@ -675,7 +674,7 @@ function computarDiffs(atual,base){
     });
     rmap.forEach((x,id)=>{if(!lmap.has(id))updates[`${c}/${fbKey(id)}`]=null;});
   });
-  ['senhas','fornNomes','solics'].forEach(k=>{
+  ['senhas','solics'].forEach(k=>{
     if(normStr(atual[k])!==normStr(base[k]))updates[k]=cleanFb(atual[k]===undefined?null:atual[k]);
   });
   if(!!atual.modoMigracao!==!!base.modoMigracao)updates['meta/modoMigracao']=!!atual.modoMigracao;
@@ -789,10 +788,8 @@ function fromV2(v2){
   s.movs=colToArr(v2.movs,(a,b)=>movNum(b.id)-movNum(a.id));
   s.triagens=colToArr(v2.triagens,(a,b)=>(b._seq||0)-(a._seq||0));
   s.reformas=colToArr(v2.reformas,(a,b)=>movNum(b.id)-movNum(a.id));
-  s.recebForn=colToArr(v2.recebForn,(a,b)=>movNum(b.id)-movNum(a.id));
   s.forns=colToArr(v2.forns,(a,b)=>movNum(a.id)-movNum(b.id));
   s.aberturaDiaria=colToArr(v2.aberturaDiaria,(a,b)=>movNum(b.id)-movNum(a.id));
-  s.fornNomes=Array.isArray(v2.fornNomes)?v2.fornNomes:Object.values(v2.fornNomes||{});
   s.solics=Array.isArray(v2.solics)?v2.solics:Object.values(v2.solics||{});
   if(v2.senhas)s.senhas=v2.senhas;
   s.est={};
@@ -818,7 +815,7 @@ function applyRemote(v2){
     updateSyncBadge();
     if(mudou&&CU){
       renderBannerMigracao();
-      const telasLeitura=['dashboard','estoque','movimentacoes','saldo-forn','minha-area','loja-dash','loja-hist','paletes-loja','solicitacoes','solicitar'];
+      const telasLeitura=['dashboard','estoque','movimentacoes','minha-area','paletes-loja','solicitacoes','solicitar'];
       // Não re-renderiza se o usuário está digitando em algum campo (evita apagar filtro de data no meio da seleção)
       const ae=document.activeElement;
       const digitando=ae&&['INPUT','SELECT','TEXTAREA'].includes(ae.tagName);
@@ -856,7 +853,6 @@ async function migrarParaV2(localState){
   const updates={};
   COLECOES.forEach(c=>{(fonte[c]||[]).forEach(x=>{if(x&&x.id)updates[`${c}/${fbKey(x.id)}`]=cleanFb(x);});});
   updates['senhas']=cleanFb(fonte.senhas);
-  updates['fornNomes']=cleanFb(fonte.fornNomes||[]);
   updates['solics']=cleanFb(fonte.solics||[]);
   CONTADORES.forEach(c=>{updates[`counters/${c}`]=fonte[c]||1;});
   updates['meta/modoMigracao']=!!fonte.modoMigracao;
@@ -952,7 +948,7 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['relatorios','📈','Relatórios Mensais'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
@@ -960,7 +956,7 @@ const MENUS={
     ['envio-loja','🚚','Envio p/ Lojas'],['paletes-loja','🏪','Paletes por Loja'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['receb-forn','📥','Receb. Fornecedor'],['saldo-forn','💰','Saldo Fornecedores'],['relatorios','📈','Relatórios Mensais'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   area:[
     ['solicitar','🙋','🙋 Solicitar Paletes'],
@@ -968,9 +964,6 @@ const MENUS={
     ['minha-area','📊','🟢 Saldo da Área (View)'],
     ['paletes-loja','🏪','🏪 Paletes por Loja (View)'],
     ['estoque','📦','📊 Estoque Geral (View)'],
-  ],
-  loja:[
-    ['loja-dash','📊','🟢 Saldo da Loja (View)'],['movimentacoes','📋','📋 Histórico (View)'],
   ],
 };
 
@@ -981,7 +974,7 @@ const AREAS_INT=['Mercearia','Mercearia Recebimento','Mercearia Expedição','FL
 const AREAS_ALL=['REV',...AREAS_INT];
 const TIPOS_MOV=['Compra','Distribuição Interna','Envio para Loja','Confirmação Loja',
   'Retorno de Loja','Devolução Interna','Triagem','Envio para Reforma','Retorno de Reforma','Descarte',
-  'Recebimento Fornecedor','Pagamento Fornecedor'];
+  'Recebimento Fornecedor','Pagamento Fornecedor','Saida para Fornecedor'];
 
 // estoque por área+modelo: S.est[area][modelo] = número
 function emptyEst(){
@@ -993,8 +986,8 @@ function emptyEst(){
 
 let S={
   est:emptyEst(),
-  movs:[],solics:[],triagens:[],reformas:[],forns:[],recebForn:[],fornNomes:[],
-  nMov:1,nRef:1,nSol:1,nForn:1,nRecForn:1,
+  movs:[],solics:[],triagens:[],reformas:[],forns:[],
+  nMov:1,nRef:1,nSol:1,nForn:1,
   senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
 };
 
@@ -1133,8 +1126,6 @@ function fixState(s){
   if(!s.triagens)s.triagens=[];
   if(!s.reformas)s.reformas=[];
   if(!s.forns)s.forns=[];
-  if(!s.recebForn)s.recebForn=[];
-  if(!s.fornNomes)s.fornNomes=[];
   
   s.est=fixEst(s.est);
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
@@ -1145,7 +1136,6 @@ function fixState(s){
   if(!s.nForn||s.nForn<1)s.nForn=1;
   if(!s.nSol||s.nSol<1)s.nSol=1;
   if(!s.nRef||s.nRef<1)s.nRef=1;
-  if(!s.nRecForn||s.nRecForn<1)s.nRecForn=1;
   if(s.modoMigracao===undefined)s.modoMigracao=false;
   if(!s.aberturaDiaria)s.aberturaDiaria=[];
   // ✅ v2: triagens precisam de id próprio para virar nó na nuvem
@@ -1228,7 +1218,6 @@ async function load(){
 function seedData(){
   S.est=emptyEst();
   S.forns=[];
-  S.fornNomes=S.fornNomes||[];
   S.modoMigracao=false;
   save();
 }
@@ -1243,8 +1232,10 @@ function lojaNome(d){const l=LOJAS_BASE.find(x=>x.d===Number(d));return l?l.n:St
 function totalEst(area){return MODELOS.reduce((s,m)=>s+(S.est[area]?.[m]||0),0);}
 // Formata valor respeitando o modo variação (mostra sinal e permite negativo)
 function fmtVal(v){
-  if(window._modoDelta)return(v>0?'+':'')+v;
-  return v;
+  const n=Number(v)||0;
+  const s=n.toLocaleString('pt-BR');
+  if(window._modoDelta)return(n>0?'+':'')+s;
+  return s;
 }
 function corVal(v){
   if(!window._modoDelta)return'';
@@ -1306,7 +1297,7 @@ function atualizarTotalModelos(){
 
 function emptyRow(n){return `<tr><td colspan="${n}"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum registro</div></div></td></tr>`;}
 function badgeMov(t){
-  const m={Compra:'green','Distribuição Interna':'blue','Envio para Loja':'navy','Confirmação Loja':'teal','Retorno de Loja':'amber','Avaria Loja':'amber','Devolução Interna':'orange',Triagem:'gray','Envio para Reforma':'red','Retorno de Reforma':'teal',Descarte:'red','Recebimento Fornecedor':'teal','Pagamento Fornecedor':'blue'};
+  const m={Compra:'green','Distribuição Interna':'blue','Envio para Loja':'navy','Confirmação Loja':'teal','Retorno de Loja':'amber','Avaria Loja':'amber','Devolução Interna':'orange',Triagem:'gray','Envio para Reforma':'red','Retorno de Reforma':'teal',Descarte:'red','Recebimento Fornecedor':'teal','Pagamento Fornecedor':'blue','Saida para Fornecedor':'blue'};
   return`<span class="badge badge-${m[t]||'gray'}">${t}</span>`;
 }
 function toast(msg,type='ok'){
@@ -1388,57 +1379,6 @@ function lojaHide(id){
   _lojaIdx[id]=-1;
 }
 // Autocomplete genérico — funciona em qualquer campo de fornecedor
-function fornSearch(inputId,ddId){
-  inputId=inputId||'c-forn'; ddId=ddId||'forn-dd';
-  const q=(document.getElementById(inputId)?.value||'').toLowerCase().trim();
-  const dd=document.getElementById(ddId);if(!dd)return;
-  const nomes=(S.fornNomes||[]).filter(n=>q?n.toLowerCase().includes(q):true);
-  if(!nomes.length){dd.style.display='none';return;}
-  dd.dataset.idx='-1';
-  dd.innerHTML=nomes.map((n,i)=>`<div class="forn-opt" data-idx="${i}"
-    style="padding:8px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"
-    onmousedown="fornSelect('${n.replace(/'/g,"\'")}','${inputId}','${ddId}')"
-    onmouseover="fornHL('${ddId}',${i})" onmouseout="fornUHL('${ddId}',${i})">
-    🏭 ${n}
-  </div>`).join('');
-  dd.style.display='block';
-}
-function fornHL(ddId,idx){
-  const dd=document.getElementById(ddId);if(!dd)return;
-  dd.dataset.idx=idx;
-  dd.querySelectorAll('.forn-opt').forEach((o,i)=>o.style.background=i===idx?'#d6eaf8':'');
-}
-function fornUHL(ddId,idx){
-  const dd=document.getElementById(ddId);if(!dd)return;
-  if(parseInt(dd.dataset.idx)===idx){const o=dd.querySelectorAll('.forn-opt')[idx];if(o)o.style.background='';}
-}
-function fornKeyNav(e,inputId,ddId){
-  ddId=ddId||'forn-dd';
-  const dd=document.getElementById(ddId);
-  if(!dd||dd.style.display==='none')return;
-  const opts=dd.querySelectorAll('.forn-opt');if(!opts.length)return;
-  let idx=parseInt(dd.dataset.idx??-1);
-  if(e.key==='ArrowDown'){e.preventDefault();idx=Math.min(idx+1,opts.length-1);fornHL(ddId,idx);opts[idx].scrollIntoView({block:'nearest'});}
-  else if(e.key==='ArrowUp'){e.preventDefault();idx=Math.max(idx-1,0);fornHL(ddId,idx);opts[idx].scrollIntoView({block:'nearest'});}
-  else if(e.key==='Enter'&&idx>=0){e.preventDefault();opts[idx].dispatchEvent(new MouseEvent('mousedown'));}
-  else if(e.key==='Escape'){fornHide(ddId);}
-}
-function fornSelect(nome,inputId,ddId){
-  inputId=inputId||'c-forn'; ddId=ddId||'forn-dd';
-  const el=document.getElementById(inputId);if(el)el.value=nome;
-  fornHide(ddId);
-  if(inputId==='rf-forn')atualizarSaldoRcf();
-}
-function fornHide(ddId){
-  ddId=ddId||'forn-dd';
-  const dd=document.getElementById(ddId);if(dd)dd.style.display='none';
-}
-function saveFornNome(nome){
-  if(!nome||!nome.trim())return;
-  if(!S.fornNomes)S.fornNomes=[];
-  const n=nome.trim();
-  if(!S.fornNomes.includes(n)){S.fornNomes.push(n);save();}
-}
 function selectAreas(id,list){
   const arr=list||AREAS_INT;
   return`<select class="form-control" id="${id}"><option value="">Selecionar área</option>${arr.map(a=>`<option>${a}</option>`).join('')}</select>`;
@@ -1450,13 +1390,7 @@ function selectForns(id){
 // ═══════════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════════
-function switchTab(t){
-  ['area','loja'].forEach(x=>{
-    document.getElementById('tab-'+x).classList.toggle('active',x===t);
-    document.getElementById('form-'+x).style.display=x===t?'block':'none';
-  });
-  document.getElementById('login-error').style.display='none';
-}
+// switchTab removida — o app é de uso interno do CD, só existe login de área.
 
 // Mapa: código de login → nome da área no estoque
 const AREA_NOME={
@@ -1466,12 +1400,55 @@ const AREA_NOME={
   CFR:'Central de Frios', FRI:'Frigorífico'
 };
 
-function loginArea(){
+// ── SENHAS: HASH SHA-256 ─────────────────────
+// O Firebase é lido por inteiro pelo cliente (attachRealtime lê V2_PATH),
+// então regra de segurança no nó 'senhas' não adianta: leitura concedida no
+// pai não pode ser revogada no filho. Guardamos hash, não texto.
+// Isso NÃO é autenticação real — impede que quem lê o banco descubra a
+// senha do ADM e entre como ADM. Autenticação de verdade exigiria Firebase
+// Auth com contas nominais.
+async function hashSenha(txt){
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('paletcd:'+String(txt)));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    console.warn('crypto.subtle indisponível (contexto não seguro) — senha em texto',e);
+    return null;
+  }
+}
+function ehHash(s){return typeof s==='string'&&/^[0-9a-f]{64}$/.test(s);}
+
+// Confere a senha digitada contra o valor guardado.
+// Aceita legado em texto puro e, se bater, migra para hash na hora.
+async function conferirSenha(chave,digitada){
+  const guardado=S.senhas?.[chave]??(PERFIL_DEF[chave]?.senhaDefault);
+  if(guardado==null)return false;
+  if(ehHash(guardado)){
+    const h=await hashSenha(digitada);
+    return h!==null&&h===guardado;
+  }
+  // legado em texto puro
+  if(String(digitada)!==String(guardado))return false;
+  const h=await hashSenha(digitada);
+  if(h){S.senhas=S.senhas||{};S.senhas[chave]=h;save();console.log('Senha de '+chave+' migrada para hash.');}
+  return true;
+}
+
+// Grava senha já convertida em hash (cai para texto se crypto indisponível)
+async function gravarSenha(chave,nova){
+  const h=await hashSenha(nova);
+  S.senhas=S.senhas||{};
+  S.senhas[chave]=h||nova;
+  save();
+  return h!==null;
+}
+
+async function loginArea(){
   const area=v('la-area'), pwd=v('la-pwd');
   const err=document.getElementById('login-error');err.style.display='none';
   if(!area){err.textContent='Selecione uma área.';err.style.display='block';return;}
-  const senhaCorreta=S.senhas[area]||(PERFIL_DEF[area]?.senhaDefault);
-  if(pwd!==senhaCorreta){err.textContent='Senha incorreta.';err.style.display='block';return;}
+  const ok=await conferirSenha(area,pwd);
+  if(!ok){err.textContent='Senha incorreta.';err.style.display='block';return;}
   const p=PERFIL_DEF[area];
   // CU.area = nome completo usado no estoque (ex: 'Mercearia', 'FLV')
   // CU.areaKey = código curto usado nas senhas (ex: 'MER', 'FLV')
@@ -1480,26 +1457,14 @@ function loginArea(){
   startApp();
 }
 
-function loginLoja(){
-  const dig=v('ll-loja'), pwd=v('ll-pwd');
-  const err=document.getElementById('login-error');err.style.display='none';
-  if(!dig){err.textContent='Selecione a loja.';err.style.display='block';return;}
-  const loja=LOJAS_BASE.find(l=>String(l.d)===String(dig));
-  if(!loja){err.textContent='Loja não encontrada.';err.style.display='block';return;}
-  if(String(pwd)!==String(loja.cc)){err.textContent='Código do cliente incorreto.';err.style.display='block';return;}
-  CU={area:loja.n,nome:loja.n,role:'loja',icon:'🏪',tipo:'loja',lojaDigito:loja.d,lojaCc:loja.cc};
-  startApp();
-}
-
-function alterarSenha(){
+async function alterarSenha(){
   const atual=v('pwd-atual'),nova=v('pwd-nova'),conf=v('pwd-conf');
   const err=document.getElementById('pwd-error');err.style.display='none';
-  if(CU.role==='loja'){err.textContent='Lojas usam o código do cliente como senha.';err.style.display='block';return;}
-  const senhaAtual=S.senhas[CU.areaKey]||(PERFIL_DEF[CU.areaKey]?.senhaDefault);
-  if(atual!==senhaAtual){err.textContent='Senha atual incorreta.';err.style.display='block';return;}
+  const ok=await conferirSenha(CU.areaKey,atual);
+  if(!ok){err.textContent='Senha atual incorreta.';err.style.display='block';return;}
   if(nova.length<4){err.textContent='Nova senha deve ter pelo menos 4 caracteres.';err.style.display='block';return;}
   if(nova!==conf){err.textContent='Nova senha e confirmação não coincidem.';err.style.display='block';return;}
-  S.senhas[CU.areaKey]=nova; save();
+  await gravarSenha(CU.areaKey,nova);
   toast('✓ Senha alterada com sucesso!');
   closeModal('modal-pwd');
   ['pwd-atual','pwd-nova','pwd-conf'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -1510,7 +1475,6 @@ function logout(){
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-shell').style.display='none';
   document.getElementById('la-pwd').value='';
-  document.getElementById('ll-pwd').value='';
 }
 
 function startApp(){
@@ -1518,7 +1482,7 @@ function startApp(){
   document.getElementById('app-shell').style.display='block';
   document.getElementById('su-icon').textContent=CU.icon;
   document.getElementById('su-name').textContent=CU.nome;
-  document.getElementById('su-role').textContent=CU.role==='loja'?'Loja · Cód '+CU.lojaCc:'Área: '+CU.areaKey;
+  document.getElementById('su-role').textContent='Área: '+CU.areaKey;
   buildNav();renderBannerMigracao();
   const m=MENUS[CU.role]||[];
   if(m.length) navigate(m[0][0]);
@@ -1551,10 +1515,8 @@ const PAGE_INFO={
   triagem:['Triagem','Classificação de paletes retornados'],reforma:['Controle de Reforma','Paletes em reforma'],
   'retorno-loja':['Retorno de Lojas','Lojas → REV'],'devolucao':['Devolução Interna','Áreas → Triagem'],
   movimentacoes:['Movimentações','Registro completo'],fornecedores:['Fornecedores','Gerenciar fornecedores'],
-  'minha-area':['Meu Estoque','Saldo da sua área'],'loja-dash':['Minha Loja','Resumo da loja'],
-  'loja-hist':['Histórico da Loja','Movimentações da loja'],
-  'devolucao-loja':['Devolução ao CD','Retorno de paletes ao Centro de Distribuição'],
-  'receb-forn':['Recebimento de Fornecedores','Débitos de paletes'],'saldo-forn':['Saldo — Fornecedores','Contas a pagar de paletes'],
+  'minha-area':['Meu Estoque','Saldo da sua área'],
+  'saida-forn':['Saída para Fornecedor','Devolução de paletes — baixa na REV'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
 };
@@ -1585,8 +1547,8 @@ function renderScreen(s){
     triagem:rTriagem,reforma:rReforma,
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
-    'minha-area':rMinhaArea,'loja-dash':rLojaDash,'loja-hist':rLojaHist,'devolucao-loja':rDevolucaoLoja,
-    'receb-forn':rRecebForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),'saldo-forn':rSaldoForn,
+    'minha-area':rMinhaArea,
+    'saida-forn':rSaidaForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),
     relatorios:rRelatorios,
   };
   if(fn[s]) fn[s](el);
@@ -1599,7 +1561,6 @@ function rDashboard(el){
   if(!S.movs) S.movs=[];
   if(!S.est) S.est=emptyEst();
   if(!S.reformas) S.reformas=[];
-  if(!S.recebForn) S.recebForn=[];
   
   // Usa estoque filtrado se disponível
   const estOrig=S.est;
@@ -1611,32 +1572,58 @@ function rDashboard(el){
   <!-- FILTRO DE DATA -->
   <div class="card" style="margin-bottom:14px;padding:14px 16px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Filtrar por período <span style="color:#1abc9c">[v30]</span></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">Filtrar por período</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
         <input type="date" id="dash-de" class="form-control" value="${window._dashDe||''}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarDashboard)">
         <span style="font-size:12px;color:var(--text-light)">até</span>
         <input type="date" id="dash-ate" class="form-control" value="${window._dashAte||''}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarDashboard)">
         <button class="btn btn-ghost btn-sm" onclick="limparFiltroDash()">✕ Limpar</button>
-        <button class="btn btn-ghost btn-sm" onclick="diagnosticoMovs()" title="Ver quantas movimentações existem em cada mês">🔍 Diagnóstico</button>
+        <button class="btn btn-ghost btn-sm" onclick="diagnosticoMovs()" title="Ferramenta técnica: quantas movimentações existem em cada mês" style="opacity:.55;font-size:11px">Diagnóstico</button>
         <span id="dash-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600"></span>
       </div>
     </div>
     ${window._modoDelta?(window._movsNoPeriodo===0?`<div style="background:#fdecea;border:1px solid #e74c3c;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:12px;color:#a83226;font-weight:600;">⚠ NENHUMA MOVIMENTAÇÃO neste período. Existem ${window._totalMovs||0} movimentações no sistema, mas nenhuma entre as datas selecionadas — por isso tudo aparece zerado. Confira o período.</div>`:`<div style="background:#fff4e5;border:1px solid #f39c12;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:12px;color:#8a5a00;font-weight:600;">⇅ MODO VARIAÇÃO — ${window._movsNoPeriodo} movimentação(ões) no período. Os números mostram o que MUDOU (entradas menos saídas), não o saldo total. Para saldo acumulado, deixe a data inicial em branco.</div>`):''}
   </div>
 
-  <!-- PAINEL 1: KPIs -->
-  <div class="section-hdr" style="margin-top:0"><div class="section-title">📦 Visão Geral</div></div>
+  <!-- PAINEL 1: KPIs PRIMARIOS — os 4 que geram decisão -->
+  <div class="section-hdr" style="margin-top:0"><div class="section-title">Visão Geral</div></div>
   <div class="kpi-grid">
-    <div class="kpi-card amber"><div class="kpi-label">Nas Lojas</div><div class="kpi-value" style="${corVal(totLojas)}">${fmtVal(totLojas)}</div></div>
-    <div class="kpi-card orange"><div class="kpi-label">Em Reforma</div><div class="kpi-value">${(()=>{const t=S.reformas.filter(r=>r.status!=='Finalizado'&&r.status!=='Excluído').reduce((s,r)=>s+(r.qtdEnv-r.qtdRet),0);return Math.max(0,t);})()}</div><div class="kpi-sub">pendente retorno</div>${window._modoDelta?'<div style="font-size:9px;color:#e67e22;font-weight:700;margin-top:2px">✱ não filtrado</div>':''}</div>
-    <div class="kpi-card red"><div class="kpi-label">Fila Triagem</div><div class="kpi-value" style="${corVal(totTr)}">${fmtVal(totTr)}</div></div>
-    <div class="kpi-card slate"><div class="kpi-label">Fila Reforma</div><div class="kpi-value" style="${corVal(totalEst('ReformaFila'))}">${fmtVal(totalEst('ReformaFila'))}</div><div class="kpi-sub">${MODELOS.filter(m=>(S.est.ReformaFila[m]||0)!==0).map(m=>`${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}: ${S.est.ReformaFila[m]}`).join(' | ')||'—'}</div></div>
-    <div class="kpi-card green"><div class="kpi-label">Mov. Hoje</div><div class="kpi-value">${movHoje}</div>${window._modoDelta?'<div style="font-size:9px;color:#e67e22;font-weight:700;margin-top:2px">✱ não filtrado</div>':''}</div>
-    <div class="kpi-card red"><div class="kpi-label">A Pagar Forn.</div><div class="kpi-value">${(()=>{const t=S.recebForn.reduce((s,r)=>s+(r.total-r.pago),0);return Math.max(0,t);})()}</div><div class="kpi-sub">paletes</div>${window._modoDelta?'<div style="font-size:9px;color:#e67e22;font-weight:700;margin-top:2px">✱ não filtrado</div>':''}</div>
+    <div class="kpi-card ${totTr>0?'atencao':'neutro'}">
+      <div class="kpi-label">Fila Triagem</div>
+      <div class="kpi-value">${fmtVal(totTr)}</div>
+      <div class="kpi-sub">aguardando classificação</div>
+    </div>
+    <div class="kpi-card ${totalEst('ReformaFila')>0?'atencao':'neutro'}">
+      <div class="kpi-label">Fila Reforma</div>
+      <div class="kpi-value">${fmtVal(totalEst('ReformaFila'))}</div>
+      <div class="kpi-sub">${MODELOS.filter(m=>(S.est.ReformaFila[m]||0)!==0).map(m=>`${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}: ${(S.est.ReformaFila[m]||0).toLocaleString('pt-BR')}`).join(' · ')||'aguardando envio'}</div>
+    </div>
+    <div class="kpi-card neutro">
+      <div class="kpi-label">Em Reforma</div>
+      <div class="kpi-value">${fmtVal(totRef)}</div>
+      <div class="kpi-sub">com o fornecedor</div>
+    </div>
+    <div class="kpi-card neutro">
+      <div class="kpi-label">Nas Lojas</div>
+      <div class="kpi-value">${fmtVal(totLojas)}</div>
+      <div class="kpi-sub">em posse das lojas</div>
+    </div>
+  </div>
+
+  <!-- KPIs SECUNDARIOS — contexto, não decisão -->
+  <div class="kpi-grid-sec">
+    ${(()=>{const r=calcSemRastro(window._dashDe,window._dashAte);
+      return `<div class="kpi-mini ${r.gap>0?'alerta':''}" title="Retorno de Loja menos Envio para Loja">
+        <span class="km-label">Sem rastro</span>
+        <span class="km-value">${(r.gap>0?'+':'')+r.gap.toLocaleString('pt-BR')}</span>
+      </div>`;})()}
+    <div class="kpi-mini"><span class="km-label">Mov. hoje</span><span class="km-value">${movHoje.toLocaleString('pt-BR')}</span></div>
+    <div class="kpi-mini"><span class="km-label">Saldo REV</span><span class="km-value">${fmtVal(totRev)}</span></div>
+    <div class="kpi-mini"><span class="km-label">Total no CD</span><span class="km-value">${fmtVal(totGeral)}</span></div>
   </div>
 
   <!-- PAINEL 2: REV por modelo -->
-  <div class="section-hdr" style="margin-top:8px"><div class="section-title">🔄 Logística Reversa — Saldo por Modelo</div></div>
+  <div class="section-hdr" style="margin-top:8px"><div class="section-title">Logística Reversa — Saldo por Modelo</div></div>
   <div style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:18px;border-top:4px solid var(--teal);">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">
       ${MODELOS.map(m=>{
@@ -1650,13 +1637,24 @@ function rDashboard(el){
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">📦 Estoque por Área</div><div id="ch-areas" style="margin-top:8px"></div></div>
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🔄 Modelos na REV</div><div id="ch-modelos" style="margin-top:8px"></div></div>
+    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">Estoque por Área</div><div id="ch-areas" style="margin-top:8px"></div></div>
+    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">Modelos na REV</div><div id="ch-modelos" style="margin-top:8px"></div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🔧 Reforma — Enviado × Retornado</div><div id="ch-reforma" style="margin-top:8px"></div></div>
-    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">🏭 Fornecedores — Vale Palete</div><div id="ch-forn" style="margin-top:8px"></div></div>
+    <div class="chart-card" style="padding:16px 20px"><div class="chart-title">Reforma — Enviado × Retornado</div><div id="ch-reforma" style="margin-top:8px"></div></div>
   </div>
+  ${(()=>{const r=calcSemRastro(window._dashDe,window._dashAte);
+    if(r.gap<=0)return '';
+    const det=MODELOS.filter(m=>r.porModelo[m]>0).map(m=>`<span style="display:inline-block;background:#fff;border:1px solid var(--border-dark);border-radius:4px;padding:3px 9px;margin:0 5px 5px 0;font-size:11px;"><strong style="font-family:var(--mono);color:#a83226">${r.porModelo[m].toLocaleString('pt-BR')}</strong> ${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</span>`).join('');
+    return `<div style="background:#fdf6ec;border:1.5px solid var(--amber);border-left:4px solid var(--amber);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:800;color:#8a5a00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⚠ ${r.gap.toLocaleString('pt-BR')} paletes sem rastro</div>
+      <div style="font-size:12px;color:var(--text-mid);line-height:1.5;margin-bottom:9px;">
+        As lojas devolveram <strong>${r.ret.toLocaleString('pt-BR')}</strong> e o CD registrou envio de <strong>${r.env.toLocaleString('pt-BR')}</strong>.
+        A diferença é palete que entrou no CD e seguiu para a loja sem passar por registro — na maior parte, palete de fornecedor paletizado.
+        O número só fecha quando o <strong>Envio para Lojas</strong> estiver rodando com todas as áreas.
+      </div>
+      <div>${det||'<span style="font-size:11px;color:var(--text-light)">Sem detalhe por modelo no período.</span>'}</div>
+    </div>`;})()}
   <div class="section-hdr"><div class="section-title">Últimas Movimentações</div></div>
   <div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th></tr></thead>
@@ -1677,7 +1675,7 @@ function rDashboard(el){
       s+=`<text x="${lW-6}" y="${y+bH*.72}" text-anchor="end" font-size="11" font-family="DM Sans,sans-serif" fill="#34495e">${it.l}</text>`;
       s+=`<rect x="${lW}" y="${y}" width="${tW}" height="${bH}" rx="4" fill="#f0f4f8"/>`;
       if(bw>0)s+=`<rect x="${lW}" y="${y}" width="${bw}" height="${bH}" rx="4" fill="${it.c||'#2471a3'}"><animate attributeName="width" from="0" to="${bw}" dur="0.5s" begin="${i*0.07}s" fill="freeze"/></rect>`;
-      if(it.v!==0)s+=`<text x="${lW+bw+6}" y="${y+bH*.72}" font-size="11" font-family="DM Mono,monospace" fill="${it.v<0?'#e74c3c':'#1b4f72'}" font-weight="700">${fmtVal(it.v).toLocaleString?fmtVal(it.v).toLocaleString('pt-BR'):fmtVal(it.v)}</text>`;
+      if(it.v!==0)s+=`<text x="${lW+bw+6}" y="${y+bH*.72}" font-size="11" font-family="DM Mono,monospace" fill="${it.v<0?'#e74c3c':'#1b4f72'}" font-weight="700">${fmtVal(it.v)}</text>`;
     });el.innerHTML=s+'</svg>';}
   function svgH3(cid,grps,d1,d2,d3,c1,c2,c3,l1,l2,l3){
     const el=document.getElementById(cid);if(!el||!grps.length){if(el)el.innerHTML='<div style="text-align:center;padding:16px;font-size:12px;color:#6c8093">Sem dados</div>';return;}
@@ -1715,7 +1713,7 @@ function rDashboard(el){
       });});el.innerHTML=s+'</svg>';}
   const AC=['#2471a3','#1abc9c','#e67e22','#8e44ad','#27ae60','#16a085','#2980b9','#f39c12','#e74c3c','#c0392b'];
   const MC={PBR:'#2471a3',DESCARTAVEL:'#e67e22',CHEP:'#1abc9c',EURO:'#8e44ad',CHEP_EURO:'#e74c3c',GAIOLA:'#f39c12'};
-  svgH('ch-areas',[{l:'Log. Reversa',v:totalEst('REV'),c:AC[0]},{l:'Mercearia',v:totalEst('Mercearia')+totalEst('Mercearia Recebimento')+totalEst('Mercearia Expedição'),c:AC[1]},{l:'FLV',v:totalEst('FLV')+totalEst('FLV Recebimento')+totalEst('FLV Expedição'),c:AC[2]},{l:'Perecível',v:totalEst('Perecível')+totalEst('Perecível Recebimento')+totalEst('Perecível Expedição'),c:AC[3]},{l:'Produção',v:totalEst('Produção'),c:AC[4]},{l:'C. Frios',v:totalEst('Central de Frios'),c:AC[5]},{l:'Frigorífico',v:totalEst('Frigorífico'),c:AC[6]},{l:'Lojas',v:totalEst('Lojas'),c:AC[7]},{l:'Triagem',v:totalEst('TriagemFila'),c:AC[8]},{l:'Fila Reforma',v:totalEst('ReformaFila'),c:AC[9]}].filter(a=>a.v!==0));
+  svgH('ch-areas',[{l:'Log. Reversa',v:totalEst('REV'),c:AC[0]},{l:'Mercearia',v:totalEst('Mercearia')+totalEst('Mercearia Recebimento')+totalEst('Mercearia Expedição'),c:AC[1]},{l:'FLV',v:totalEst('FLV')+totalEst('FLV Recebimento')+totalEst('FLV Expedição'),c:AC[2]},{l:'Perecível',v:totalEst('Perecível')+totalEst('Perecível Recebimento')+totalEst('Perecível Expedição'),c:AC[3]},{l:'Produção',v:totalEst('Produção'),c:AC[4]},{l:'C. Frios',v:totalEst('Central de Frios'),c:AC[5]},{l:'Frigorífico',v:totalEst('Frigorífico'),c:AC[6]},{l:'Lojas',v:totalEst('Lojas'),c:AC[7]}].filter(a=>a.v!==0));
   svgH('ch-modelos',MODELOS.map(m=>({l:MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola'),v:S.est.REV[m]||0,c:MC[m]})).filter(x=>x.v!==0));
   // Reforma: Enviado + Retornado + Descartável por fornecedor
   const rM={};
@@ -1732,8 +1730,6 @@ function rDashboard(el){
   });
   const rK=Object.keys(rM);
   svgH3('ch-reforma',rK,rK.map(k=>rM[k].e),rK.map(k=>rM[k].r),rK.map(k=>rM[k].d),'#e67e22','#1abc9c','#8e44ad','Enviado','Retornado','Descartável');
-  const tR=S.recebForn.reduce((s,r)=>s+r.total,0),tP=S.recebForn.reduce((s,r)=>s+r.pago,0);
-  svgH('ch-forn',[{l:'Recebido',v:tR,c:'#1b4f72'},{l:'Pago',v:tP,c:'#1abc9c'},{l:'A Pagar',v:Math.max(0,tR-tP),c:'#e74c3c'}],24,14,80);
   // Restaura estoque original SÓ depois dos gráficos.
   // Guarda: se o Firebase substituiu S nesse meio tempo, não sobrescreve.
   if(S.est===window._dashEstTemp)S.est=estOrig;
@@ -1825,25 +1821,8 @@ function rCompra(el){
     <div class="section-title" style="margin-bottom:14px">🛒 Entrada de Paletes — REV</div>
     <div class="info-box">REV atual: <strong>${totalEst('REV')}</strong> paletes</div>
     <div class="form-grid">
-      <div class="form-group full">
-        <label class="form-label">Tipo de Entrada *</label>
-        <div style="display:flex;gap:10px;margin-top:4px;">
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);cursor:pointer;background:#f8fbff;transition:all .15s;" id="lbl-compra">
-            <input type="radio" name="c-tipo" value="Compra" id="rb-compra" onchange="toggleTipoCompra()" checked style="accent-color:var(--navy)">
-            <span>🛒 <strong>Compra</strong> — entrada via fornecedor</span>
-          </label>
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);cursor:pointer;background:#f8fbff;transition:all .15s;" id="lbl-retorno">
-            <input type="radio" name="c-tipo" value="Retorno de Reforma" id="rb-retorno" onchange="toggleTipoCompra()" style="accent-color:var(--teal)">
-            <span>🔧 <strong>Retorno de Reforma</strong> — volta do fornecedor</span>
-          </label>
-        </div>
-      </div>
       <div class="form-group"><label class="form-label">Fornecedor / NF</label>
-        <div style="position:relative">
-          <input class="form-control" id="c-forn" placeholder="Fornecedor ou NF" autocomplete="off"
-            oninput="fornSearch('c-forn','forn-dd')" onfocus="fornSearch('c-forn','forn-dd')" onblur="setTimeout(()=>fornHide('forn-dd'),200)" onkeydown="fornKeyNav(event,'c-forn','forn-dd')">
-          <div id="forn-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border-dark);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:160px;overflow-y:auto;z-index:400;box-shadow:var(--shadow-md);"></div>
-        </div>
+        <input class="form-control" id="c-forn" placeholder="Fornecedor ou NF" autocomplete="off">
       </div>
       <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="c-data" type="date" value="${hoje()}"></div>
       <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="c-user" value="${CU.nome}"></div>
@@ -1862,23 +1841,13 @@ function rCompra(el){
     ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditMov('${m.id}','compra')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','compra')" title="Excluir">🗑️</button></td>`:''}
   </tr>`).join('')||emptyRow(canDelete()?7:6)}</tbody></table></div></div>`;
 }
-function toggleTipoCompra(){
-  const isRetorno=document.getElementById('rb-retorno')?.checked;
-  const lblC=document.getElementById('lbl-compra');
-  const lblR=document.getElementById('lbl-retorno');
-  if(lblC)lblC.style.borderColor=isRetorno?'var(--border-dark)':'var(--navy)';
-  if(lblR)lblR.style.borderColor=isRetorno?'var(--teal)':'var(--border-dark)';
-  const btn=document.getElementById('btn-compra');
-  if(btn)btn.textContent=isRetorno?'✓ Registrar Retorno de Reforma':'✓ Registrar Compra';
-}
 function doCompra(){
   const modelos=parseModelos(),tot=totalModelos(modelos),user=v('c-user');
-  const tipo=document.querySelector('input[name="c-tipo"]:checked')?.value||'Compra';
+  const tipo='Compra';
   if(tot<1)return toast('Informe pelo menos um modelo e quantidade.','err');
   if(!user)return toast('Informe o usuário.','err');
   MODELOS.forEach(m=>{S.est.REV[m]=(S.est.REV[m]||0)+(modelos[m]||0);});
-  const origem=tipo==='Retorno de Reforma'?'Reforma':'Fornecedor';
-  saveFornNome(v('c-forn'));
+  const origem='Fornecedor';
   addMov(tipo,origem,'REV',null,v('c-forn'),tot,user,v('c-obs'),modelos,v('c-data'));
   toast(`✓ ${tot} paletes registrados → REV (${tipo}).`);
   renderScreen('compra');
@@ -2353,7 +2322,7 @@ function rEnvioLoja(el){
         <td>${modelosHtml(m.modelos)}</td>
         <td style="font-size:11px">${m.usuario}</td>
         ${(CU.role==='adm'||CU.role==='rev')?`<td><button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','envio-loja')" title="Excluir">🗑️</button></td>`:''}
-      </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev')?8:7)}</tbody>
+      </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev')?7:6)}</tbody>
     </table></div>
   </div>`;
   envCalc();
@@ -2408,6 +2377,32 @@ function doEnvioLoja(){
 // ══════════════════════════════════════════════════════════════
 // PALETES POR LOJA  (saldo em posse de cada loja)
 // ══════════════════════════════════════════════════════════════
+// ── SEM RASTRO ────────────────────────
+// Palete que voltou de loja sem ter sido registrado na saída.
+// Origem principal: palete de fornecedor paletizado que entra no CD,
+// segue para a loja junto com o produto e só aparece no retorno.
+// Cálculo puro sobre S.movs — não depende de est nem sofre clamp em zero.
+function calcSemRastro(de,ate){
+  const dentro=(m)=>{
+    if(!de&&!ate)return true;
+    const d=parseTsDate(m.ts);
+    if(!d||dataIncompleta(d))return false;
+    if(de&&d<new Date(de+'T00:00:00'))return false;
+    if(ate&&d>new Date(ate+'T23:59:59'))return false;
+    return true;
+  };
+  let env=0,ret=0;
+  const porModelo={};MODELOS.forEach(m=>porModelo[m]=0);
+  (S.movs||[]).forEach(m=>{
+    if(m.tipo!=='Envio para Loja'&&m.tipo!=='Retorno de Loja')return;
+    if(!dentro(m))return;
+    const sinal=m.tipo==='Retorno de Loja'?1:-1;
+    if(sinal>0)ret+=(m.qtd||0);else env+=(m.qtd||0);
+    MODELOS.forEach(k=>{porModelo[k]+=sinal*(m.modelos?.[k]||0);});
+  });
+  return{env,ret,gap:ret-env,porModelo};
+}
+
 function calcSaldoLojas(){
   const map={};
   S.movs.forEach(m=>{
@@ -2421,8 +2416,8 @@ function calcSaldoLojas(){
   });
   return Object.keys(map).map(d=>{
     const loja=LOJAS_BASE.find(l=>l.d===Number(d))||{d:Number(d),n:lojaNome(d)};
-    const porModelo={};MODELOS.forEach(x=>porModelo[x]=Math.max(0,map[d].pm[x]));
-    return{loja,env:map[d].env,ret:map[d].ret,saldo:Math.max(0,map[d].env-map[d].ret),porModelo};
+    const porModelo={};MODELOS.forEach(x=>porModelo[x]=map[d].pm[x]);
+    return{loja,env:map[d].env,ret:map[d].ret,saldo:map[d].env-map[d].ret,porModelo};
   }).sort((a,b)=>b.saldo-a.saldo||a.loja.n.localeCompare(b.loja.n,'pt-BR'));
 }
 
@@ -2433,13 +2428,14 @@ function rPaletesLoja(el){
   const totEnv=data.reduce((s,r)=>s+r.env,0);
   const totRet=data.reduce((s,r)=>s+r.ret,0);
   const comSaldo=data.filter(r=>r.saldo>0).length;
+  const comNeg=data.filter(r=>r.saldo<0).length;
 
   el.innerHTML=`
   <div class="kpi-grid">
     <div class="kpi-card teal"><div class="kpi-label">Paletes nas Lojas</div><div class="kpi-value">${totSaldo}</div><div class="kpi-sub">saldo em posse</div></div>
     <div class="kpi-card blue"><div class="kpi-label">Total Enviado</div><div class="kpi-value">${totEnv}</div></div>
     <div class="kpi-card amber"><div class="kpi-label">Total Retornado</div><div class="kpi-value">${totRet}</div></div>
-    <div class="kpi-card slate"><div class="kpi-label">Lojas com Saldo</div><div class="kpi-value">${comSaldo}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas</div></div>
+    <div class="kpi-card slate"><div class="kpi-label">Lojas com Saldo</div><div class="kpi-value">${comSaldo}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas${comNeg?` · <strong style="color:var(--red)">${comNeg} negativa(s)</strong>`:''}</div></div>
   </div>
 
   <div class="card" style="margin-top:16px">
@@ -2459,7 +2455,7 @@ function rPaletesLoja(el){
         <td class="td-mono" style="text-align:center">${String(r.loja.d).padStart(3,'0')}</td>
         <td style="text-align:center">${r.env}</td>
         <td style="text-align:center">${r.ret}</td>
-        <td style="text-align:center;font-weight:800;color:${r.saldo>0?'var(--navy)':'var(--text-light)'}">${r.saldo}</td>
+        <td style="text-align:center;font-weight:800;color:${r.saldo>0?'var(--navy)':r.saldo<0?'var(--red)':'var(--text-light)'}" ${r.saldo<0?'title="Devolveu mais do que recebeu — palete sem registro de envio"':''}>${r.saldo>0?'':''}${r.saldo.toLocaleString('pt-BR')}</td>
         ${MODELOS.map(m=>`<td style="text-align:center;color:${r.porModelo[m]>0?'var(--text)':'var(--text-light)'}">${r.porModelo[m]}</td>`).join('')}
       </tr>`).join(''):emptyRow(5+MODELOS.length)}</tbody>
     </table></div>
@@ -2495,7 +2491,7 @@ function rRetornoLoja(el){
       <td style="max-width:200px">${modelosHtml(m.modelos)}</td>
       <td>${m.usuario}</td>
       ${(CU.role==='adm'||CU.role==='rev')?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditMov('${m.id}','retorno-loja')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','retorno-loja')" title="Excluir">🗑️</button></td>`:''}
-    </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev')?7:6)}</tbody>
+    </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev')?8:7)}</tbody>
   </table></div></div>`;
 }
 function doRetornoLoja(){
@@ -3150,436 +3146,80 @@ function rMinhaArea(el){
 }
 
 // ── DEVOLUÇÃO LOJA → CD ────────────────
-function rDevolucaoLoja(el){
-  const isLoja=CU.role==='loja';
-  const d=isLoja?CU.lojaDigito:null;
-  // Saldo atual da loja (por modelo)
-  const saldoLoja={};
-  MODELOS.forEach(m=>{
-    const env=S.movs.filter(x=>x.tipo==='Envio para Loja'&&(isLoja?Number(x.loja)===d:true)&&x.modelos?.[m]).reduce((s,x)=>s+(x.modelos[m]||0),0);
-    const ret=S.movs.filter(x=>x.tipo==='Retorno de Loja'&&(isLoja?Number(x.loja)===d:true)&&x.modelos?.[m]).reduce((s,x)=>s+(x.modelos[m]||0),0);
-    saldoLoja[m]=Math.max(0,env-ret);
-  });
-  const totSaldo=totalModelos(saldoLoja);
-
+function rSaidaForn(el){
+  const hist=(S.movs||[]).filter(m=>m.tipo==='Saida para Fornecedor'||m.tipo==='Pagamento Fornecedor');
   el.innerHTML=`
   <div class="form-card">
-    <div class="section-title" style="margin-bottom:14px">↩️ Devolução de Paletes ao CD</div>
-    ${isLoja?`<div class="info-box">🏪 <strong>${CU.nome}</strong> — Paletes em posse: <strong>${totSaldo}</strong></div>`:''}
-
-    <div style="margin-bottom:14px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;">Saldo Atual por Modelo</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${MODELOS.map(m=>`<div style="background:var(--bg);padding:5px 10px;border-radius:6px;font-size:11px;">
-          <span style="color:var(--text-light)">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</span>
-          <strong style="color:${saldoLoja[m]>0?'var(--navy)':'var(--text-light)'};margin-left:5px">${saldoLoja[m]}</strong>
-        </div>`).join('')}
-      </div>
+    <div class="section-title" style="margin-bottom:14px">🚛 Saída para Fornecedor</div>
+    <div class="info-box">Disponível na REV: <strong>${totalEst('REV')}</strong> paletes</div>
+    <div class="warn-box" style="font-size:11px;margin-bottom:12px">
+      Lance o <strong>volume total devolvido no dia</strong>, somando todos os fornecedores.
+      O detalhe por empresa fica no Controle de Material Circulante.
     </div>
-
     <div class="form-grid">
-      ${isLoja?'':`<div class="form-group"><label class="form-label">Loja *</label>${selectLojas('dl-loja')}</div>`}
-      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="dl-data" type="date" value="${hoje()}"></div>
-      <div class="form-group"><label class="form-label">Responsável *</label><input class="form-control" id="dl-user" value="${CU.nome}"></div>
-      <div class="form-group full"><label class="form-label">Motivo</label>
-        <select class="form-control" id="dl-motivo">
-          <option value="Devolução programada">Devolução programada</option>
-          <option value="Avaria — obrigação de devolução">Avaria — obrigação de devolução</option>
-          <option value="Excesso de paletes">Excesso de paletes</option>
-          <option value="Encerramento de operação">Encerramento de operação</option>
-          <option value="Outro">Outro</option>
-        </select>
-      </div>
+      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="sf-data" type="date" value="${hoje()}"></div>
+      <div class="form-group"><label class="form-label">Responsável *</label><input class="form-control" id="sf-user" value="${CU.nome}"></div>
+      <div class="form-group full"><label class="form-label">Quantidades por Modelo *</label>${selectModeloInputs('sf')}</div>
       <div class="form-group full"><label class="form-label">Observação</label>
-        <textarea class="form-control" id="dl-obs" placeholder="Detalhes da devolução..." style="min-height:55px"></textarea>
+        <input class="form-control" id="sf-obs" placeholder="Ex: Coca 35, Minalba 10, Só Frutas 15">
       </div>
     </div>
-
-    <div style="margin-top:12px">
-      <label class="form-label" style="margin-bottom:8px;display:block">Quantidades a Devolver por Modelo *</label>
-      <div style="background:#f8fbff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          ${MODELOS.map(m=>`<div>
-            <label style="font-size:10px;font-weight:700;color:var(--text-light);text-transform:uppercase;display:block;margin-bottom:3px;">
-              ${MODELO_LABELS[m]} <span style="color:var(--text-light);font-weight:400">(máx: ${saldoLoja[m]})</span>
-            </label>
-            <input class="form-control" id="dev-${m}" type="number" min="0" max="${saldoLoja[m]}" value="0"
-              style="padding:7px;text-align:center;font-size:14px;font-weight:700;" oninput="calcTotDev()">
-          </div>`).join('')}
-        </div>
-        <div style="margin-top:10px;padding:8px 12px;background:var(--navy);border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;color:rgba(255,255,255,.7);font-family:var(--mono)">TOTAL A DEVOLVER</span>
-          <span id="tot-dev" style="font-size:20px;font-weight:800;font-family:var(--mono);color:#fff">0</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-actions">
-      <button class="btn btn-primary btn-full" style="font-size:14px;padding:13px" onclick="doDevolucaoLoja()">↩️ Registrar Devolução</button>
-    </div>
+    <div class="form-actions"><button class="btn btn-primary" onclick="doSaidaForn()">✓ Registrar Saída</button></div>
   </div>
-
-  <div class="card">
-    <div class="card-hdr"><span class="card-title">📋 Histórico de Devoluções${isLoja?' — '+CU.nome:''}</span></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Loja</th><th>Qtd</th><th>Modelos</th><th>Motivo</th><th>Resp.</th></tr></thead>
-      <tbody>${S.movs.filter(m=>m.tipo==='Retorno de Loja'&&(isLoja?Number(m.loja)===CU.lojaDigito:true)).slice(0,10).map(m=>`<tr>
-        <td class="td-mono">${m.ts.split(',')[0]}</td>
-        <td>${lojaNome(m.loja)}</td>
-        <td class="td-bold">${m.qtd}</td>
-        <td style="max-width:160px">${modelosHtml(m.modelos)}</td>
-        <td style="font-size:11px">${m.obs||'—'}</td>
-        <td>${m.usuario}</td>
-      </tr>`).join('')||emptyRow(6)}</tbody>
-    </table></div>
-  </div>`;
-}
-
-function calcTotDev(){
-  const tot=MODELOS.reduce((s,m)=>{const el=document.getElementById('dev-'+m);return s+(parseInt(el?.value)||0);},0);
-  const el=document.getElementById('tot-dev');if(el)el.textContent=tot;
-}
-
-function doDevolucaoLoja(){
-  const isLoja=CU.role==='loja';
-  const lojaDigito=isLoja?CU.lojaDigito:parseInt(v('dl-loja'));
-  const user=v('dl-user'),motivo=v('dl-motivo');
-  if(!lojaDigito)return toast('Selecione a loja.','err');
-  if(!user)return toast('Informe o responsável.','err');
-  // Monta modelos devolvidos
-  const modelos={};
-  MODELOS.forEach(m=>{const q=parseInt(document.getElementById('dev-'+m)?.value)||0;if(q>0)modelos[m]=q;});
-  const tot=totalModelos(modelos);
-  if(tot<1)return toast('Informe pelo menos um modelo para devolver.','err');
-  // Valida saldo por modelo
-  S.est=fixEst(S.est);
-  for(const m of MODELOS){
-    const q=modelos[m]||0;
-    if(q>(S.est.Lojas[m]||0))return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} nas Lojas (disponível: ${S.est.Lojas[m]||0}).`,'err');
-  }
-  // Movimenta: Lojas → TriagemFila
-  MODELOS.forEach(m=>{const q=modelos[m]||0;S.est.Lojas[m]=Math.max(0,(S.est.Lojas[m]||0)-q);S.est.TriagemFila[m]=(S.est.TriagemFila[m]||0)+q;});
-  const lNome=lojaNome(lojaDigito);
-  const obs=motivo+(v('dl-obs')?' — '+v('dl-obs'):'');
-  addMov('Retorno de Loja',lNome,'Triagem',lojaDigito,null,tot,user,obs,modelos,v('dl-data'));
-  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
-  save();
-  toast(`✓ ${tot} paletes devolvidos → Fila de Triagem.`);
-  renderScreen('devolucao-loja');
-}
-
-// ── LOJA DASHBOARD ─────────────────────
-function rLojaDash(el){
-  const d=CU.lojaDigito;
-  const env=S.movs.filter(m=>m.tipo==='Envio para Loja'&&Number(m.loja)===d).reduce((s,m)=>s+m.qtd,0);
-  const ret=S.movs.filter(m=>m.tipo==='Retorno de Loja'&&Number(m.loja)===d).reduce((s,m)=>s+m.qtd,0);
-  el.innerHTML=`
-  <div class="info-box">🏪 Loja: <strong>${CU.nome}</strong> · Dígito: ${d}</div>
-  <div class="kpi-grid">
-    <div class="kpi-card teal"><div class="kpi-label">Paletes Ativos</div><div class="kpi-value">${Math.max(0,env-ret)}</div><div class="kpi-sub">saldo atual</div></div>
-    <div class="kpi-card blue"><div class="kpi-label">Total Recebido</div><div class="kpi-value">${env}</div></div>
-    <div class="kpi-card amber"><div class="kpi-label">Total Devolvido</div><div class="kpi-value">${ret}</div></div>
-  </div>`;
-}
-
-// ── LOJA HISTÓRICO ─────────────────────
-function rLojaHist(el){
-  const d=CU.lojaDigito;
-  const movs=S.movs.filter(m=>Number(m.loja)===d);
-  el.innerHTML=`
-  <div class="card"><div class="card-hdr"><span class="card-title">📋 Histórico — ${CU.nome}</span></div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Saídas</span>
+    <span style="font-size:11px;color:var(--text-light)">${hist.length} lançamento(s)</span></div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Qtd</th><th>Modelos</th><th>Usuário</th><th>Obs</th></tr></thead>
-    <tbody>${movs.length?movs.map(m=>`<tr>
-      <td class="td-mono" style="font-size:10px">${m.ts}</td><td>${badgeMov(m.tipo)}</td>
-      <td class="td-bold">${m.qtd}</td><td>${modelosHtml(m.modelos)}</td>
-      <td>${m.usuario}</td><td style="font-size:11px">${m.obs||'—'}</td>
-    </tr>`).join(''):emptyRow(6)}</tbody>
+    <thead><tr><th>Data</th><th>Total</th><th>Modelos</th><th>Responsável</th><th>Observação</th>${canDelete()?'<th></th>':''}</tr></thead>
+    <tbody>${hist.map(m=>`<tr>
+      <td class="td-mono">${m.ts.split(',')[0]}</td>
+      <td class="td-bold td-mono">${m.qtd}</td>
+      <td>${modelosHtml(m.modelos)}</td>
+      <td>${m.usuario||'—'}</td>
+      <td style="font-size:11px;color:var(--text-mid)">${m.obs||'—'}</td>
+      ${canDelete()?`<td><button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','saida-forn')" title="Excluir">🗑️</button></td>`:''}
+    </tr>`).join('')||emptyRow(canDelete()?6:5)}</tbody>
   </table></div></div>`;
 }
-
-// ── PALETES POR LOJA ───────────────────
-
-// ── RECEBIMENTO DE FORNECEDORES ────────
-function saldoFornRcf(fornecedor){
-  const regs=S.recebForn.filter(r=>r.fornecedor.toLowerCase()===fornecedor.toLowerCase());
-  const total=regs.reduce((s,r)=>s+r.total,0);
-  const pago=regs.reduce((s,r)=>s+r.pago,0);
-  return{total,pago,saldo:total-pago};
-}
-function rRecebForn(el){
-  el.innerHTML=`
-  <div class="form-card">
-    <div class="section-title" style="margin-bottom:14px">📥 Recebimento / Pagamento — Fornecedores</div>
-    <div class="info-box" style="margin-bottom:14px">
-      📦 Saldo REV: <strong>${totalEst('REV')}</strong> paletes disponíveis
-      &nbsp;|&nbsp; 💰 A pagar fornecedores: <strong style="color:var(--red)">${Math.max(0,S.recebForn.reduce((s,r)=>s+(r.total-r.pago),0))}</strong> paletes
-    </div>
-    <div class="form-group full" style="margin-bottom:14px">
-      <label class="form-label">Tipo de Lançamento *</label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
-        <label style="flex:1;min-width:200px;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--navy);border-radius:var(--radius-sm);cursor:pointer;background:#eaf4fb;" id="lbl-rcf-rec">
-          <input type="radio" name="rcf-tipo" value="receber" id="rb-rcf-rec" onchange="toggleRecebPag()" checked style="accent-color:var(--navy)">
-          <span>📥 <strong>Receber</strong> — fornecedor entregou paletes</span>
-        </label>
-        <label style="flex:1;min-width:200px;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);cursor:pointer;background:#f8fbff;" id="lbl-rcf-pag">
-          <input type="radio" name="rcf-tipo" value="pagar" id="rb-rcf-pag" onchange="toggleRecebPag()" style="accent-color:var(--teal)">
-          <span>💳 <strong>Pagar</strong> — devolver paletes ao fornecedor</span>
-        </label>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Fornecedor *</label>
-        <div style="position:relative">
-          <input class="form-control" id="rf-forn" placeholder="Digite ou selecione o fornecedor..." autocomplete="off"
-            oninput="fornSearch('rf-forn','rf-forn-dd');atualizarSaldoRcf()"
-            onfocus="fornSearch('rf-forn','rf-forn-dd')"
-            onblur="setTimeout(()=>fornHide('rf-forn-dd'),200)"
-            onkeydown="fornKeyNav(event,'rf-forn','rf-forn-dd')">
-          <div id="rf-forn-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border-dark);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:180px;overflow-y:auto;z-index:400;box-shadow:var(--shadow-md);"></div>
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="rf-data" type="date" value="${hoje()}"></div>
-      <div class="form-group"><label class="form-label">Nº NF / Pedido</label><input class="form-control" id="rf-nf" placeholder="Número da nota fiscal"></div>
-      <div class="form-group"><label class="form-label">Responsável *</label><input class="form-control" id="rf-user" value="${CU.nome}"></div>
-      <div class="form-group full"><label class="form-label">Observação</label><input class="form-control" id="rf-obs" placeholder="Produto, descrição..."></div>
-    </div>
-    <div id="rf-saldo-box" style="display:none;margin-bottom:14px;padding:12px 16px;background:#fff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;">Saldo em Aberto — Fornecedor</div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;">
-        <div><span style="font-size:11px;color:var(--text-light)">Total recebido</span><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--navy)" id="rf-s-total">0</div></div>
-        <div><span style="font-size:11px;color:var(--text-light)">Já pago</span><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green)" id="rf-s-pago">0</div></div>
-        <div><span style="font-size:11px;color:var(--text-light)">Saldo devedor</span><div style="font-size:22px;font-weight:800;font-family:var(--mono);color:var(--red)" id="rf-s-saldo">0</div></div>
-      </div>
-    </div>
-    <div class="form-group full"><label class="form-label" id="rf-qtd-label">Quantidades por Modelo *</label>${selectModeloInputs('rf')}</div>
-    <div class="form-actions">
-      <button class="btn btn-primary" id="btn-rcf" onclick="doRecebForn()">✓ Registrar Recebimento</button>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:18px">
-    <div class="card-hdr"><span class="card-title">💰 Saldo em Aberto por Fornecedor</span></div>
-    <div style="padding:14px">
-      ${(()=>{
-        const fornMap={};
-        S.recebForn.forEach(r=>{
-          if(!fornMap[r.fornecedor])fornMap[r.fornecedor]={total:0,pago:0};
-          fornMap[r.fornecedor].total+=r.total;
-          fornMap[r.fornecedor].pago+=r.pago;
-        });
-        const itens=Object.entries(fornMap).filter(([,v])=>v.total-v.pago>0);
-        if(!itens.length)return '<div style="color:var(--text-light);font-size:13px;text-align:center;padding:10px">Nenhum saldo em aberto 🎉</div>';
-        return itens.map(([nome,info])=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fbff;border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid var(--border);">
-            <strong style="font-size:13px">${nome}</strong>
-            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-              <span style="font-size:11px;color:var(--text-light)">recebido: <strong>${info.total}</strong></span>
-              <span style="font-size:11px;color:var(--green)">pago: <strong>${info.pago}</strong></span>
-              <span style="font-family:var(--mono);font-size:16px;font-weight:800;color:var(--red)">deve: ${info.total-info.pago}</span>
-            </div>
-          </div>`).join('');
-      })()}
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">📋 Histórico — Recebimentos e Pagamentos</span>
-      <button class="btn btn-ghost btn-sm" onclick="exportRecebForn()">⬇ Exportar</button>
-    </div>
-    <div class="filters" style="flex-wrap:wrap;">
-      <input class="filter-input" id="rfs" placeholder="🔍 Buscar fornecedor..." oninput="filtRecebForn()">
-      <input class="filter-input" id="rfnf" placeholder="🔍 Nº Vale / NF..." oninput="filtRecebForn()" style="min-width:140px;">
-      <select class="filter-select" id="rfstatus" onchange="filtRecebForn()">
-        <option value="">Todos os status</option>
-        <option value="Pendente">Pendente</option>
-        <option value="Pago parcial">Pago parcial</option>
-        <option value="Quitado">Quitado</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="filtRecebForn(1)">✕ Limpar</button>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>ID</th><th>Data</th><th>Fornecedor</th><th>NF</th><th>Modelos</th><th>Total</th><th>Pago</th><th>Saldo</th><th>Status</th><th>Ação</th></tr></thead>
-      <tbody id="rftbody"></tbody>
-    </table></div>
-  </div>`;
-  filtRecebForn();
-}
-function toggleRecebPag(){
-  const isPag=document.getElementById('rb-rcf-pag')?.checked;
-  document.getElementById('lbl-rcf-rec').style.borderColor=isPag?'var(--border-dark)':'var(--navy)';
-  document.getElementById('lbl-rcf-rec').style.background=isPag?'#f8fbff':'#eaf4fb';
-  document.getElementById('lbl-rcf-pag').style.borderColor=isPag?'var(--teal)':'var(--border-dark)';
-  document.getElementById('lbl-rcf-pag').style.background=isPag?'#d1f2eb':'#f8fbff';
-  document.getElementById('btn-rcf').textContent=isPag?'💳 Registrar Pagamento':'✓ Registrar Recebimento';
-  document.getElementById('rf-qtd-label').textContent=isPag?'Quantidades Pagas por Modelo *':'Quantidades por Modelo *';
-  atualizarSaldoRcf();
-}
-function atualizarSaldoRcf(){
-  const isPag=document.getElementById('rb-rcf-pag')?.checked;
-  const box=document.getElementById('rf-saldo-box');if(!box)return;
-  if(!isPag){box.style.display='none';return;}
-  const forn=(document.getElementById('rf-forn')?.value||'').trim();
-  if(!forn){box.style.display='none';return;}
-  const sd=saldoFornRcf(forn);
-  document.getElementById('rf-s-total').textContent=sd.total;
-  document.getElementById('rf-s-pago').textContent=sd.pago;
-  document.getElementById('rf-s-saldo').textContent=sd.saldo;
-  box.style.display='block';
-}
-function doRecebForn(){
-  const isPag=document.getElementById('rb-rcf-pag')?.checked;
-  const forn=v('rf-forn'),modelos=parseModelos(),tot=totalModelos(modelos),user=v('rf-user');
-  if(!forn)return toast('Informe o fornecedor.','err');
-  if(tot<1)return toast('Informe as quantidades por modelo.','err');
+function doSaidaForn(){
+  const modelos=parseModelos(),tot=totalModelos(modelos),user=v('sf-user');
+  if(tot<1)return toast('Informe pelo menos um modelo e quantidade.','err');
   if(!user)return toast('Informe o responsável.','err');
-  if(isPag){
-    const sd=saldoFornRcf(forn);
-    // Permite pagamento mesmo sem entrada registrada (débitos de meses anteriores)
-    if(sd.saldo<0)sd.saldo=0;
-    if(sd.saldo>0&&tot>sd.saldo){
-      // Avisa mas permite confirmar (pode ter débitos não registrados)
-      if(!confirm(`O pagamento (${tot}) excede o saldo registrado (${sd.saldo}). Pode haver débitos de meses anteriores não lançados. Confirmar mesmo assim?`))return;
-    }
-    let restante=tot;
-    S.est=fixEst(S.est);
-    const pendentes=S.recebForn.filter(r=>r.fornecedor.toLowerCase()===forn.toLowerCase()&&r.pago<r.total).reverse();
-    const saldoPendente=pendentes.reduce((s,r)=>s+(r.total-r.pago),0);
-    // Se não há débito registrado ou insuficiente, cria registro "Saldo Anterior"
-    if(!pendentes.length||saldoPendente<tot){
-      const qtdSemDebito=tot-saldoPendente;
-      const id='RCF-'+String(S.nRecForn++).padStart(4,'0');
-      S.recebForn.unshift({
-        id,fornecedor:forn,nf:'SALDO ANTERIOR',data:v('rf-data')||hoje(),
-        usuario:user,obs:'Saldo de meses anteriores — '+(v('rf-obs')||''),
-        modelos,total:qtdSemDebito,pago:qtdSemDebito,status:'Quitado',
-        pagamentos:[{data:v('rf-data')||hoje(),qtd:qtdSemDebito,obs:'Saldo anterior',tipo:'Pagamento'}],
-        ts:new Date().toLocaleString('pt-BR')
-      });
-    }
-    // Abate os débitos registrados normalmente
-    pendentes.forEach(r=>{
-      if(restante<=0)return;
-      const disponivel=r.total-r.pago;
-      const abate=Math.min(disponivel,restante);
-      r.pago+=abate;restante-=abate;
-      r.pagamentos=r.pagamentos||[];
-      r.pagamentos.push({data:v('rf-data')||hoje(),qtd:abate,obs:v('rf-obs'),tipo:'Pagamento'});
-      r.status=r.pago>=r.total?'Quitado':'Pago parcial';
-    });
-    // ★ ABATE DO ESTOQUE REV — pagamento devolve paletes ao fornecedor
-    if(!S.modoMigracao){
-      for(const m of MODELOS){
-        if((modelos[m]||0)>(S.est.REV[m]||0)){
-          if(!confirm(`Saldo insuficiente de ${MODELO_LABELS[m]} na REV (disponível: ${S.est.REV[m]||0}, necessário: ${modelos[m]}). Confirmar mesmo assim?`))return;
-        }
+  S.est=fixEst(S.est);
+  if(!S.modoMigracao){
+    for(const m of MODELOS){
+      const q=modelos[m]||0;
+      if(q>(S.est.REV[m]||0)){
+        if(!confirm(`Saldo insuficiente de ${MODELO_LABELS[m]} na REV (disponível: ${S.est.REV[m]||0}, necessário: ${q}). Confirmar mesmo assim?`))return;
       }
     }
-    MODELOS.forEach(m=>{
-      const q=modelos[m]||0;
-      if(q>0) S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-q);
-    });
-    saveFornNome(forn);
-    addMov('Pagamento Fornecedor',forn,'Fornecedor',null,null,tot,user,v('rf-obs'),modelos,v('rf-data'));
-    save();toast(`✓ Pagamento de ${tot} paletes registrado → saiu da REV.`);renderScreen('receb-forn');
-  } else {
-    const id='RCF-'+String(S.nRecForn++).padStart(4,'0');
-    S.recebForn.unshift({
-      id,fornecedor:forn,nf:v('rf-nf'),data:v('rf-data')||hoje(),
-      usuario:user,obs:v('rf-obs'),modelos,total:tot,pago:0,status:'Pendente',
-      pagamentos:[],ts:new Date().toLocaleString('pt-BR')
-    });
-    // Recebimento = apenas registro de DÉBITO
-    // O palete do fornecedor NÃO entra no estoque REV aqui
-    // A entrada na REV é feita separadamente via COMPRA
-    saveFornNome(forn);
-    addMov('Recebimento Fornecedor',forn,'CD',null,null,tot,user,v('rf-obs'),modelos,v('rf-data'));
-    save();toast(`✓ Débito de ${tot} paletes registrado — ${forn}.`);renderScreen('receb-forn');
   }
-}
-function filtRecebForn(clr){
-  if(clr){['rfs','rfnf','rfstatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
-  const s=(v('rfs')||'').toLowerCase(), nf=(v('rfnf')||'').toLowerCase(), st=v('rfstatus');
-  const f=S.recebForn.filter(r=>
-    (!s||r.fornecedor.toLowerCase().includes(s))&&
-    (!nf||(r.nf||'').toLowerCase().includes(nf))&&
-    (!st||r.status===st)
-  );
-  const tb=document.getElementById('rftbody');if(!tb)return;
-  const sbadge={Pendente:'badge-amber','Pago parcial':'badge-blue',Quitado:'badge-green'};
-  tb.innerHTML=f.length?f.map(r=>{
-    const debito=r.total-r.pago;
-    return`<tr>
-      <td class="td-mono">${r.id}</td>
-      <td class="td-mono">${r.data}</td>
-      <td class="td-bold">${r.fornecedor}</td>
-      <td class="td-mono">${r.nf||'—'}</td>
-      <td style="max-width:150px">${modelosHtml(r.modelos)}</td>
-      <td class="td-bold td-mono">${r.total}</td>
-      <td class="td-mono" style="color:var(--green)">${r.pago}</td>
-      <td class="td-bold td-mono" style="color:${debito>0?'var(--red)':'var(--green)'}">${debito}</td>
-      <td><span class="badge ${sbadge[r.status]||'badge-gray'}">${r.status}</span></td>
-      <td>${debito>0?`<button class="btn btn-teal btn-xs" onclick="abrirPagForn('${r.id}')">💳 Pagar</button>`:'—'}</td>
-      ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditRecebForn('${r.id}','receb-forn')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirRecebForn('${r.id}','receb-forn')" title="Excluir">🗑️</button></td>`:''}
-    </tr>`;
-  }).join(''):emptyRow(10);
-}
-let currentRcfId=null;
-function abrirPagForn(id){
-  currentRcfId=id;
-  const r=S.recebForn.find(x=>x.id===id);
-  const debito=r.total-r.pago;
-  document.getElementById('mref-info').innerHTML=`<strong>${r.id}</strong> — ${r.fornecedor}<br>Total: ${r.total} | Pago: ${r.pago} | <strong style="color:var(--red)">Saldo: ${debito}</strong>`;
-  document.getElementById('mref-modelo').value=Object.entries(r.modelos||{}).filter(([,v])=>v>0).map(([m,v])=>`${MODELO_LABELS[m]}: ${v}`).join(' | ')||'—';
-  document.getElementById('mref-qtd').value='';
-  document.getElementById('mref-data').value=hoje();
-  document.getElementById('mref-obs').value='';
-  document.querySelector('#modal-retorno .modal-footer .btn-success').onclick=confirmarPagForn;
-  openModal('modal-retorno');
-}
-function confirmarPagForn(){
-  const qtd=parseInt(document.getElementById('mref-qtd').value)||0;
-  const obs=document.getElementById('mref-obs').value;
-  const r=S.recebForn.find(x=>x.id===currentRcfId);if(!r)return;
-  const debito=r.total-r.pago;
-  if(!qtd||qtd<1)return toast('Informe a quantidade.','err');
-  if(qtd>debito)return toast(`Não pode pagar mais que o saldo (${debito}).`,'err');
-  r.pago+=qtd;
-  r.pagamentos=r.pagamentos||[];
-  r.pagamentos.push({data:v('mref-data')||hoje(),qtd,obs,tipo:'Pagamento'});
-  r.status=r.pago>=r.total?'Quitado':'Pago parcial';
-  // ★ ABATE DO ESTOQUE REV — pagamento devolve paletes ao fornecedor
-  S.est=fixEst(S.est);
-  // Distribui proporcionalmente pelos modelos do registro
-  const totalMod=totalModelos(r.modelos||{});
-  MODELOS.forEach(m=>{
-    if(!r.modelos?.[m])return;
-    const proporcao=totalMod>0?r.modelos[m]/totalMod:0;
-    const qAbate=Math.round(qtd*proporcao);
-    S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-qAbate);
-  });
-  addMov('Pagamento Fornecedor',r.fornecedor,'Fornecedor',null,null,qtd,CU.nome,obs,r.modelos);
-  // ✅ SEM syncEst() — estoque foi atualizado por delta direto acima
-  save();toast(`✓ Pagamento de ${qtd} paletes registrado → saiu da REV.`);closeModal('modal-retorno');renderScreen('receb-forn');
+  MODELOS.forEach(m=>{const q=modelos[m]||0;if(q>0)S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-q);});
+  addMov('Saida para Fornecedor','REV','Fornecedor',null,null,tot,user,v('sf-obs'),modelos,v('sf-data'));
+  save();
+  toast(`✓ ${tot} paletes saíram da REV.`);
+  renderScreen('saida-forn');
 }
 
-// ── SENHAS ADM ─────────────────────────
 function rSenhasAdm(el){
   const areas=Object.keys(PERFIL_DEF);
   el.innerHTML=`
-  <div class="info-box">Apenas o Administrador visualiza esta tela. Comunique as senhas individualmente a cada área.</div>
+  <div class="warn-box">As senhas são guardadas em <strong>hash</strong> e não podem mais ser exibidas, nem por você.
+  Para dar acesso a uma área, defina uma senha nova abaixo e comunique diretamente ao responsável.</div>
   <div class="card">
     <div class="card-hdr"><span class="card-title">🔑 Senhas de Acesso</span></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Ícone</th><th>Área</th><th>Código</th><th>Senha Atual</th><th>Ação</th></tr></thead>
+      <thead><tr><th>Ícone</th><th>Área</th><th>Código</th><th>Situação</th><th>Ação</th></tr></thead>
       <tbody>${areas.map(a=>{
         const p=PERFIL_DEF[a];
-        const senha=S.senhas[a]||p.senhaDefault;
+        const guardado=S.senhas?.[a];
+        const estado = !guardado ? ['Senha padrão','var(--red)']
+                     : ehHash(guardado) ? ['Protegida (hash)','var(--green)']
+                     : ['Texto puro — troque','var(--amber)'];
         return`<tr>
           <td style="font-size:18px">${p.icon}</td>
           <td class="td-bold">${p.nome}</td>
           <td class="td-mono">${a}</td>
-          <td><span style="font-family:var(--mono);background:#f8fbff;padding:3px 10px;border-radius:4px;border:1px solid var(--border-dark);font-size:13px;letter-spacing:1px">${senha}</span></td>
+          <td><span style="font-size:12px;font-weight:700;color:${estado[1]}">${estado[0]}</span></td>
           <td><button class="btn btn-ghost btn-xs" onclick="resetarSenha('${a}')">↺ Resetar</button></td>
         </tr>`;
       }).join('')}</tbody>
@@ -3598,17 +3238,21 @@ function rSenhasAdm(el){
     <div class="form-actions"><button class="btn btn-primary" onclick="doAlterarSenhaAdm()">✓ Alterar</button></div>
   </div>`;
 }
-function resetarSenha(area){
-  if(!confirm(`Resetar senha de ${PERFIL_DEF[area].nome} para o padrão?`))return;
-  S.senhas[area]=PERFIL_DEF[area].senhaDefault;
-  save();toast(`✓ Senha de ${PERFIL_DEF[area].nome} resetada.`);renderScreen('senhas-adm');
+async function resetarSenha(area){
+  const padrao=PERFIL_DEF[area].senhaDefault;
+  if(!confirm(`Resetar a senha de ${PERFIL_DEF[area].nome} para o padrão?\n\nO padrão é conhecido e deve ser trocado no primeiro acesso.`))return;
+  await gravarSenha(area,padrao);
+  toast(`✓ Senha de ${PERFIL_DEF[area].nome} resetada para o padrão.`);renderScreen('senhas-adm');
 }
-function doAlterarSenhaAdm(){
+async function doAlterarSenhaAdm(){
   const area=v('sa-area'),nova=v('sa-nova');
   if(!area)return toast('Selecione a área.','err');
   if(nova.length<4)return toast('Senha deve ter pelo menos 4 caracteres.','err');
-  S.senhas[area]=nova;save();
-  toast(`✓ Senha de ${PERFIL_DEF[area].nome} alterada.`);renderScreen('senhas-adm');
+  const comHash=await gravarSenha(area,nova);
+  document.getElementById('sa-nova').value='';
+  toast(comHash?`✓ Senha de ${PERFIL_DEF[area].nome} alterada e protegida.`
+               :`⚠ Senha alterada, mas sem hash (contexto não seguro).`,comHash?'ok':'warn');
+  renderScreen('senhas-adm');
 }
 
 // ── EXPORT EXCEL ───────────────────────
@@ -3633,16 +3277,6 @@ function exportPaletesLoja(){
     ...data.map(r=>[r.loja.n,r.loja.d,r.env,r.ret,r.saldo,...MODELOS.map(m=>r.porModelo[m])])
   ];
   downloadXLSX(rows,'Paletes_por_Loja_PaletCD');
-}
-
-function exportRecebForn(){
-  const rows=[
-    ['ID','Data','Fornecedor','NF','Total','Pago','Débito','Status',...MODELOS.map(m=>MODELO_LABELS[m])],
-    ...S.recebForn.map(r=>[
-      r.id,r.data,r.fornecedor,r.nf||'',r.total,r.pago,r.total-r.pago,r.status,...MODELOS.map(m=>r.modelos?.[m]||0)
-    ])
-  ];
-  downloadXLSX(rows,'Recebimento_Fornecedores_PaletCD');
 }
 
 function downloadXLSX(rows, filename){
@@ -3758,28 +3392,6 @@ function exportRelReformasMes(ano, mes){
   downloadXLSX(rows, `Reformas_Detalhado_${_mesNome(mes)}_${ano}`);
   return true;
 }
-// Relatório de débitos com fornecedor no mês (S.recebForn)
-function exportRelRecebFornMes(ano, mes){
-  const regs=(S.recebForn||[]).filter(r=>{
-    const d=_mesDoIso(r.data); if(!d) return false;
-    return d.ano===ano && d.mes===mes;
-  });
-  if(!regs.length){
-    toast(`⚠ Nenhuma entrada de fornecedor em ${_mesNome(mes)}/${ano}.`,'warn');
-    return false;
-  }
-  const rows=[
-    ['ID','Data','Fornecedor','NF','Total','Pago','Débito','Status',
-      ...MODELOS.map(m=>MODELO_LABELS[m]),'Usuário','Observação'],
-    ...regs.map(r=>[
-      r.id, r.data, r.fornecedor, r.nf||'', r.total, r.pago, r.total-r.pago, r.status,
-      ...MODELOS.map(m=>r.modelos?.[m]||0),
-      r.usuario||'', r.obs||''
-    ])
-  ];
-  downloadXLSX(rows, `Entrada_Fornecedores_${_mesNome(mes)}_${ano}`);
-  return true;
-}
 // Consolidado: todas as movs do mês, um CSV só
 function exportRelConsolidado(ano, mes){
   const movs=(S.movs||[]).filter(m=>{
@@ -3834,9 +3446,8 @@ async function exportTudoDoMes(ano, mes){
       ignorados++;
     }
   }
-  // Extras: reformas detalhadas e recebForn detalhado
+  // Extra: reformas detalhadas
   if(exportRelReformasMes(ano, mes)){baixados++;await new Promise(r=>setTimeout(r,350));}
-  if(exportRelRecebFornMes(ano, mes)){baixados++;await new Promise(r=>setTimeout(r,350));}
   if(exportRelConsolidado(ano, mes)){baixados++;}
   setTimeout(()=>toast(`✅ ${baixados} relatório(s) baixado(s). ${ignorados} sem dados no período.`),400);
 }
@@ -3849,12 +3460,9 @@ function rRelatorios(el){
   window._relAno=anoAtual; window._relMes=mesAtual;
   const contagem=_contarPorTipo(anoAtual, mesAtual);
   const totalMovs=Object.values(contagem).reduce((s,v)=>s+v,0);
-  // Reforma e recebForn extras
+  // Reformas do mes
   const nReformas=(S.reformas||[]).filter(r=>{
     if(r.status==='Excluído') return false;
-    const d=_mesDoIso(r.data); return d && d.ano===anoAtual && d.mes===mesAtual;
-  }).length;
-  const nRecebForn=(S.recebForn||[]).filter(r=>{
     const d=_mesDoIso(r.data); return d && d.ano===anoAtual && d.mes===mesAtual;
   }).length;
 
@@ -3903,8 +3511,6 @@ function rRelatorios(el){
         <strong style="color:var(--navy);font-size:15px;">${totalMovs}</strong> <span style="color:var(--text-light)">movs</span>
         <span style="color:var(--text-light);margin:0 6px">|</span>
         <strong style="color:var(--orange);font-size:15px;">${nReformas}</strong> <span style="color:var(--text-light)">ref.</span>
-        <span style="color:var(--text-light);margin:0 6px">|</span>
-        <strong style="color:var(--purple);font-size:15px;">${nRecebForn}</strong> <span style="color:var(--text-light)">entradas</span>
       </div>
     </div>
   </div>
@@ -3960,20 +3566,6 @@ function rRelatorios(el){
       </div>
       <button class="btn ${nReformas?'btn-primary':'btn-ghost'} btn-sm btn-full" ${nReformas?'':'disabled'} onclick="exportRelReformasMes(${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
     </div>
-    <div style="background:${nRecebForn?'#fff':'#f8fbff'};border:${nRecebForn?'2px solid #8e44ad':'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${nRecebForn?'':'opacity:.55'}">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="font-size:26px">📥</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--text)">Entradas de Fornecedor</div>
-          <div style="font-size:10px;color:var(--text-light);margin-top:1px">Débitos + status de pagamento</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${nRecebForn?'#8e44ad':'var(--text-light)'}">${nRecebForn}</div>
-          <div style="font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">registros</div>
-        </div>
-      </div>
-      <button class="btn ${nRecebForn?'btn-primary':'btn-ghost'} btn-sm btn-full" ${nRecebForn?'':'disabled'} onclick="exportRelRecebFornMes(${anoAtual},${mesAtual})">⬇ Exportar CSV</button>
-    </div>
     <div style="background:${totalMovs?'#fff':'#f8fbff'};border:${totalMovs?'2px solid var(--navy)':'1px solid var(--border)'};border-radius:var(--radius);padding:14px;${totalMovs?'':'opacity:.55'}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <div style="font-size:26px">📋</div>
@@ -3999,111 +3591,6 @@ function aplicarFiltroRel(){
   window._relAno=parseInt(document.getElementById('rel-ano').value,10);
   window._relMes=parseInt(document.getElementById('rel-mes').value,10);
   renderScreen('relatorios');
-}
-
-// ── SALDO FORNECEDORES ────────────────
-function rSaldoForn(el){
-  // Agrupa todos os recebForn por fornecedor
-  const fornMap={};
-  S.recebForn.forEach(r=>{
-    if(!fornMap[r.fornecedor])fornMap[r.fornecedor]={total:0,pago:0,regs:[]};
-    fornMap[r.fornecedor].total+=r.total;
-    fornMap[r.fornecedor].pago+=r.pago;
-    fornMap[r.fornecedor].regs.push(r);
-  });
-  const itens=Object.entries(fornMap).sort((a,b)=>(b[1].total-b[1].pago)-(a[1].total-a[1].pago));
-  const totalDeve=itens.reduce((s,[,v])=>s+Math.max(0,v.total-v.pago),0);
-  const totalRec=itens.reduce((s,[,v])=>s+v.total,0);
-  const totalPago=itens.reduce((s,[,v])=>s+v.pago,0);
-
-  // Estoque filtrado por data
-  const estOrigEst=S.est;
-  if(window._estoqueEstTemp){S.est=window._estoqueEstTemp;}
-  el.innerHTML=`
-  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Ver saldo em data específica <span style="color:#1abc9c">[v30]</span></div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-        <input type="date" id="est-de" class="form-control" value="${window._estDe||''}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarEstoque)">
-        <span style="font-size:12px;color:var(--text-light)">até</span>
-        <input type="date" id="est-ate" class="form-control" value="${window._estAte||''}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarEstoque)">
-        <button class="btn btn-ghost btn-sm" onclick="limparFiltroEstoque()">✕ Limpar</button>
-        <button class="btn btn-ghost btn-sm" onclick="diagnosticoMovs()" title="Ver quantas movimentações existem em cada mês">🔍 Diagnóstico</button>
-        <span id="est-periodo-label" style="font-size:11px;color:var(--teal);font-weight:600">${window._estoqueEstTemp?(window._modoDelta?'⇅ variação do período':'saldo acumulado'):''}</span>
-      </div>
-    </div>
-    ${window._modoDelta?(window._movsNoPeriodo===0?`<div style="background:#fdecea;border:1px solid #e74c3c;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:12px;color:#a83226;font-weight:600;">⚠ NENHUMA MOVIMENTAÇÃO neste período. Existem ${window._totalMovs||0} movimentações no sistema, mas nenhuma entre as datas selecionadas — por isso tudo aparece zerado. Confira o período.</div>`:`<div style="background:#fff4e5;border:1px solid #f39c12;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:12px;color:#8a5a00;font-weight:600;">⇅ MODO VARIAÇÃO — ${window._movsNoPeriodo} movimentação(ões) no período. Os números mostram o que MUDOU (entradas menos saídas), não o saldo total. Para saldo acumulado, deixe a data inicial em branco.</div>`):''}
-  </div>
-  <div class="kpi-grid">
-    <div class="kpi-card navy"><div class="kpi-label">Total Recebido</div><div class="kpi-value">${totalRec}</div><div class="kpi-sub">paletes</div></div>
-    <div class="kpi-card green"><div class="kpi-label">Total Pago</div><div class="kpi-value">${totalPago}</div></div>
-    <div class="kpi-card red"><div class="kpi-label">Total a Pagar</div><div class="kpi-value">${totalDeve}</div></div>
-  </div>
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">💰 Saldo por Fornecedor — Paletes Vale</span>
-      <button class="btn btn-success btn-sm" onclick="exportSaldoForn()">⬇ Excel</button>
-    </div>
-    <div class="filters">
-      <input class="filter-input" id="sf-s" placeholder="🔍 Buscar fornecedor..." oninput="filtSaldoForn()">
-      <select class="filter-select" id="sf-st" onchange="filtSaldoForn()">
-        <option value="">Todos</option>
-        <option value="aberto">Com saldo em aberto</option>
-        <option value="quitado">Quitado</option>
-      </select>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Fornecedor</th><th>Total Recebido</th><th>Total Pago</th><th>Saldo Devedor</th><th>Status</th><th>Ação</th></tr></thead>
-      <tbody id="sf-tbody"></tbody>
-    </table></div>
-  </div>
-  <div class="card" style="margin-top:14px">
-    <div class="card-hdr"><span class="card-title">📋 Últimos Pagamentos Registrados</span></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Fornecedor</th><th>Qtd Paga</th><th>Obs</th></tr></thead>
-      <tbody>${S.movs.filter(m=>m.tipo==='Pagamento Fornecedor').slice(0,20).map(m=>`<tr>
-        <td class="td-mono">${m.ts.split(',')[0]}</td>
-        <td class="td-bold">${m.origem}</td>
-        <td class="td-bold td-mono" style="color:var(--green)">${m.qtd}</td>
-        <td style="font-size:11px">${m.obs||'—'}</td>
-      </tr>`).join('')||emptyRow(4)}</tbody>
-    </table></div>
-  </div>`;
-  window._saldoFornData=itens;
-  filtSaldoForn();
-}
-function filtSaldoForn(){
-  const s=(v('sf-s')||'').toLowerCase(), st=v('sf-st');
-  const data=(window._saldoFornData||[]).filter(([nome,info])=>{
-    const saldo=info.total-info.pago;
-    if(!nome.toLowerCase().includes(s))return false;
-    if(st==='aberto'&&saldo<=0)return false;
-    if(st==='quitado'&&saldo>0)return false;
-    return true;
-  });
-  const tb=document.getElementById('sf-tbody');if(!tb)return;
-  tb.innerHTML=data.length?data.map(([nome,info])=>{
-    const saldo=Math.max(0,info.total-info.pago);
-    return`<tr>
-      <td class="td-bold">${nome}</td>
-      <td class="td-mono">${info.total}</td>
-      <td class="td-mono" style="color:var(--green)">${info.pago}</td>
-      <td class="td-bold td-mono" style="font-size:16px;color:${saldo>0?'var(--red)':'var(--green)'}">${saldo}</td>
-      <td><span class="badge ${saldo>0?'badge-amber':'badge-green'}">${saldo>0?'Em aberto':'Quitado'}</span></td>
-      <td>${saldo>0?`<button class="btn btn-teal btn-xs" onclick="navigate('receb-forn')">💳 Pagar</button>`:'—'}</td>
-    </tr>`;
-  }).join(''):emptyRow(6);
-}
-function exportSaldoForn(){
-  const data=window._saldoFornData||[];
-  const rows=[
-    ['Fornecedor','Total Recebido','Total Pago','Saldo Devedor','Status'],
-    ...data.map(([nome,info])=>{
-      const saldo=Math.max(0,info.total-info.pago);
-      return[nome,info.total,info.pago,saldo,saldo>0?'Em aberto':'Quitado'];
-    })
-  ];
-  downloadXLSX(rows,'Saldo_Fornecedores_PaletCD');
 }
 
 // bind export button in movimentacoes screen
@@ -4217,11 +3704,10 @@ function doReset(){
   // Mantém senhas e fornecedores, zera tudo mais
   const senhas=S.senhas;
   const forns=S.forns;
-  const fornNomes=S.fornNomes||[];
   S={
     est:emptyEst(),
-    movs:[],solics:[],triagens:[],reformas:[],forns:forns||[],recebForn:[],fornNomes,
-    nMov:1,nRef:1,nSol:1,nForn:S.nForn||1,nRecForn:1,modoMigracao:false,
+    movs:[],solics:[],triagens:[],reformas:[],forns:forns||[],
+    nMov:1,nRef:1,nSol:1,nForn:S.nForn||1,modoMigracao:false,
     senhas:senhas||{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
   };
   save();
@@ -4347,38 +3833,6 @@ function confirmarEditTriagem(screen){
   t.total=t.prontos+t.reforma+t.descarte;
   save();toast('✓ Triagem editada.');closeModal('modal-edit-triagem');if(screen)renderScreen(screen);
 }
-function abrirEditRecebForn(id,screen){
-  if(!canDelete())return toast('Sem permissão para editar.','err');
-  const r=S.recebForn.find(x=>x.id===id);if(!r)return;
-  _editMovId='RCF:'+id; // prefix to distinguish
-  document.getElementById('edit-mov-info').innerHTML=`<strong>${r.id}</strong> · Receb. Fornecedor · ${r.data}<br>Fornecedor: ${r.fornecedor} | Total: ${r.total} | Pago: ${r.pago}`;
-  document.getElementById('edit-mov-data').value=r.data||'';
-  document.getElementById('edit-mov-user').value=r.usuario||'';
-  document.getElementById('edit-mov-origem').value=r.fornecedor||'';
-  document.getElementById('edit-mov-destino').value='Recebimento';
-  document.getElementById('edit-mov-nf').value=r.nf||'';
-  document.getElementById('edit-mov-obs').value=r.obs||'';
-  const cont=document.getElementById('edit-mov-modelos');
-  cont.innerHTML=MODELOS.map(md=>`<div style="display:flex;flex-direction:column;gap:3px;">
-    <label style="font-size:10px;font-weight:700;color:var(--text-light);">${MODELO_LABELS[md]}</label>
-    <input class="form-control" id="emod-${md}" type="number" min="0" value="${r.modelos?.[md]||0}" style="padding:6px;font-size:12px;text-align:center;">
-  </div>`).join('');
-  document.querySelector('#modal-edit-mov .modal-footer .btn-primary').onclick=()=>confirmarEditRecebForn(id,screen);
-  openModal('modal-edit-mov');
-}
-function confirmarEditRecebForn(id,screen){
-  const r=S.recebForn.find(x=>x.id===id);if(!r)return;
-  r.data=document.getElementById('edit-mov-data').value||r.data;
-  r.usuario=document.getElementById('edit-mov-user').value||r.usuario;
-  r.fornecedor=document.getElementById('edit-mov-origem').value||r.fornecedor;
-  r.nf=document.getElementById('edit-mov-nf').value;
-  r.obs=document.getElementById('edit-mov-obs').value;
-  const novosMod={};let novoTot=0;
-  MODELOS.forEach(md=>{const q=parseInt(document.getElementById('emod-'+md)?.value)||0;if(q>0){novosMod[md]=q;novoTot+=q;}});
-  if(novoTot>0){r.modelos=novosMod;r.total=novoTot;}
-  save();toast('✓ Recebimento editado.');closeModal('modal-edit-mov');if(screen)renderScreen(screen);
-}
-
 // ── EXCLUSÃO DE REGISTROS ──────────────
 function canDelete(){return CU.role==='adm'||CU.role==='rev';}
 function excluirMov(id,screen){
@@ -4390,25 +3844,14 @@ function excluirMov(id,screen){
   // Estorno de estoque automático conforme o tipo
   S.est=fixEst(S.est);
   try{
-    if(mov.tipo==='Pagamento Fornecedor'){
+    if(mov.tipo==='Pagamento Fornecedor'||mov.tipo==='Saida para Fornecedor'){
       // Pagamento excluído → devolve paletes à REV
       MODELOS.forEach(m=>{S.est.REV[m]=(S.est.REV[m]||0)+(mov.modelos?.[m]||0);});
-      // Reverte o pago nos registros de recebForn
-      let restante=mov.qtd;
-      const pagos=S.recebForn.filter(r=>r.fornecedor===mov.origem&&r.pago>0);
-      pagos.forEach(r=>{
-        if(restante<=0)return;
-        const reverter=Math.min(r.pago,restante);
-        r.pago=Math.max(0,r.pago-reverter);restante-=reverter;
-        r.status=r.pago===0?'Pendente':r.pago>=r.total?'Quitado':'Pago parcial';
-      });
     } else if(mov.tipo==='Envio Descartável Reforma'){
       // Envio Descartável excluído → devolve à REV
       S.est.REV.DESCARTAVEL=(S.est.REV.DESCARTAVEL||0)+(mov.modelos?.DESCARTAVEL||mov.qtd||0);
     } else if(mov.tipo==='Recebimento Fornecedor'){
-      // Recebimento excluído → não mexe na REV (nunca foi somado lá)
-      const idx=S.recebForn.findIndex(r=>r.fornecedor===mov.origem&&r.total===mov.qtd&&r.pago===0);
-      if(idx!==-1)S.recebForn.splice(idx,1);
+      // Legado: recebimento nunca somou na REV → nada a estornar
     } else if(mov.tipo==='Compra'){
       MODELOS.forEach(m=>{S.est.REV[m]=Math.max(0,(S.est.REV[m]||0)-(mov.modelos?.[m]||0));});
     } else if(mov.tipo==='Distribuição Interna'){
@@ -4544,13 +3987,6 @@ function excluirTriagem(idx,screen){
   if(!confirm('Excluir este registro de triagem?'))return;
   S.triagens.splice(idx,1);save();
   toast('✓ Triagem excluída.','warn');if(screen)renderScreen(screen);
-}
-function excluirRecebForn(id,screen){
-  if(!canDelete())return toast('Sem permissão para excluir.','err');
-  if(!confirm(`Excluir recebimento ${id}?`))return;
-  const idx=S.recebForn.findIndex(r=>r.id===id);
-  if(idx===-1)return;
-  S.recebForn.splice(idx,1);save();toast(`✓ Recebimento ${id} excluído.`,'warn');if(screen)renderScreen(screen);
 }
 
 
@@ -4914,13 +4350,6 @@ document.getElementById('mob-overlay').addEventListener('click',()=>{
   document.getElementById('mob-overlay').classList.remove('open');
 });
 document.getElementById('la-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')loginArea();});
-document.getElementById('ll-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')loginLoja();});
-
-// Populate loja select
-(function(){
-  const sel=document.getElementById('ll-loja');
-  LOJAS_BASE.forEach(l=>{const o=document.createElement('option');o.value=l.d;o.textContent=`${String(l.d).padStart(3,'0')} · ${l.n}`;sel.appendChild(o);});
-})();
 
 load().then(()=>{updateClock();});
 updateClock();
