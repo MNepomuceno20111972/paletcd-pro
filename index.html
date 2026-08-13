@@ -961,9 +961,8 @@ const MENUS={
   area:[
     ['solicitar','🙋','🙋 Solicitar Paletes'],
     ['envio-loja','🚚','🚚 Envio para Lojas'],
-    ['minha-area','📊','🟢 Saldo da Área (View)'],
+    ['minha-area','📦','📦 Estoque da Área'],
     ['paletes-loja','🏪','🏪 Paletes por Loja (View)'],
-    ['estoque','📦','📊 Estoque Geral (View)'],
   ],
 };
 
@@ -1515,7 +1514,7 @@ const PAGE_INFO={
   triagem:['Triagem','Classificação de paletes retornados'],reforma:['Controle de Reforma','Paletes em reforma'],
   'retorno-loja':['Retorno de Lojas','Lojas → REV'],'devolucao':['Devolução Interna','Áreas → Triagem'],
   movimentacoes:['Movimentações','Registro completo'],fornecedores:['Fornecedores','Gerenciar fornecedores'],
-  'minha-area':['Meu Estoque','Saldo da sua área'],
+  'minha-area':['Estoque da Área','Saldo apenas da sua área'],
   'saida-forn':['Saída para Fornecedor','Devolução de paletes — baixa na REV'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
@@ -1537,6 +1536,8 @@ function navigate(screen){
 // RENDER
 // ═══════════════════════════════════════════════════════
 function renderScreen(s){
+  // 🔒 Perfil de área não enxerga o estoque geral — só o da própria área.
+  if(CU.role==='area'&&s==='estoque')s='minha-area';
   _currentScreen=s;
   const el=document.getElementById('content-area');el.innerHTML='';
   const fn={
@@ -1910,7 +1911,9 @@ function solicSaldoPend(sol){
 function rSolicitar(el){
   const isArea=CU.role==='area';
   const opts=isArea?subAreasDe(CU.area):AREAS_INT;
-  const minhas=(S.solics||[]).filter(s=>!isArea||String(s.area||'').startsWith(CU.area)).slice(0,25);
+  const minhas=(S.solics||[])
+    .filter(s=>!s.ocultaArea)                                        // cancelada pelo ADM → some daqui
+    .filter(s=>!isArea||String(s.area||'').startsWith(CU.area)).slice(0,25);
   const pend=minhas.filter(s=>s.status==='Pendente').length;
   const saldoREV=totalEst('REV');
 
@@ -1993,6 +1996,8 @@ function cancelarSolic(id,screen){
   s.status='Cancelada';
   s.canceladoPor=CU.nome;
   s.canceladoEm=new Date().toLocaleString('pt-BR');
+  // Cancelou o ADM/REV → some da tela da área (fica visível só na fila da REV, p/ auditoria)
+  if(CU.role==='adm'||CU.role==='rev')s.ocultaArea=true;
   save();
   toast(`Solicitação ${id} cancelada.`,'warn');
   renderScreen(screen||'solicitacoes');
@@ -2241,8 +2246,9 @@ function rEnvioLoja(el){
   S.est=fixEst(S.est);
   const saldo={};MODELOS.forEach(m=>saldo[m]=S.est[area]?.[m]||0);
   const totSaldo=totalModelos(saldo);
-  const comSaldo=MODELOS.filter(m=>saldo[m]>0);
-  const modVis=comSaldo.length?comSaldo:MODELOS;
+  // Todos os modelos sempre visíveis (inclusive GAIOLA de madeira),
+  // mesmo com saldo zero na área — o bloqueio de estouro continua em envCalc().
+  const modVis=MODELOS;
 
   const linhas=_envRows.map((r,i)=>`
     <div style="border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:#f8fbff;">
@@ -2403,11 +2409,22 @@ function calcSemRastro(de,ate){
   return{env,ret,gap:ret-env,porModelo};
 }
 
-function calcSaldoLojas(){
+function calcSaldoLojas(de,ate){
+  const dIni=de?new Date(de+'T00:00:00'):null;
+  const dFim=ate?new Date(ate+'T23:59:59'):null;
+  const dentro=(m)=>{
+    if(!dIni&&!dFim)return true;
+    const d=parseTsDate(m.ts);
+    if(!d||dataIncompleta(d))return false;
+    if(dIni&&d<dIni)return false;
+    if(dFim&&d>dFim)return false;
+    return true;
+  };
   const map={};
   S.movs.forEach(m=>{
     if(!m.loja)return;
     if(m.tipo!=='Envio para Loja'&&m.tipo!=='Retorno de Loja')return;
+    if(!dentro(m))return;
     const d=Number(m.loja);
     if(!map[d]){map[d]={env:0,ret:0,pm:{}};MODELOS.forEach(x=>map[d].pm[x]=0);}
     const sinal=m.tipo==='Envio para Loja'?1:-1;
@@ -2421,9 +2438,40 @@ function calcSaldoLojas(){
   }).sort((a,b)=>b.saldo-a.saldo||a.loja.n.localeCompare(b.loja.n,'pt-BR'));
 }
 
+function filtrarPaletesLoja(){
+  window._plDe=document.getElementById('pl-de')?.value||'';
+  window._plAte=document.getElementById('pl-ate')?.value||'';
+  const a=parseDate(window._plDe),b=parseDate(window._plAte);
+  if(dataIncompleta(a)||dataIncompleta(b))return; // ainda digitando o ano
+  renderScreen('paletes-loja');
+}
+function limparFiltroPaletesLoja(){
+  window._plDe='';window._plAte='';
+  renderScreen('paletes-loja');
+}
+function plPeriodoRapido(dias){
+  const fim=new Date(),ini=new Date();ini.setDate(ini.getDate()-dias+1);
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  window._plDe=iso(ini);window._plAte=iso(fim);
+  renderScreen('paletes-loja');
+}
+function plMesAtual(){
+  const h=new Date();
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  window._plDe=iso(new Date(h.getFullYear(),h.getMonth(),1));
+  window._plAte=iso(h);
+  renderScreen('paletes-loja');
+}
+
 function rPaletesLoja(el){
-  const data=calcSaldoLojas();
+  const fDe=window._plDe||'',fAte=window._plAte||'';
+  const filtrado=!!(fDe||fAte);
+  const data=calcSaldoLojas(fDe,fAte);
   window._paletesLojaData=data;
+  const fmtBr=iso=>{if(!iso)return '';const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;};
+  const rotulo=filtrado
+    ? `⇅ MOVIMENTO DO PERÍODO ${fDe?fmtBr(fDe):'início'} → ${fAte?fmtBr(fAte):'hoje'}`
+    : 'Saldo acumulado (todo o histórico)';
   const totSaldo=data.reduce((s,r)=>s+r.saldo,0);
   const totEnv=data.reduce((s,r)=>s+r.env,0);
   const totRet=data.reduce((s,r)=>s+r.ret,0);
@@ -2431,16 +2479,33 @@ function rPaletesLoja(el){
   const comNeg=data.filter(r=>r.saldo<0).length;
 
   el.innerHTML=`
+  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Filtrar por período</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
+        <input type="date" id="pl-de" class="form-control" value="${fDe}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarPaletesLoja)">
+        <span style="font-size:12px;color:var(--text-light)">até</span>
+        <input type="date" id="pl-ate" class="form-control" value="${fAte}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarPaletesLoja)">
+        <button class="btn btn-ghost btn-sm" onclick="plPeriodoRapido(7)">7 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="plPeriodoRapido(30)">30 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="plMesAtual()">Mês atual</button>
+        <button class="btn btn-ghost btn-sm" onclick="limparFiltroPaletesLoja()">✕ Limpar</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;background:${filtrado?'#fff4e5':'var(--bg)'};border:1px solid ${filtrado?'#f39c12':'var(--border)'};border-radius:6px;padding:8px 12px;font-size:12px;color:${filtrado?'#8a5a00':'var(--text-light)'};font-weight:600;">
+      ${rotulo}${filtrado?' — os números abaixo mostram apenas o que foi enviado e retornado dentro do período, não o saldo total em posse da loja.':''}
+    </div>
+  </div>
   <div class="kpi-grid">
-    <div class="kpi-card teal"><div class="kpi-label">Paletes nas Lojas</div><div class="kpi-value">${totSaldo}</div><div class="kpi-sub">saldo em posse</div></div>
-    <div class="kpi-card blue"><div class="kpi-label">Total Enviado</div><div class="kpi-value">${totEnv}</div></div>
-    <div class="kpi-card amber"><div class="kpi-label">Total Retornado</div><div class="kpi-value">${totRet}</div></div>
-    <div class="kpi-card slate"><div class="kpi-label">Lojas com Saldo</div><div class="kpi-value">${comSaldo}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas${comNeg?` · <strong style="color:var(--red)">${comNeg} negativa(s)</strong>`:''}</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">${filtrado?'Saldo do Período':'Paletes nas Lojas'}</div><div class="kpi-value">${totSaldo}</div><div class="kpi-sub">${filtrado?'enviado menos retornado':'saldo em posse'}</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">${filtrado?'Enviado no Período':'Total Enviado'}</div><div class="kpi-value">${totEnv}</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">${filtrado?'Retornado no Período':'Total Retornado'}</div><div class="kpi-value">${totRet}</div></div>
+    <div class="kpi-card slate"><div class="kpi-label">${filtrado?'Lojas com Movimento':'Lojas com Saldo'}</div><div class="kpi-value">${filtrado?data.length:comSaldo}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas${comNeg?` · <strong style="color:var(--red)">${comNeg} negativa(s)</strong>`:''}</div></div>
   </div>
 
   <div class="card" style="margin-top:16px">
     <div class="card-hdr">
-      <span class="card-title">🏪 Saldo por Loja</span>
+      <span class="card-title">🏪 ${filtrado?'Movimento por Loja':'Saldo por Loja'}</span>
       <button class="btn btn-ghost btn-xs" onclick="exportPaletesLoja()">⬇️ Excel</button>
     </div>
     <div class="table-wrap"><table>
@@ -3122,22 +3187,96 @@ function doExcluirForn(id){
 }
 
 // ── MINHA ÁREA ─────────────────────────
+function filtrarMinhaArea(){
+  window._maDe=document.getElementById('ma-de')?.value||'';
+  window._maAte=document.getElementById('ma-ate')?.value||'';
+  const a=parseDate(window._maDe),b=parseDate(window._maAte);
+  if(dataIncompleta(a)||dataIncompleta(b))return; // ainda digitando o ano
+  renderScreen('minha-area');
+}
+function limparFiltroMinhaArea(){
+  window._maDe='';window._maAte='';
+  renderScreen('minha-area');
+}
+function maPeriodoRapido(dias){
+  const fim=new Date(),ini=new Date();ini.setDate(ini.getDate()-dias+1);
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  window._maDe=iso(ini);window._maAte=iso(fim);
+  renderScreen('minha-area');
+}
+function maMesAtual(){
+  const h=new Date();
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  window._maDe=iso(new Date(h.getFullYear(),h.getMonth(),1));
+  window._maAte=iso(h);
+  renderScreen('minha-area');
+}
+
 function rMinhaArea(el){
   const area=CU.area;
-  const est=S.est[area]||{};
+  const fDe=window._maDe||'',fAte=window._maAte||'';
+  const dDe=parseDate(fDe),dAte=parseDate(fAte);
+  const modoDelta=!!dDe;                 // com data inicial → variação do período
+  const filtrado=!!(dDe||dAte);
+
+  // Snapshot do estoque conforme o filtro
+  let estCalc;
+  if(modoDelta)      estCalc=calcEstDelta(dDe,dAte||new Date());
+  else if(dAte)      estCalc=calcEstAteDia(dAte);
+  else               estCalc=S.est;
+  const est=estCalc[area]||{};
+  const total=MODELOS.reduce((sm,m)=>sm+(est[m]||0),0);
+
+  const fmtBr=iso=>{if(!iso)return '';const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;};
+  const rotulo=modoDelta
+    ? `⇅ VARIAÇÃO de ${fmtBr(fDe)} até ${fAte?fmtBr(fAte):'hoje'} — entradas menos saídas, não o saldo total.`
+    : (dAte?`📌 Saldo acumulado até ${fmtBr(fAte)}`:'Saldo atual (todo o histórico)');
+
+  // Movimentações da área dentro do período
+  const dIni=fDe?new Date(fDe+'T00:00:00'):null;
+  const dFim=fAte?new Date(fAte+'T23:59:59'):null;
+  const movs=S.movs.filter(m=>{
+    if(m.origem!==area&&m.destino!==area)return false;
+    if(!dIni&&!dFim)return true;
+    const d=parseTsDate(m.ts);
+    if(!d||dataIncompleta(d))return false;
+    if(dIni&&d<dIni)return false;
+    if(dFim&&d>dFim)return false;
+    return true;
+  });
+
   el.innerHTML=`
+  <div class="card" style="margin-bottom:14px;padding:14px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">📅 Filtrar por período</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
+        <input type="date" id="ma-de" class="form-control" value="${fDe}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarMinhaArea)">
+        <span style="font-size:12px;color:var(--text-light)">até</span>
+        <input type="date" id="ma-ate" class="form-control" value="${fAte}" style="max-width:150px;font-size:12px;padding:6px 10px" onchange="agendarFiltro(filtrarMinhaArea)">
+        <button class="btn btn-ghost btn-sm" onclick="maPeriodoRapido(7)">7 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="maPeriodoRapido(30)">30 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="maMesAtual()">Mês atual</button>
+        <button class="btn btn-ghost btn-sm" onclick="limparFiltroMinhaArea()">✕ Limpar</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;background:${modoDelta?'#fff4e5':'var(--bg)'};border:1px solid ${modoDelta?'#f39c12':'var(--border)'};border-radius:6px;padding:8px 12px;font-size:12px;color:${modoDelta?'#8a5a00':'var(--text-light)'};font-weight:600;">
+      ${rotulo}${modoDelta?' Para ver saldo acumulado, deixe a data inicial em branco.':''}
+    </div>
+  </div>
+
   <div class="section-hdr"><div class="section-title">Estoque — ${area}</div></div>
   <div class="model-stock-grid">${MODELOS.map(m=>`<div class="model-card ${MODELO_CLS[m]}">
     <div class="model-name">${MODELO_LABELS[m]}</div>
-    <div class="model-val">${est[m]||0}</div>
+    <div class="model-val" style="${corVal(est[m]||0)}">${fmtVal(est[m]||0)}</div>
   </div>`).join('')}</div>
   <div class="kpi-grid" style="margin-bottom:14px">
-    <div class="kpi-card teal"><div class="kpi-label">Total ${area}</div><div class="kpi-value">${totalEst(area)}</div><div class="kpi-sub">paletes</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">${modoDelta?'Variação':'Total'} ${area}</div><div class="kpi-value" style="${corVal(total)}">${fmtVal(total)}</div><div class="kpi-sub">paletes</div></div>
+    <div class="kpi-card slate"><div class="kpi-label">Movimentações</div><div class="kpi-value">${movs.length}</div><div class="kpi-sub">${filtrado?'no período':'no histórico'}</div></div>
   </div>
-  <div class="section-hdr"><div class="section-title">Últimas Movimentações</div></div>
+  <div class="section-hdr"><div class="section-title">${filtrado?'Movimentações do Período':'Últimas Movimentações'}</div></div>
   <div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th></tr></thead>
-    <tbody>${S.movs.filter(m=>m.origem===area||m.destino===area).slice(0,15).map(m=>`<tr>
+    <tbody>${movs.slice(0,filtrado?200:15).map(m=>`<tr>
       <td class="td-mono">${m.ts.split(',')[0]}</td><td>${badgeMov(m.tipo)}</td>
       <td><span class="tag-area">${m.origem}</span></td><td><span class="tag-area">${m.destino}</span></td>
       <td class="td-bold">${m.qtd}</td><td>${modelosHtml(m.modelos)}</td>
