@@ -3188,9 +3188,15 @@ function rMovimentacoes(el){
           <option value="CD">CD</option>
         </optgroup>
       </select>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <label style="font-size:11px;font-weight:700;color:var(--text-light);white-space:nowrap;">📅 Data:</label>
-        <input class="filter-input" id="md" type="date" onchange="filtMovs()" style="min-width:140px;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-light);white-space:nowrap;">📅 Período:</label>
+        <input class="filter-input" id="md" type="date" onchange="filtMovs()" title="Data inicial" style="min-width:140px;">
+        <span style="font-size:11px;color:var(--text-light)">até</span>
+        <input class="filter-input" id="md2" type="date" onchange="filtMovs()" title="Data final" style="min-width:140px;">
+        <button class="btn btn-ghost btn-xs" onclick="movPeriodoRapido(0)" title="Somente hoje">Hoje</button>
+        <button class="btn btn-ghost btn-xs" onclick="movPeriodoRapido(7)">7 dias</button>
+        <button class="btn btn-ghost btn-xs" onclick="movPeriodoRapido(30)">30 dias</button>
+        <button class="btn btn-ghost btn-xs" onclick="movMesAtual()">Mês atual</button>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="toggleOrdemMovs()" id="btn-ordem" title="Alternar ordem">🔼 Recente</button>
       <button class="btn btn-ghost btn-sm" onclick="filtMovs(1)">✕ Limpar</button>
@@ -3204,6 +3210,22 @@ function rMovimentacoes(el){
   filtMovs();
 }
 let _movsOrdem='desc';
+function _isoDia(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function movPeriodoRapido(dias){
+  const fim=new Date(),ini=new Date();
+  if(dias>0)ini.setDate(ini.getDate()-dias+1);
+  const a=document.getElementById('md'),b=document.getElementById('md2');
+  if(a)a.value=_isoDia(ini);
+  if(b)b.value=_isoDia(fim);
+  filtMovs();
+}
+function movMesAtual(){
+  const h=new Date();
+  const a=document.getElementById('md'),b=document.getElementById('md2');
+  if(a)a.value=_isoDia(new Date(h.getFullYear(),h.getMonth(),1));
+  if(b)b.value=_isoDia(h);
+  filtMovs();
+}
 function toggleOrdemMovs(){
   _movsOrdem=_movsOrdem==='desc'?'asc':'desc';
   const btn=document.getElementById('btn-ordem');
@@ -3220,13 +3242,26 @@ function parseTsDate(ts){
 }
 function filtMovs(clr){
   if(clr){
-    ['ms','mt','mm','md','mdest'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    ['ms','mt','mm','md','md2','mdest'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     _movsOrdem='desc';
     const btn=document.getElementById('btn-ordem');if(btn)btn.textContent='🔼 Recente';
   }
-  const s=(v('ms')||'').toLowerCase(),t=v('mt'),m=v('mm'),d=v('md'),dest=(v('mdest')||'');
-  let dFmt='';
-  if(d){const[y,mo,dy]=d.split('-');dFmt=`${dy}/${mo}/${y}`;}
+  const s=(v('ms')||'').toLowerCase(),t=v('mt'),m=v('mm'),dest=(v('mdest')||'');
+  // ── PERÍODO: data inicial e/ou final. Qualquer uma pode ficar em branco.
+  const dDe=v('md'),dAte=v('md2');
+  const pDe=dDe?parseDate(dDe):null;
+  const pAte=dAte?parseDate(dAte):null;
+  if(dataIncompleta(pDe)||dataIncompleta(pAte))return; // ainda digitando o ano
+  const ini=pDe?new Date(pDe.getFullYear(),pDe.getMonth(),pDe.getDate(),0,0,0):null;
+  const fim=pAte?new Date(pAte.getFullYear(),pAte.getMonth(),pAte.getDate(),23,59,59):null;
+  const noPeriodo=x=>{
+    if(!ini&&!fim)return true;
+    const dt=parseTsDate(x.ts);
+    if(!dt||dataIncompleta(dt))return false;
+    if(ini&&dt<ini)return false;
+    if(fim&&dt>fim)return false;
+    return true;
+  };
   let f=S.movs.filter(x=>
     (!s||x.id.toLowerCase().includes(s)||x.tipo.toLowerCase().includes(s)||x.origem.toLowerCase().includes(s)||(x.destino||'').toLowerCase().includes(s)||x.usuario.toLowerCase().includes(s))&&
     (!t||x.tipo===t)&&
@@ -3240,10 +3275,15 @@ function filtMovs(clr){
       if(sel==='perecível'||sel==='perecivel') return d.startsWith('perecív')||d.startsWith('pereciv');
       return d===sel;
     })())&&
-    (!dFmt||x.ts.startsWith(dFmt))
+    noPeriodo(x)
   );
   f=[...f].sort((a,b)=>_movsOrdem==='asc'?parseTsDate(a.ts)-parseTsDate(b.ts):parseTsDate(b.ts)-parseTsDate(a.ts));
-  const ct=document.getElementById('mcount');if(ct)ct.textContent=`${f.length} registro(s)`;
+  window._movsFiltradas=f; // export do Excel usa exatamente o que está na tela
+  const totQtd=f.reduce((a,x)=>a+(x.qtd||0),0);
+  const fmtBr=iso=>{const[y,mo,dy]=iso.split('-');return `${dy}/${mo}/${y}`;};
+  const rot=(dDe||dAte)?` · ${dDe?fmtBr(dDe):'início'} → ${dAte?fmtBr(dAte):'hoje'}`:'';
+  const ct=document.getElementById('mcount');
+  if(ct)ct.innerHTML=`<strong>${f.length}</strong> registro(s) · <strong>${totQtd.toLocaleString('pt-BR')}</strong> paletes${rot}`;
   const tb=document.getElementById('mtbody');
   if(tb)tb.innerHTML=f.length?f.map(x=>`<tr>
     <td class="td-mono">${x.id}</td><td class="td-mono" style="font-size:10px">${x.ts}</td>
@@ -3572,12 +3612,13 @@ async function doAlterarSenhaAdm(){
 // ── EXPORT EXCEL ───────────────────────
 function exportMovimentacoes(){
   const rows=[
-    ['ID','Data/Hora','Tipo','Origem','Destino','Loja','Qtd','PBR','DESCARTAVEL','CHEP','EURO','GAIOLA','Usuário','Obs'],
-    ...S.movs.map(m=>[
+    ['ID','Data/Hora','Tipo','Origem','Destino','Loja','Qtd','PBR','DESCARTAVEL','CHEP','EURO','CHEP_EURO','GAIOLA','Usuário','Obs'],
+    // Exporta o resultado FILTRADO na tela. Sem filtro, sai tudo.
+    ...(window._movsFiltradas||S.movs).map(m=>[
       m.id,m.ts,m.tipo,m.origem,m.destino,
       m.loja?lojaNome(m.loja):'',
       m.qtd,
-      m.modelos?.PBR||0,m.modelos?.DESCARTAVEL||0,m.modelos?.CHEP||0,m.modelos?.EURO||0,m.modelos?.GAIOLA||0,
+      m.modelos?.PBR||0,m.modelos?.DESCARTAVEL||0,m.modelos?.CHEP||0,m.modelos?.EURO||0,m.modelos?.CHEP_EURO||0,m.modelos?.GAIOLA||0,
       m.usuario,m.obs
     ])
   ];
@@ -4532,7 +4573,11 @@ window._estAte=window._estAte||'';
 let _fltTimer=null;
 function agendarFiltro(fn){clearTimeout(_fltTimer);_fltTimer=setTimeout(fn,700);}
 // Ano < 2000 = digitação incompleta (ex: "0020" enquanto digita 2026)
-function dataIncompleta(d){return d&&d.getFullYear()<2000;}
+function dataIncompleta(d){
+  if(!d)return false;
+  if(isNaN(d.getTime()))return true;   // ts corrompido / data inválida → tratar como inválida
+  return d.getFullYear()<2000;         // ainda digitando o ano
+}
 function filtrarDashboard(){
   window._dashDe=document.getElementById('dash-de')?.value||'';
   window._dashAte=document.getElementById('dash-ate')?.value||'';
