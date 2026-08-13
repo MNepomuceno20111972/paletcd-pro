@@ -1556,6 +1556,40 @@ function renderScreen(s){
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
 }
 
+// ── ADESÃO DAS ÁREAS: ENVIO PARA LOJAS ─────────────────────────
+// Apura quanto cada CENTRO DE CUSTO distribuiu direto para as lojas.
+// Serve para acompanhar a virada em que as áreas assumem o envio,
+// que antes era feito só pela Logística Reversa.
+function ccRaizes(){
+  const out=['REV'];
+  AREAS_INT.forEach(a=>{const r=ccRaiz(a);if(!out.includes(r))out.push(r);});
+  return out;
+}
+function calcEnvioLojasPorArea(de,ate){
+  const dIni=de?new Date(de+'T00:00:00'):null;
+  const dFim=ate?new Date(ate+'T23:59:59'):null;
+  const map={};
+  ccRaizes().forEach(r=>{map[r]={cc:r,qtd:0,movs:0,lojas:{},ultima:null,ultimaTs:0,porModelo:{}};MODELOS.forEach(m=>map[r].porModelo[m]=0);});
+  (S.movs||[]).forEach(m=>{
+    if(m.tipo!=='Envio para Loja')return;
+    const d=parseTsDate(m.ts);
+    if(dIni||dFim){
+      if(!d||dataIncompleta(d))return;
+      if(dIni&&d<dIni)return;
+      if(dFim&&d>dFim)return;
+    }
+    const r=m.origem==='REV'?'REV':ccRaiz(m.origem);
+    if(!map[r])return;
+    const o=map[r];
+    o.qtd+=(m.qtd||0);o.movs++;
+    if(m.loja)o.lojas[m.loja]=1;
+    MODELOS.forEach(k=>{o.porModelo[k]+=(m.modelos?.[k]||0);});
+    const t=d?d.getTime():0;
+    if(t>o.ultimaTs){o.ultimaTs=t;o.ultima=(m.ts||'').split(',')[0];}
+  });
+  return ccRaizes().map(r=>({...map[r],lojas:Object.keys(map[r].lojas).length}));
+}
+
 // ── DASHBOARD ──────────────────────────
 function rDashboard(el){
   // Garante que S tem estrutura
@@ -1656,6 +1690,67 @@ function rDashboard(el){
       </div>
       <div>${det||'<span style="font-size:11px;color:var(--text-light)">Sem detalhe por modelo no período.</span>'}</div>
     </div>`;})()}
+  ${(()=>{
+    const rows=calcEnvioLojasPorArea(window._dashDe,window._dashAte);
+    const tot=rows.reduce((a,r)=>a+r.qtd,0);
+    const totMov=rows.reduce((a,r)=>a+r.movs,0);
+    const areas=rows.filter(r=>r.cc!=='REV');
+    const ativas=areas.filter(r=>r.qtd>0).length;
+    const rev=rows.find(r=>r.cc==='REV')||{qtd:0};
+    const pctAreas=tot>0?Math.round(((tot-rev.qtd)/tot)*100):0;
+    const per=(window._dashDe||window._dashAte)?'no período filtrado':'no histórico completo';
+    return `
+  <div class="section-hdr"><div class="section-title">Distribuição para Lojas — por Área</div></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">
+      <span class="card-title">🚚 Quem está enviando para as lojas</span>
+      <span style="font-size:11px;color:var(--text-light);font-weight:600">${ativas} de ${areas.length} áreas ativas · ${pctAreas}% do volume saiu das áreas · ${per}</span>
+    </div>
+    <div style="padding:10px 14px 0;font-size:12px;color:var(--text-mid);line-height:1.5;">
+      Antes o envio era todo pela Logística Reversa. Área que aparece com <strong>zero</strong> ainda não assumiu a distribuição — é aí que a cobrança entra.
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Centro de Custo</th>
+        <th style="text-align:center">Saída p/ Lojas</th>
+        <th style="text-align:center">% do Total</th>
+        <th style="text-align:center">Envios</th>
+        <th style="text-align:center">Lojas Atendidas</th>
+        <th style="text-align:center">Último Envio</th>
+        <th style="text-align:center">Status</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>{
+          const pct=tot>0?Math.round((r.qtd/tot)*100):0;
+          const isRev=r.cc==='REV';
+          const st=isRev
+            ? '<span class="badge badge-gray">• Logística Reversa</span>'
+            : (r.qtd>0?'<span class="badge badge-green">✓ Ativa</span>':'<span class="badge badge-amber">⏳ Não iniciou</span>');
+          return `<tr style="${isRev?'background:#f0f4f8;':(r.qtd?'':'opacity:.6;')}">
+            <td class="td-bold" style="font-size:12px">${isRev?'Log. Reversa':r.cc}</td>
+            <td style="text-align:center;font-family:var(--mono);font-weight:800;font-size:15px;color:${r.qtd?'var(--navy)':'var(--text-light)'}">${r.qtd.toLocaleString('pt-BR')}</td>
+            <td style="text-align:center;font-size:11px;color:var(--text-light)">
+              <div style="background:#f0f4f8;border-radius:4px;height:6px;width:60px;margin:0 auto 3px;overflow:hidden">
+                <div style="background:${isRev?'#6c8093':'var(--teal)'};height:6px;width:${pct}%"></div>
+              </div>${pct}%
+            </td>
+            <td style="text-align:center;font-family:var(--mono)">${r.movs||''}</td>
+            <td style="text-align:center;font-family:var(--mono)">${r.lojas||''}</td>
+            <td class="td-mono" style="text-align:center;font-size:11px">${r.ultima||'—'}</td>
+            <td style="text-align:center">${st}</td>
+          </tr>`;
+        }).join('')}
+        <tr style="background:var(--navy);color:#fff;font-weight:800">
+          <td style="font-size:12px;color:#fff">TOTAL</td>
+          <td style="text-align:center;font-family:var(--mono);font-size:15px;color:#fff">${tot.toLocaleString('pt-BR')}</td>
+          <td style="text-align:center;font-size:11px;color:#fff">100%</td>
+          <td style="text-align:center;font-family:var(--mono);color:#fff">${totMov}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>`;})()}
+
   <div class="section-hdr"><div class="section-title">Últimas Movimentações</div></div>
   <div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th></tr></thead>
@@ -2188,6 +2283,24 @@ function subAreasDe(area){
   const r=AREAS_INT.filter(a=>a===area||a.startsWith(area+' '));
   return r.length?r:[area];
 }
+// ── CENTRO DE CUSTO ──────────────────────────────────────────────
+// Mercearia, Mercearia Recebimento e Mercearia Expedição são o MESMO
+// centro de custo. Saldo e disponibilidade são sempre consolidados.
+function ccRaiz(area){
+  const cands=AREAS_INT.filter(a=>a===area||String(area||'').startsWith(a+' '));
+  return cands.sort((a,b)=>a.length-b.length)[0]||area;
+}
+function ccGrupo(area){
+  const raiz=ccRaiz(area);
+  const g=AREAS_INT.filter(a=>a===raiz||a.startsWith(raiz+' '));
+  return g.length?g:[area];
+}
+// Saldo somado do centro de custo, a partir de um snapshot de estoque
+function ccSaldo(grupo,est){
+  const e=est||S.est,out={};
+  MODELOS.forEach(m=>{out[m]=grupo.reduce((sm,a)=>sm+(e[a]?.[m]||0),0);});
+  return out;
+}
 function lojasOptions(sel){
   return LOJAS_BASE.slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'))
     .map(l=>`<option value="${l.d}"${String(sel)===String(l.d)?' selected':''}>${String(l.d).padStart(3,'0')} · ${l.n}</option>`).join('');
@@ -2212,6 +2325,8 @@ function envTrocaArea(){envSyncRows();window._envArea=v('env-area');renderScreen
 // Recalcula totais na tela (por linha, por modelo e saldo restante)
 function envCalc(){
   const area=window._envArea;
+  const grupo=window._envGrupo||ccGrupo(area);
+  const dispCC=ccSaldo(grupo,S.est);
   const totMod={};MODELOS.forEach(m=>totMod[m]=0);
   let geral=0;
   _envRows.forEach((r,i)=>{
@@ -2227,7 +2342,7 @@ function envCalc(){
   const g=document.getElementById('env-total-geral');if(g)g.textContent=geral;
   let estouro=false;
   MODELOS.forEach(m=>{
-    const disp=S.est[area]?.[m]||0, rest=disp-totMod[m];
+    const disp=dispCC[m]||0, rest=disp-totMod[m];
     const el=document.getElementById('env-rest-'+m);
     if(el){el.textContent=rest;el.style.color=rest<0?'var(--red)':'var(--navy)';}
     if(rest<0)estouro=true;
@@ -2237,6 +2352,24 @@ function envCalc(){
   const w=document.getElementById('env-alerta');
   if(w)w.style.display=estouro?'block':'none';
 }
+// Baixa a quantidade do centro de custo: primeiro a área escolhida,
+// depois as irmãs do mesmo CC. Delta direto em est — sem syncEst().
+function ccBaixar(area,modelo,qtd){
+  const ordem=[area,...ccGrupo(area).filter(a=>a!==area)];
+  let falta=qtd,usadas=[];
+  for(const a of ordem){
+    if(falta<=0)break;
+    const disp=S.est[a]?.[modelo]||0;
+    if(disp<=0)continue;
+    const usa=Math.min(disp,falta);
+    S.est[a][modelo]=disp-usa;falta-=usa;
+    if(a!==area)usadas.push(`${usa} de ${a}`);
+  }
+  if(falta>0){ // só em modo migração — permite negativo na área escolhida
+    S.est[area][modelo]=(S.est[area][modelo]||0)-falta;falta=0;
+  }
+  return usadas;
+}
 
 function rEnvioLoja(el){
   const isArea=CU.role==='area';
@@ -2244,8 +2377,12 @@ function rEnvioLoja(el){
   if(!window._envArea||!opts.includes(window._envArea))window._envArea=opts[0];
   const area=window._envArea;
   S.est=fixEst(S.est);
-  const saldo={};MODELOS.forEach(m=>saldo[m]=S.est[area]?.[m]||0);
+  // Saldo do CENTRO DE CUSTO inteiro (área pai + subáreas)
+  const grupo=ccGrupo(area);
+  window._envGrupo=grupo;
+  const saldo=ccSaldo(grupo,S.est);
   const totSaldo=totalModelos(saldo);
+  const detGrupo=grupo.length>1?grupo.map(a=>`${a}: <strong>${totalEst(a)}</strong>`).join(' · '):'';
   // Todos os modelos sempre visíveis (inclusive GAIOLA de madeira),
   // mesmo com saldo zero na área — o bloqueio de estouro continua em envCalc().
   const modVis=MODELOS;
@@ -2289,8 +2426,9 @@ function rEnvioLoja(el){
 
     <div style="margin:14px 0;background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;">
-        Saldo disponível em ${area} · total ${totSaldo}
+        Saldo disponível no centro de custo ${ccRaiz(area)} · total ${totSaldo}
       </div>
+      ${detGrupo?`<div style="font-size:11px;color:var(--text-light);margin-bottom:8px;">${detGrupo}</div>`:''}
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         ${modVis.map(m=>`<div style="background:var(--bg);padding:5px 10px;border-radius:6px;font-size:11px;">
           <span style="color:var(--text-light)">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</span>
@@ -2355,22 +2493,27 @@ function doEnvioLoja(){
   }
 
   S.est=fixEst(S.est);
+  const grupo=ccGrupo(area);
+  const dispCC=ccSaldo(grupo,S.est);
   if(!S.modoMigracao){
     for(const m of MODELOS){
       const need=linhas.reduce((s,l)=>s+(l.mod[m]||0),0);
-      const disp=S.est[area]?.[m]||0;
-      if(need>disp)return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} em ${area}. Disponível ${disp}, enviando ${need}.`,'err');
+      const disp=dispCC[m]||0;
+      if(need>disp)return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} no centro de custo ${ccRaiz(area)}. Disponível ${disp}, enviando ${need}.`,'err');
     }
   }
 
+  const rateados=[];
   linhas.forEach(l=>{
     MODELOS.forEach(m=>{
       const q=l.mod[m]||0;if(!q)return;
-      S.est[area][m]=Math.max(0,(S.est[area][m]||0)-q);
+      const usadas=ccBaixar(area,m,q);        // baixa área escolhida → irmãs do CC
+      if(usadas.length)rateados.push(`${MODELO_LABELS[m]}: ${usadas.join(', ')}`);
       S.est.Lojas[m]=(S.est.Lojas[m]||0)+q;
     });
     const mov=addMov('Envio para Loja',area,lojaNome(l.loja),l.loja,null,l.tot,user,obs,l.mod,data);
     if(nf&&mov)mov.nf=nf;
+    if(mov&&rateados.length)mov.ccRateio=rateados.slice();
   });
 
   save(); // ✅ SEM syncEst() — estoque atualizado por delta direto acima
@@ -3214,35 +3357,39 @@ function maMesAtual(){
 
 function rMinhaArea(el){
   const area=CU.area;
+  const grupo=ccGrupo(area);
+  const raiz=ccRaiz(area);
   const fDe=window._maDe||'',fAte=window._maAte||'';
   const dDe=parseDate(fDe),dAte=parseDate(fAte);
-  const modoDelta=!!dDe;                 // com data inicial → variação do período
-  const filtrado=!!(dDe||dAte);
+  const filtrado=!!(fDe||fAte);
+  const fmtBr=iso=>{if(!iso)return '';const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;};
 
-  // Snapshot do estoque conforme o filtro
-  let estCalc;
-  if(modoDelta)      estCalc=calcEstDelta(dDe,dAte||new Date());
-  else if(dAte)      estCalc=calcEstAteDia(dAte);
-  else               estCalc=S.est;
-  const est=estCalc[area]||{};
+  // ── SALDO: sempre acumulado (tudo que entrou menos o que já saiu).
+  // A data final, se informada, corta o acumulado naquele dia.
+  const estRef=dAte?calcEstAteDia(dAte):S.est;
+  const est=ccSaldo(grupo,estRef);
   const total=MODELOS.reduce((sm,m)=>sm+(est[m]||0),0);
 
-  const fmtBr=iso=>{if(!iso)return '';const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;};
-  const rotulo=modoDelta
-    ? `⇅ VARIAÇÃO de ${fmtBr(fDe)} até ${fAte?fmtBr(fAte):'hoje'} — entradas menos saídas, não o saldo total.`
-    : (dAte?`📌 Saldo acumulado até ${fmtBr(fAte)}`:'Saldo atual (todo o histórico)');
-
-  // Movimentações da área dentro do período
+  // ── MOVIMENTAÇÕES do centro de custo dentro do período
+  const noCC=a=>grupo.includes(a);
   const dIni=fDe?new Date(fDe+'T00:00:00'):null;
   const dFim=fAte?new Date(fAte+'T23:59:59'):null;
   const movs=S.movs.filter(m=>{
-    if(m.origem!==area&&m.destino!==area)return false;
+    if(!noCC(m.origem)&&!noCC(m.destino))return false;
     if(!dIni&&!dFim)return true;
     const d=parseTsDate(m.ts);
     if(!d||dataIncompleta(d))return false;
     if(dIni&&d<dIni)return false;
     if(dFim&&d>dFim)return false;
     return true;
+  });
+  // Entrada = veio de fora do CC. Saída = foi para fora do CC.
+  // Transferência entre subáreas do mesmo CC não conta nos dois lados.
+  let entr=0,said=0;
+  movs.forEach(m=>{
+    const dentroOri=noCC(m.origem),dentroDest=noCC(m.destino);
+    if(dentroDest&&!dentroOri)entr+=(m.qtd||0);
+    else if(dentroOri&&!dentroDest)said+=(m.qtd||0);
   });
 
   el.innerHTML=`
@@ -3259,20 +3406,48 @@ function rMinhaArea(el){
         <button class="btn btn-ghost btn-sm" onclick="limparFiltroMinhaArea()">✕ Limpar</button>
       </div>
     </div>
-    <div style="margin-top:10px;background:${modoDelta?'#fff4e5':'var(--bg)'};border:1px solid ${modoDelta?'#f39c12':'var(--border)'};border-radius:6px;padding:8px 12px;font-size:12px;color:${modoDelta?'#8a5a00':'var(--text-light)'};font-weight:600;">
-      ${rotulo}${modoDelta?' Para ver saldo acumulado, deixe a data inicial em branco.':''}
+    <div style="margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text-light);font-weight:600;">
+      💼 Centro de custo <strong style="color:var(--navy)">${raiz}</strong>${grupo.length>1?` — saldo somado de ${grupo.length} áreas`:''}. Os cartões mostram o <strong>saldo acumulado</strong>${dAte?` até ${fmtBr(fAte)}`:''}. O período filtra apenas as movimentações abaixo.
     </div>
   </div>
 
-  <div class="section-hdr"><div class="section-title">Estoque — ${area}</div></div>
+  <div class="section-hdr"><div class="section-title">Estoque — ${raiz}${grupo.length>1?' (consolidado)':''}</div></div>
   <div class="model-stock-grid">${MODELOS.map(m=>`<div class="model-card ${MODELO_CLS[m]}">
     <div class="model-name">${MODELO_LABELS[m]}</div>
     <div class="model-val" style="${corVal(est[m]||0)}">${fmtVal(est[m]||0)}</div>
   </div>`).join('')}</div>
+
   <div class="kpi-grid" style="margin-bottom:14px">
-    <div class="kpi-card teal"><div class="kpi-label">${modoDelta?'Variação':'Total'} ${area}</div><div class="kpi-value" style="${corVal(total)}">${fmtVal(total)}</div><div class="kpi-sub">paletes</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Saldo Total ${raiz}</div><div class="kpi-value" style="${corVal(total)}">${fmtVal(total)}</div><div class="kpi-sub">paletes em posse</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Entradas</div><div class="kpi-value">${entr}</div><div class="kpi-sub">${filtrado?'no período':'no histórico'}</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Saídas</div><div class="kpi-value">${said}</div><div class="kpi-sub">${said?'para lojas / devolução':'nenhuma saída ainda'}</div></div>
     <div class="kpi-card slate"><div class="kpi-label">Movimentações</div><div class="kpi-value">${movs.length}</div><div class="kpi-sub">${filtrado?'no período':'no histórico'}</div></div>
   </div>
+
+  ${grupo.length>1?`
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">📍 Abertura por Área</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Área</th><th style="text-align:center">Total</th>${MODELOS.map(m=>`<th style="text-align:center">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${grupo.map(a=>{
+          const e=estRef[a]||{};
+          const t=MODELOS.reduce((sm,m)=>sm+(e[m]||0),0);
+          return `<tr>
+            <td style="font-size:12px">${a===raiz?a:'↳ '+a.replace(raiz+' ','')}</td>
+            <td style="text-align:center;font-family:var(--mono);font-weight:700;${corVal(t)}">${fmtVal(t)}</td>
+            ${MODELOS.map(m=>`<td style="text-align:center;font-family:var(--mono);color:${(e[m]||0)?'var(--text)':'var(--text-light)'}">${(e[m]||0)||''}</td>`).join('')}
+          </tr>`;
+        }).join('')}
+        <tr style="background:#f0f4f8;font-weight:800">
+          <td style="font-size:12px">TOTAL ${raiz}</td>
+          <td style="text-align:center;font-family:var(--mono);${corVal(total)}">${fmtVal(total)}</td>
+          ${MODELOS.map(m=>`<td style="text-align:center;font-family:var(--mono)">${est[m]||0}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table></div>
+  </div>`:''}
+
   <div class="section-hdr"><div class="section-title">${filtrado?'Movimentações do Período':'Últimas Movimentações'}</div></div>
   <div class="card"><div class="table-wrap"><table>
     <thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th></tr></thead>
