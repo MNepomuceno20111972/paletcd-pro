@@ -1310,9 +1310,12 @@ async function load(){
       // Nós pesados (filtrados ao mês): movs, triagens, reformas
       // Isso reduz o download em ~70% em relação ao once('value') no V2_PATH raiz.
 
-      // Verifica se o v2 existe (usa est ou counters como sinal)
-      const metaSnap = await db.ref(`${V2_PATH}/meta`).once('value');
-      const temDados = !!(metaSnap.val());
+      // Verifica se o v2 existe verificando nós essenciais
+      const [metaSnap, countersSnap0] = await Promise.all([
+        db.ref(`${V2_PATH}/meta`).once('value'),
+        db.ref(`${V2_PATH}/counters`).once('value'),
+      ]);
+      const temDados = !!(metaSnap.val()?.migrated || countersSnap0.val());
 
       if(!temDados) {
         // Primeira execução: migra o blob legado (lê raiz uma única vez para migrar)
@@ -1336,12 +1339,11 @@ async function load(){
         saveSynced(snapState());
       } else {
         // ── Leitura granular: nós leves primeiro ──
-        const [estSnap,fornsSnap,senhasSnap,solicsSnap,countersSnap,abrSnap] = await Promise.all([
+        const [estSnap,fornsSnap,senhasSnap,solicsSnap,abrSnap] = await Promise.all([
           db.ref(`${V2_PATH}/est`).once('value'),
           db.ref(`${V2_PATH}/forns`).once('value'),
           db.ref(`${V2_PATH}/senhas`).once('value'),
           db.ref(`${V2_PATH}/solics`).once('value'),
-          db.ref(`${V2_PATH}/counters`).once('value'),
           db.ref(`${V2_PATH}/aberturaDiaria`).once('value'),
         ]);
 
@@ -1364,8 +1366,8 @@ async function load(){
         const solV=solicsSnap.val();
         novo.solics=solV?(Array.isArray(solV)?solV:Object.values(solV)):(base.solics||[]);
 
-        // counters
-        const ctrV=countersSnap.val()||{};
+        // counters (já lido acima)
+        const ctrV=countersSnap0.val()||{};
         CONTADORES.forEach(c=>{novo[c]=Math.max(novo[c]||1,ctrV[c]||1);});
 
         // aberturaDiaria
@@ -3460,45 +3462,36 @@ function parseTsDate(ts){
 }
 // ── Carga histórica sob demanda ─────────────────────────────────
 // Chamado quando o usuário filtra por data anterior ao mês atual.
-// Baixa os dados do Firebase apenas para os meses necessários
-// e faz merge em S.movs sem duplicar.
-let _historicoBaixado=new Set(); // meses já baixados: "MM/YYYY"
-async function carregarHistorico(anoMes){ // anoMes = "YYYY-MM"
-  const [ano,mes]=anoMes.split('-').map(Number);
-  const chave=`${String(mes).padStart(2,'0')}/${ano}`;
-  if(_historicoBaixado.has(chave))return; // já baixou
-  _historicoBaixado.add(chave);
+// Baixa todo o nó (uma única vez por sessão) e faz merge em S.
+let _historicoBaixado=false;
+let _carregandoHistorico=false;
+async function carregarHistoricoCompleto(){
+  if(_historicoBaixado||_carregandoHistorico||!firebaseReady||!db)return false;
+  _carregandoHistorico=true;
   try{
     const [movsSnap,triSnap,refSnap]=await Promise.all([
       db.ref(`${V2_PATH}/movs`).once('value'),
       db.ref(`${V2_PATH}/triagens`).once('value'),
       db.ref(`${V2_PATH}/reformas`).once('value'),
     ]);
-    // Filtra apenas o mês solicitado
-    const filtMes=(obj)=>{
-      if(!obj)return{};
-      const r={};
-      Object.entries(obj).forEach(([k,v2])=>{
-        if(!v2||!v2.ts)return;
-        const p=v2.ts.split(',')[0].split('/');
-        if(p.length<3)return;
-        if(parseInt(p[1],10)===mes&&parseInt(p[2],10)===ano)r[k]=v2;
-      });
-      return r;
-    };
     const mergeArr=(arr,obj)=>{
+      if(!obj)return arr||[];
       const map=new Map((arr||[]).filter(x=>x&&x.id).map(x=>[String(x.id),x]));
       Object.values(obj).forEach(x=>{if(x&&x.id)map.set(String(x.id),x);});
       return [...map.values()];
     };
-    S.movs   =mergeArr(S.movs,   filtMes(movsSnap.val())).sort((a,b)=>movNum(b.id)-movNum(a.id));
-    S.triagens=mergeArr(S.triagens,filtMes(triSnap.val())).sort((a,b)=>(b._seq||0)-(a._seq||0));
-    S.reformas=mergeArr(S.reformas,filtMes(refSnap.val())).sort((a,b)=>movNum(b.id)-movNum(a.id));
+    S.movs   =mergeArr(S.movs,   movsSnap.val()).sort((a,b)=>movNum(b.id)-movNum(a.id));
+    S.triagens=mergeArr(S.triagens,triSnap.val()).sort((a,b)=>(b._seq||0)-(a._seq||0));
+    S.reformas=mergeArr(S.reformas,refSnap.val()).sort((a,b)=>movNum(b.id)-movNum(a.id));
     lsSet(LS_KEY,S);
-    console.log(`✓ Histórico carregado: ${chave} — ${S.movs.length} movs total`);
+    _historicoBaixado=true;
+    console.log(`✓ Histórico completo carregado: ${S.movs.length} movs total`);
+    return true;
   }catch(e){
     console.warn('Erro ao carregar histórico:',e);
-    _historicoBaixado.delete(chave); // permite retry
+    return false;
+  }finally{
+    _carregandoHistorico=false;
   }
 }
 
@@ -3509,16 +3502,14 @@ function filtMovs(clr){
     const btn=document.getElementById('btn-ordem');if(btn)btn.textContent='🔼 Recente';
   }
   const s=(v('ms')||'').toLowerCase(),t=v('mt'),m=v('mm'),dest=(v('mdest')||'');
-  // ── PERÍODO: data inicial e/ou final. Qualquer uma pode ficar em branco.
   const dDe=v('md'),dAte=v('md2');
-  // Se o filtro de data aponta para mês anterior ao atual, carrega histórico
-  if(dDe&&firebaseReady&&db){
+  // Se filtro aponta para mês anterior e histórico ainda não foi baixado: carrega e re-renderiza
+  if(dDe&&!_historicoBaixado&&!_carregandoHistorico&&firebaseReady&&db){
     const n=new Date();
     const mesAtualStr=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
-    const dDeStr=dDe.slice(0,7); // "YYYY-MM"
-    if(dDeStr<mesAtualStr&&!_historicoBaixado.has(dDeStr.split('-').reverse().join('/'))){
-      // Carrega assincronamente e re-renderiza ao terminar
-      carregarHistorico(dDeStr).then(()=>filtMovs());
+    if(dDe.slice(0,7)<mesAtualStr){
+      carregarHistoricoCompleto().then(ok=>{if(ok)filtMovs();});
+      return; // aguarda; não entra em loop porque _carregandoHistorico=true
     }
   }
   const pDe=dDe?parseDate(dDe):null;
