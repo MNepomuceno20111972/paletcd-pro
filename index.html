@@ -516,13 +516,13 @@ async function githubLoad() {
 // FIREBASE CONFIGURATION
 // ═══════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD9qVsBjf_v59TN8Ayvarts5Q7LXxzlVrQ",
-  authDomain: "paletcd.firebaseapp.com",
-  databaseURL: "https://paletcd-default-rtdb.firebaseio.com",
-  projectId: "paletcd",
-  storageBucket: "paletcd.firebasestorage.app",
-  messagingSenderId: "431517046970",
-  appId: "1:431517046970:web:e03e0ff01e1b898275ca83"
+  apiKey: "AIzaSyD_BE2ocd4_yfAO70SoVrdxEMs-PaPtLRQ",
+  authDomain: "paletecd-v2.firebaseapp.com",
+  databaseURL: "https://paletecd-v2-default-rtdb.firebaseio.com",
+  projectId: "paletecd-v2",
+  storageBucket: "paletecd-v2.firebasestorage.app",
+  messagingSenderId: "743106122178",
+  appId: "1:743106122178:web:08e80bfd703ddc5a81465b"
 };
 
 const V2_PATH = 'palet_app/v2';
@@ -746,13 +746,13 @@ async function syncDiff(){
     updateSyncBadge();
     if(_dirty){scheduleSync(200);}
     else{
-      // Alinha apenas 'est' com o remoto (nó pequeno; é o que sofre transação
-      // concorrente). Antes baixava V2_PATH inteiro a cada gravação.
+      // v33: alinha apenas 'est' (nó pequeno, é o que sofre transação
+      // concorrente). Antes baixava palet_app/v2 INTEIRO a cada gravação.
       db.ref(`${V2_PATH}/est`).once('value').then(es=>{
         const v=es.val(); if(!v)return;
-        const novoEst={}; Object.keys(v).forEach(a=>{novoEst[a]=Object.assign({},v[a]);});
-        if(normStr(novoEst)!==normStr(S.est)){
-          S.est=novoEst; lsSet(LS_KEY,S); saveSynced(snapState()); updateSyncBadge();
+        const ne={}; Object.keys(v).forEach(a=>{ne[a]=Object.assign({},v[a]);});
+        if(normStr(ne)!==normStr(S.est)){
+          S.est=ne; lsSet(LS_KEY,S); saveSynced(snapState()); updateSyncBadge();
         }
       }).catch(()=>{});
     }
@@ -806,10 +806,32 @@ function fromV2(v2){
   return fixState(s);
 }
 
+// ── v33: sinalização da 1ª carga ───────────────────────
+// Permite que load() aguarde o listener em vez de fazer um once() na
+// raiz — o listener entrega exatamente o mesmo payload logo em seguida,
+// então o once() era um download inteiro duplicado a cada abertura.
+let _primeiraCargaOK=false,_primeiraCargaResolve=null;
+function _sinalizarPrimeiraCarga(){
+  _primeiraCargaOK=true;
+  if(_primeiraCargaResolve){const f=_primeiraCargaResolve;_primeiraCargaResolve=null;f();}
+}
+function _aguardarPrimeiraCarga(ms){
+  if(_primeiraCargaOK)return Promise.resolve(true);
+  return new Promise(resolve=>{
+    let feito=false;
+    const t=setTimeout(()=>{
+      if(feito)return; feito=true; _primeiraCargaResolve=null;
+      console.warn('Nuvem demorou a responder — seguindo com o cache local');
+      resolve(false);
+    },ms||8000);
+    _primeiraCargaResolve=()=>{if(!feito){feito=true;clearTimeout(t);resolve(true);}};
+  });
+}
+
 // ── Aplicação de snapshot remoto (tempo real) ──────────
 function applyRemote(v2){
-  if(!v2)return;
-  if(_dirty||_syncing)return; // pendências locais primeiro; convergimos após o sync
+  if(!v2){_sinalizarPrimeiraCarga();return;}
+  if(_dirty||_syncing){_sinalizarPrimeiraCarga();return;} // pendências locais primeiro; convergimos após o sync
   _applyingRemote=true;
   try{
     const novo=fromV2(v2);
@@ -830,192 +852,25 @@ function applyRemote(v2){
     }
   }finally{
     _applyingRemote=false;
+    _sinalizarPrimeiraCarga();
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// LISTENERS GRANULARES (v33) — substitui o .on('value') na raiz
-// ──────────────────────────────────────────────────────────────
-// Antes: qualquer mudança em qualquer nó baixava palet_app/v2 INTEIRO
-//        para todos os clientes conectados.
-// Agora: cada nó tem seu próprio listener; os pesados (movs/triagens/
-//        reformas) usam limitToLast — só a janela recente trafega.
-//        O histórico anterior à janela permanece em S (cache local) e
-//        é baixado sob demanda pelo botão "Carregar histórico".
-// ══════════════════════════════════════════════════════════════
-
-const JANELA={movs:400,triagens:300,reformas:200,aberturaDiaria:60};
-let _remoto={};              // fatias remotas recebidas dos listeners
-let _applyTimer=null;        // debounce do merge
-let _bootRealtime=true;      // ignora render nos primeiros callbacks
-let _refsAtivas=[];          // para .off() em logout/troca
-
-// Merge de coleção: janela remota é a verdade dentro do seu intervalo;
-// registros anteriores à janela (histórico) são preservados do cache local.
-// Isso propaga EXCLUSÕES feitas dentro da janela sem apagar o histórico.
-function _mergeColecao(local,remotoObj,sortFn){
-  if(remotoObj===undefined)return local||[];
-  const remArr=Object.values(remotoObj||{}).filter(x=>x&&x.id);
-  if(!remArr.length)return local||[];
-  const idsRem=new Set(remArr.map(x=>String(x.id)));
-  const minNum=Math.min(...remArr.map(x=>movNum(x.id)));
-  // histórico = local abaixo da janela e que não veio no remoto
-  const hist=(local||[]).filter(x=>x&&x.id&&movNum(x.id)<minNum&&!idsRem.has(String(x.id)));
-  const arr=[...hist,...remArr];
-  if(sortFn)arr.sort(sortFn);
-  return arr;
-}
-
-function _agendarApply(){
-  if(_applyTimer)clearTimeout(_applyTimer);
-  _applyTimer=setTimeout(_aplicarRemoto,250);
-}
-
-// Resolve quando a 1ª carga dos listeners é aplicada (ou no timeout).
-// Evita duplicar o download fazendo once() + on() no mesmo nó.
-let _primeiraCargaOK=false, _primeiraCargaResolve=null;
-function _aguardarPrimeiraCarga(ms){
-  if(_primeiraCargaOK)return Promise.resolve(true);
-  return new Promise(resolve=>{
-    let feito=false;
-    const t=setTimeout(()=>{if(!feito){feito=true;_primeiraCargaResolve=null;
-      console.warn('Listeners demoraram; seguindo com o cache local');resolve(false);}},ms||6000);
-    _primeiraCargaResolve=()=>{if(!feito){feito=true;clearTimeout(t);_primeiraCargaResolve=null;resolve(true);}};
-  });
-}
-
-function _aplicarRemoto(){
-  if(_dirty||_syncing)return;          // pendências locais primeiro
-  if(!Object.keys(_remoto).length)return;
-  _applyingRemote=true;
-  try{
-    const novo=Object.assign({},S);
-
-    if(_remoto.est!==undefined){
-      novo.est={};
-      Object.keys(_remoto.est||{}).forEach(a=>{novo.est[a]=Object.assign({},_remoto.est[a]);});
-    }
-    novo.movs    =_mergeColecao(S.movs,    _remoto.movs,    (a,b)=>movNum(b.id)-movNum(a.id));
-    novo.triagens=_mergeColecao(S.triagens,_remoto.triagens,(a,b)=>(b._seq||0)-(a._seq||0));
-    novo.reformas=_mergeColecao(S.reformas,_remoto.reformas,(a,b)=>movNum(b.id)-movNum(a.id));
-    novo.aberturaDiaria=_mergeColecao(S.aberturaDiaria,_remoto.aberturaDiaria,(a,b)=>movNum(b.id)-movNum(a.id));
-    if(_remoto.forns!==undefined) novo.forns=colToArr(_remoto.forns,(a,b)=>movNum(a.id)-movNum(b.id));
-    if(_remoto.senhas!==undefined&&_remoto.senhas) novo.senhas=_remoto.senhas;
-    if(_remoto.solics!==undefined) novo.solics=Array.isArray(_remoto.solics)?_remoto.solics:Object.values(_remoto.solics||{});
-    if(_remoto.counters!==undefined) CONTADORES.forEach(c=>{novo[c]=Math.max(S[c]||1,(_remoto.counters||{})[c]||1);});
-    if(_remoto.meta!==undefined) novo.modoMigracao=!!(_remoto.meta&&_remoto.meta.modoMigracao);
-
-    const final=fixState(novo);
-    const mudou=normStr(final)!==normStr(S);
-    if(!mudou){
-      _cloudOK=true;updateSyncBadge();
-      _primeiraCargaOK=true; if(_primeiraCargaResolve)_primeiraCargaResolve();
-      return;
-    }
-
-    S=final;
-    lsSet(LS_KEY,S);
-    saveSynced(snapState());
-    _cloudOK=true;
-    updateSyncBadge();
-    _primeiraCargaOK=true; if(_primeiraCargaResolve)_primeiraCargaResolve();
-
-    if(_bootRealtime){_bootRealtime=false;return;} // 1ª carga: load() já renderiza
-    if(CU){
-      renderBannerMigracao();
-      const telasLeitura=['dashboard','estoque','movimentacoes','minha-area','paletes-loja','solicitacoes','solicitar'];
-      const ae=document.activeElement;
-      const digitando=ae&&['INPUT','SELECT','TEXTAREA'].includes(ae.tagName);
-      if(telasLeitura.includes(_currentScreen)&&!digitando)renderScreen(_currentScreen);
-    }
-  }catch(e){
-    console.error('Erro ao aplicar remoto:',e);
-  }finally{
-    _applyingRemote=false;
-  }
-}
-
+let _realtimeAtivo=false;
 function attachRealtime(){
   if(!firebaseReady||!db)return;
-  _refsAtivas.forEach(r=>{try{r.off();}catch(e){}});
-  _refsAtivas=[];
-  _bootRealtime=true;
-
-  const onErr=nome=>err=>{console.warn(`Listener ${nome}:`,err&&err.code);_cloudOK=false;updateSyncBadge();};
-
-  // Nó completo (pequeno, alta frequência de mudança)
-  const escutar=(no,query)=>{
-    const ref=query||db.ref(`${V2_PATH}/${no}`);
-    ref.on('value',snap=>{_remoto[no]=snap.val()===null?{}:snap.val();_agendarApply();},onErr(no));
-    _refsAtivas.push(ref);
-  };
-
-  escutar('est');
-  escutar('counters');
-  escutar('meta');
-  escutar('senhas');
-  escutar('solics');
-  escutar('forns');
-
-  // Nós pesados: janela limitada — só a cauda recente trafega
-  escutar('movs',           db.ref(`${V2_PATH}/movs`).limitToLast(JANELA.movs));
-  escutar('triagens',       db.ref(`${V2_PATH}/triagens`).limitToLast(JANELA.triagens));
-  escutar('reformas',       db.ref(`${V2_PATH}/reformas`).limitToLast(JANELA.reformas));
-  escutar('aberturaDiaria', db.ref(`${V2_PATH}/aberturaDiaria`).limitToLast(JANELA.aberturaDiaria));
-
-  const conn=db.ref('.info/connected');
-  conn.on('value',s=>{
+  if(_realtimeAtivo)return; // nunca anexa duas vezes
+  _realtimeAtivo=true;
+  db.ref(V2_PATH).on('value',
+    snap=>{applyRemote(snap.val());},
+    err=>{console.warn('Listener desconectado:',err);_cloudOK=false;updateSyncBadge();_sinalizarPrimeiraCarga();}
+  );
+  db.ref('.info/connected').on('value',s=>{
     const on=!!s.val();
     _cloudOK=on&&firebaseReady;
     updateSyncBadge();
     if(on&&_dirty)scheduleSync(300);
   });
-  _refsAtivas.push(conn);
-
-  console.log('✓ v33: listeners granulares ativos (janela movs='+JANELA.movs+')');
-}
-
-// ── Histórico completo sob demanda ─────────────────────────────
-// Baixa TODO o histórico uma única vez por sessão. Chamado pelo botão
-// na tela de Movimentações quando o usuário precisa de meses anteriores.
-let _histCarregado=false,_histCarregando=false;
-async function carregarHistoricoCompleto(){
-  if(_histCarregado)  {toast('Histórico já carregado','info');return true;}
-  if(_histCarregando) return false;
-  if(!firebaseReady||!db){toast('Sem conexão com a nuvem','error');return false;}
-  _histCarregando=true;
-  const btn=document.getElementById('btn-hist');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Carregando…';}
-  try{
-    const [ms,ts,rs]=await Promise.all([
-      db.ref(`${V2_PATH}/movs`).once('value'),
-      db.ref(`${V2_PATH}/triagens`).once('value'),
-      db.ref(`${V2_PATH}/reformas`).once('value'),
-    ]);
-    const un=(local,obj,sortFn)=>{
-      const map=new Map((local||[]).filter(x=>x&&x.id).map(x=>[String(x.id),x]));
-      Object.values(obj||{}).forEach(x=>{if(x&&x.id)map.set(String(x.id),x);});
-      const arr=[...map.values()];
-      if(sortFn)arr.sort(sortFn);
-      return arr;
-    };
-    S.movs    =un(S.movs,    ms.val(),(a,b)=>movNum(b.id)-movNum(a.id));
-    S.triagens=un(S.triagens,ts.val(),(a,b)=>(b._seq||0)-(a._seq||0));
-    S.reformas=un(S.reformas,rs.val(),(a,b)=>movNum(b.id)-movNum(a.id));
-    lsSet(LS_KEY,S);
-    _histCarregado=true;
-    toast(`Histórico completo: ${S.movs.length} movimentações`,'success');
-    if(_currentScreen)renderScreen(_currentScreen);
-    return true;
-  }catch(e){
-    console.error('Erro ao carregar histórico:',e);
-    toast('Erro ao carregar histórico','error');
-    return false;
-  }finally{
-    _histCarregando=false;
-    const b=document.getElementById('btn-hist');
-    if(b){b.disabled=false;b.textContent='📚 Carregar histórico';}
-  }
 }
 
 // ── Migração única: blob legado → v2 granular ──────────
@@ -1337,17 +1192,17 @@ async function load(){
   await initFirebase();
   if(firebaseReady) {
     try {
-      // ── v33: leitura inicial granular ────────────────────────────────
-      // Antes: once('value') no V2_PATH raiz baixava TUDO a cada abertura.
-      // Agora: nós leves completos + nós pesados só na janela recente.
+      // v33: detecta migração lendo só 'meta' e 'counters' (nós minúsculos).
+      // Antes lia palet_app/v2 INTEIRO só para saber se já havia migrado —
+      // e logo depois o listener baixava tudo de novo. Era 2x por abertura.
       const [metaSnap,ctrSnap] = await Promise.all([
         db.ref(`${V2_PATH}/meta`).once('value'),
         db.ref(`${V2_PATH}/counters`).once('value'),
       ]);
-      const jaMigrado = !!(metaSnap.val()&&metaSnap.val().migrated) || !!ctrSnap.val();
+      const jaMigrado = !!(metaSnap.val() && metaSnap.val().migrated) || !!ctrSnap.val();
 
       if(!jaMigrado) {
-        // Primeira execução do v2: migra o blob legado (lê a raiz UMA vez na vida)
+        // Primeira execução do v2: lê a raiz UMA vez na vida do projeto
         let snap = await db.ref(V2_PATH).once('value');
         let v2 = snap.val();
         const temDados = x => !!(x && (x.counters || x.est || x.movs));
@@ -1355,6 +1210,7 @@ async function load(){
           const migrado = await migrarParaV2(localState);
           if(migrado) { S = migrado; }
           else {
+            // Outro dispositivo está migrando agora — aguarda os dados
             for(let i = 0; i < 10; i++) {
               await new Promise(r => setTimeout(r, 800));
               snap = await db.ref(V2_PATH).once('value');
@@ -1368,39 +1224,33 @@ async function load(){
         }
         lsSet(LS_KEY, S);
         saveSynced(snapState());
+        attachRealtime();
       } else {
-        // ── Carga inicial VIA LISTENERS ────────────────────────────────
-        // Não fazemos once() aqui: os listeners de attachRealtime() já
-        // entregam a primeira carga. Fazer os dois dobrava o download.
-        S = localState || S;
-
-        // Alterações offline pendentes sobem ANTES do remoto chegar
+        // 3) Alterações offline pendentes? Sobem ANTES de aceitar o remoto.
+        //    (deltas de estoque + nós alterados — nada se perde, nada ressuscita)
         const pendente = localState && synced && normStr(localState) !== normStr(synced);
         if(pendente) {
           console.log('↻ Reenviando alterações offline pendentes…');
           _dirty = true;
           await syncDiff();
+        } else if(localState && !synced && localState.movs && localState.movs.length) {
+          // localStorage pré-v2: a nuvem v2 (migrada do blob) é a verdade.
+          console.warn('Estado local pré-v2 ignorado em favor do v2 remoto. Use Exportar/Importar Backup se precisar resgatar algo.');
         }
-
-        // counters/meta já foram lidos acima (nós minúsculos)
-        const cv = ctrSnap.val()||{};
-        CONTADORES.forEach(c=>{S[c]=Math.max(S[c]||1, cv[c]||1);});
-        S.modoMigracao = !!(metaSnap.val()&&metaSnap.val().modoMigracao);
-
+        // O listener entrega o mesmo payload que o once() entregaria.
+        // Aguardamos a 1ª entrega dele em vez de baixar duas vezes.
         attachRealtime();
-        // Aguarda a 1ª entrega dos listeners (ou segue com o cache em 6s)
-        await _aguardarPrimeiraCarga(6000);
+        await _aguardarPrimeiraCarga(8000);
         lsSet(LS_KEY, S);
         saveSynced(snapState());
-        console.log(`✓ v33 boot: ${S.movs.length} movs em memória (janela ${JANELA.movs})`);
       }
-      if(!_refsAtivas.length) attachRealtime();
       _cloudOK = true;
     } catch(e) {
       console.error('Erro ao carregar da nuvem:', e);
       _cloudOK = false;
       // Sem nuvem: opera local; diffs pendentes sobem na próxima conexão
       if(localState && synced && normStr(localState) !== normStr(synced)) _dirty = true;
+      try{ if(!_realtimeAtivo) attachRealtime(); }catch(e2){}
     }
   }
   updateSyncBadge();
@@ -3396,7 +3246,6 @@ function rMovimentacoes(el){
       </div>
       <button class="btn btn-ghost btn-sm" onclick="toggleOrdemMovs()" id="btn-ordem" title="Alternar ordem">🔼 Recente</button>
       <button class="btn btn-ghost btn-sm" onclick="filtMovs(1)">✕ Limpar</button>
-      <button class="btn btn-ghost btn-sm" id="btn-hist" onclick="carregarHistoricoCompleto()" title="Baixa todas as movimentações anteriores (só é necessário para consultar meses passados)">📚 Carregar histórico</button>
       <span id="mcount" style="font-size:11px;color:var(--text-light);margin-left:auto;align-self:center"></span>
     </div>
     <div class="table-wrap"><table>
