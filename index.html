@@ -329,7 +329,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
     </div>
     <nav id="sidebar-nav"></nav>
     <div class="sidebar-footer">
-      <div style="font-size:10px;color:rgba(255,255,255,.3);">v3.0 · PaletCD</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);">v3.1 · Edição de Envio</div>
       <button class="chg-pwd-btn" onclick="openModal('modal-pwd')">🔑 Alterar Senha</button>
       <button class="logout-btn" onclick="logout()">↩ Sair</button>
     </div>
@@ -408,7 +408,7 @@ textarea.form-control{resize:vertical;min-height:60px;}
         <label class="form-label" style="margin-bottom:6px;display:block;">Quantidades por Modelo</label>
         <div id="edit-mov-modelos" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fbff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;"></div>
       </div>
-      <div class="warn-box" style="margin-top:12px;font-size:11px;">⚠️ A edição altera apenas os dados do registro. O estoque <strong>não é recalculado</strong> automaticamente — use com cuidado.</div>
+      <div class="warn-box" style="margin-top:12px;font-size:11px;">⚠️ Ao salvar, o efeito antigo é <strong>estornado</strong> e o novo é aplicado — o estoque acompanha a correção automaticamente.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-edit-mov')">Cancelar</button>
@@ -2502,7 +2502,7 @@ function rEnvioLoja(el){
   <div class="card" style="margin-top:16px">
     <div class="card-hdr"><span class="card-title">🕘 Últimos Envios</span></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Origem</th><th>Loja</th><th>NF</th><th>Total</th><th>Modelos</th><th>Usuário</th>${(CU.role==='adm'||CU.role==='rev'||CU.role==='area')?'<th></th>':''}</tr></thead>
+      <thead><tr><th>Data</th><th>Origem</th><th>Loja</th><th>NF</th><th>Total</th><th>Modelos</th><th>Usuário</th><th>Ações</th></tr></thead>
       <tbody>${hist.length?hist.map(m=>`<tr>
         <td class="td-mono" style="font-size:10px">${m.ts}</td>
         <td style="font-size:11px">${m.origem||'—'}</td>
@@ -2511,8 +2511,12 @@ function rEnvioLoja(el){
         <td class="td-bold">${m.qtd}</td>
         <td>${modelosHtml(m.modelos)}</td>
         <td style="font-size:11px">${m.usuario}</td>
-        ${(CU.role==='adm'||CU.role==='rev'||CU.role==='area')?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditMov('${m.id}','envio-loja')" title="Editar">✏️</button>${(CU.role==='adm'||CU.role==='rev')?`<button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','envio-loja')" title="Excluir">🗑️</button>`:''}</td>`:''}
-      </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev'||CU.role==='area')?7:6)}</tbody>
+        <td style="white-space:nowrap">
+          ${canEditMov(m)?`<button class="btn btn-warning btn-xs" onclick="abrirEditMov('${m.id}','envio-loja')" title="Editar lançamento" style="margin-right:4px">✏️ Editar</button>`:''}
+          ${canDelete()?`<button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','envio-loja')" title="Excluir">🗑️</button>`:''}
+          ${(!canEditMov(m)&&!canDelete())?'<span style="color:var(--text-light);font-size:11px">—</span>':''}
+        </td>
+      </tr>`).join(''):emptyRow(8)}</tbody>
     </table></div>
   </div>`;
   envCalc();
@@ -4160,9 +4164,19 @@ const TIPOS_VINCULO=['Pagamento Fornecedor','Recebimento Fornecedor','Envio para
 let _editMovId=null, _editTriIdx=null, _editTriId=null, _editSolId=null;
 
 function abrirEditMov(id,screen){
-  if(!canDelete())return toast('Sem permissão para editar.','err');
   const m=S.movs.find(x=>x.id===id);if(!m)return;
+  if(!canEditMov(m))return toast('Sem permissão para editar este lançamento.','err');
   _editMovId=id;
+  // Perfil "área" não pode remanejar origem/destino entre centros de custo:
+  // só corrige data, usuário, NF, observação e quantidades.
+  const soArea=!canDelete();
+  ['edit-mov-origem','edit-mov-destino'].forEach(cid=>{
+    const el=document.getElementById(cid);
+    if(!el)return;
+    el.readOnly=soArea;
+    el.style.background=soArea?'#eef2f6':'';
+    el.style.color=soArea?'var(--text-light)':'';
+  });
   document.getElementById('edit-mov-info').innerHTML=`<strong>${m.id}</strong> · ${m.tipo} · ${m.ts}`;
   // parse date from ts dd/mm/yyyy
   const parts=m.ts.split(',')[0].split('/');
@@ -4184,10 +4198,12 @@ function abrirEditMov(id,screen){
 }
 function confirmarEditMov(screen){
   const m=S.movs.find(x=>x.id===_editMovId);if(!m)return;
+  if(!canEditMov(m))return toast('Sem permissão para editar este lançamento.','err');
   const novosMod={};let novoTot=0;
   MODELOS.forEach(md=>{const q=parseInt(document.getElementById('emod-'+md)?.value)||0;if(q>0){novosMod[md]=q;novoTot+=q;}});
-  const novaOrigem=document.getElementById('edit-mov-origem').value||m.origem;
-  const novoDestino=document.getElementById('edit-mov-destino').value||m.destino;
+  // Área não remaneja centro de custo nem loja: origem e destino ficam como estão.
+  const novaOrigem=canDelete()?(document.getElementById('edit-mov-origem').value||m.origem):m.origem;
+  const novoDestino=canDelete()?(document.getElementById('edit-mov-destino').value||m.destino):m.destino;
   const mudouEfeito=(novoTot>0&&normStr(novosMod)!==normStr(m.modelos||{}))||novaOrigem!==m.origem||novoDestino!==m.destino;
   if(mudouEfeito&&TIPOS_VINCULO.includes(m.tipo)){
     if(!confirm(`"${m.tipo}" tem vínculos com saldo de fornecedor/lotes de reforma que esta edição NÃO reajusta. O estoque será corrigido, mas o vínculo não. Para corrigir tudo, exclua e relance. Continuar mesmo assim?`))return;
@@ -4236,6 +4252,16 @@ function confirmarEditTriagem(screen){
 }
 // ── EXCLUSÃO DE REGISTROS ──────────────
 function canDelete(){return CU.role==='adm'||CU.role==='rev';}
+// ── PERMISSÃO DE EDIÇÃO ────────────────
+// ADM e REV editam qualquer movimentação.
+// A ÁREA edita apenas os próprios "Envio para Loja" — assim ela corrige o
+// que lançou errado sem depender da Reversa, e sem alcançar registro alheio.
+function canEditMov(m){
+  if(canDelete())return true;
+  if(!m||CU.role!=='area')return false;
+  if(m.tipo!=='Envio para Loja')return false;
+  return String(m.origem||'').startsWith(CU.area);
+}
 function excluirMov(id,screen){
   if(!canDelete())return toast('Sem permissão para excluir.','err');
   if(!confirm(`Excluir movimentação ${id}? Esta ação não pode ser desfeita.`))return;
