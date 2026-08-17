@@ -2502,7 +2502,7 @@ function rEnvioLoja(el){
   <div class="card" style="margin-top:16px">
     <div class="card-hdr"><span class="card-title">🕘 Últimos Envios</span></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Origem</th><th>Loja</th><th>NF</th><th>Total</th><th>Modelos</th><th>Usuário</th>${(CU.role==='adm'||CU.role==='rev')?'<th></th>':''}</tr></thead>
+      <thead><tr><th>Data</th><th>Origem</th><th>Loja</th><th>NF</th><th>Total</th><th>Modelos</th><th>Usuário</th>${(CU.role==='adm'||CU.role==='rev'||CU.role==='area')?'<th></th>':''}</tr></thead>
       <tbody>${hist.length?hist.map(m=>`<tr>
         <td class="td-mono" style="font-size:10px">${m.ts}</td>
         <td style="font-size:11px">${m.origem||'—'}</td>
@@ -2511,8 +2511,8 @@ function rEnvioLoja(el){
         <td class="td-bold">${m.qtd}</td>
         <td>${modelosHtml(m.modelos)}</td>
         <td style="font-size:11px">${m.usuario}</td>
-        ${(CU.role==='adm'||CU.role==='rev')?`<td><button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','envio-loja')" title="Excluir">🗑️</button></td>`:''}
-      </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev')?7:6)}</tbody>
+        ${(CU.role==='adm'||CU.role==='rev'||CU.role==='area')?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditMov('${m.id}','envio-loja')" title="Editar">✏️</button>${(CU.role==='adm'||CU.role==='rev')?`<button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','envio-loja')" title="Excluir">🗑️</button>`:''}</td>`:''}
+      </tr>`).join(''):emptyRow((CU.role==='adm'||CU.role==='rev'||CU.role==='area')?7:6)}</tbody>
     </table></div>
   </div>`;
   envCalc();
