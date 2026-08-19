@@ -197,6 +197,14 @@ textarea.form-control{resize:vertical;min-height:60px;}
 .filter-input{min-width:140px;}
 .filter-select{min-width:130px;}
 
+/* ── BUSCA DE LOJA (autocomplete) ────── */
+.lj-drop{position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:60;background:#fff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);box-shadow:0 8px 22px rgba(0,0,0,.16);max-height:230px;overflow-y:auto;}
+.lj-opt{padding:7px 11px;font-size:12.5px;cursor:pointer;border-bottom:1px solid #f0f3f7;display:flex;gap:7px;align-items:center;}
+.lj-opt:last-child{border-bottom:0;}
+.lj-opt:hover,.lj-opt.on{background:#e8f2ff;}
+.lj-opt b{font-family:var(--font-mono,monospace);color:var(--navy);font-size:11.5px;background:#eef4fb;padding:1px 6px;border-radius:4px;}
+.lj-hint{font-size:10px;color:var(--text-light);padding:6px 11px;background:#f8fbff;border-top:1px solid #f0f3f7;}
+
 /* ── STOCK BAR ────────────────────────── */
 .stock-bar{height:7px;background:var(--border);border-radius:4px;overflow:hidden;min-width:70px;display:inline-block;vertical-align:middle;}
 .stock-bar-fill{height:100%;background:var(--teal);border-radius:4px;}
@@ -2447,6 +2455,84 @@ function lojasOptions(sel){
   return LOJAS_BASE.slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'))
     .map(l=>`<option value="${l.d}"${String(sel)===String(l.d)?' selected':''}>${String(l.d).padStart(3,'0')} · ${l.n}</option>`).join('');
 }
+
+// ── BUSCA RÁPIDA DE LOJA (código ou nome) ─────────────────────
+// Digite "003", "3" ou "alph" e a loja aparece na lista.
+function normLoja(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function lojaLabel(d){
+  const l=LOJAS_BASE.find(x=>x.d===Number(d));
+  return l?`${String(l.d).padStart(3,'0')} · ${l.n}`:String(d||'');
+}
+function lojasMatch(q){
+  const t=normLoja(q);
+  const base=LOJAS_BASE.slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'));
+  if(!t)return base;
+  if(/^\d+$/.test(t)){
+    const cod=base.filter(l=>String(l.d).startsWith(t)||String(l.d).padStart(3,'0').startsWith(t));
+    if(cod.length)return cod.sort((a,b)=>a.d-b.d);
+    return base.filter(l=>normLoja(l.n).includes(t));
+  }
+  const ini=base.filter(l=>normLoja(l.n).startsWith(t));
+  const meio=base.filter(l=>!normLoja(l.n).startsWith(t)&&normLoja(l.n).includes(t));
+  return ini.concat(meio);
+}
+function envBusca(i){
+  const inp=document.getElementById('env-busca-'+i),box=document.getElementById('env-drop-'+i),hid=document.getElementById('env-loja-'+i);
+  if(!inp||!box)return;
+  if(!inp.value.trim()&&hid){hid.value='';if(_envRows[i])_envRows[i].loja='';inp.style.borderColor='';}
+  const res=lojasMatch(inp.value).slice(0,12);
+  box._res=res;box._idx=0;
+  if(!res.length){
+    box.innerHTML=`<div class="lj-hint">Nenhuma loja encontrada para "${inp.value.trim()}"</div>`;
+    box.style.display='block';return;
+  }
+  box.innerHTML=res.map((l,k)=>`<div class="lj-opt${k===0?' on':''}" data-k="${k}" onmousedown="event.preventDefault();envPick(${i},${l.d},1)"><b>${String(l.d).padStart(3,'0')}</b> ${l.n}</div>`).join('')
+    +`<div class="lj-hint">↑ ↓ para navegar · Enter para selecionar</div>`;
+  box.style.display='block';
+}
+function envMarca(box){
+  if(!box)return;
+  box.querySelectorAll('.lj-opt').forEach(o=>o.classList.toggle('on',Number(o.dataset.k)===box._idx));
+  const at=box.querySelector('.lj-opt.on');
+  if(at&&at.scrollIntoView)at.scrollIntoView({block:'nearest'});
+}
+function envKey(e,i){
+  const box=document.getElementById('env-drop-'+i);
+  if(!box||box.style.display==='none')return;
+  const res=box._res||[];
+  if(e.key==='ArrowDown'){e.preventDefault();box._idx=Math.min((box._idx||0)+1,res.length-1);envMarca(box);}
+  else if(e.key==='ArrowUp'){e.preventDefault();box._idx=Math.max((box._idx||0)-1,0);envMarca(box);}
+  else if(e.key==='Enter'){e.preventDefault();const l=res[box._idx||0];if(l)envPick(i,l.d,1);}
+  else if(e.key==='Escape'){box.style.display='none';}
+}
+function envPick(i,d,foco){
+  const inp=document.getElementById('env-busca-'+i),hid=document.getElementById('env-loja-'+i),box=document.getElementById('env-drop-'+i);
+  // Avisa se a loja já está em outra linha (o envio bloqueia duplicata)
+  const dup=_envRows.findIndex((r,k)=>k!==i&&String(r.loja)===String(d));
+  if(hid)hid.value=d;
+  if(_envRows[i])_envRows[i].loja=String(d);
+  if(inp){inp.value=lojaLabel(d);inp.style.borderColor=dup>=0?'var(--amber)':'var(--green)';}
+  if(box)box.style.display='none';
+  if(dup>=0)toast(`Loja ${lojaLabel(d)} já está na linha ${dup+1}. Junte as quantidades.`,'warn');
+  if(foco){
+    const alvo=document.getElementById(`env-${i}-${MODELOS[0]}`);
+    if(alvo)setTimeout(()=>{alvo.focus();if(alvo.select)alvo.select();},20);
+  }
+}
+function envFecha(i){
+  setTimeout(()=>{
+    const box=document.getElementById('env-drop-'+i);if(box)box.style.display='none';
+    const inp=document.getElementById('env-busca-'+i),hid=document.getElementById('env-loja-'+i);
+    if(!inp||!hid)return;
+    if(!inp.value.trim()){hid.value='';if(_envRows[i])_envRows[i].loja='';inp.style.borderColor='';return;}
+    if(hid.value){inp.value=lojaLabel(hid.value);return;}
+    const res=lojasMatch(inp.value);
+    if(res.length===1)envPick(i,res[0].d,0);
+    else inp.style.borderColor='var(--red)';
+  },160);
+}
 // Lê o que está na tela para dentro de _envRows (antes de re-renderizar)
 function envSyncRows(){
   _envRows.forEach((r,i)=>{
@@ -2533,9 +2619,14 @@ function rEnvioLoja(el){
     <div style="border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:#f8fbff;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="background:var(--navy);color:#fff;font-size:10px;font-weight:800;border-radius:5px;padding:3px 8px;">${i+1}</span>
-        <select class="form-control" id="env-loja-${i}" style="flex:1;">
-          <option value="">— Selecionar loja —</option>${lojasOptions(r.loja)}
-        </select>
+        <div style="position:relative;flex:1;">
+          <input class="form-control" id="env-busca-${i}" autocomplete="off" placeholder="🔍 Código ou nome da loja (ex.: 003 ou alph)"
+            value="${r.loja?lojaLabel(r.loja):''}"
+            style="${r.loja?'border-color:var(--green);':''}"
+            oninput="envBusca(${i})" onfocus="envBusca(${i})" onkeydown="envKey(event,${i})" onblur="envFecha(${i})">
+          <input type="hidden" id="env-loja-${i}" value="${r.loja||''}">
+          <div class="lj-drop" id="env-drop-${i}" style="display:none"></div>
+        </div>
         ${_envRows.length>1?`<button class="btn btn-danger btn-xs" onclick="envDelRow(${i})" title="Remover linha">🗑️</button>`:''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
@@ -3309,6 +3400,31 @@ function rMovimentacoes(el){
       <input class="filter-input" id="ms" placeholder="🔍 Buscar..." oninput="filtMovs()">
       <select class="filter-select" id="mt" onchange="filtMovs()"><option value="">Todos os tipos</option>${TIPOS_MOV.map(t=>`<option>${t}</option>`).join('')}</select>
       <select class="filter-select" id="mm" onchange="filtMovs()"><option value="">Todos os modelos</option>${MODELOS.map(m=>`<option value="${m}">${MODELO_LABELS[m]}</option>`).join('')}</select>
+      <select class="filter-select" id="morig" onchange="filtMovs()">
+        <option value="">Todas as áreas (origem)</option>
+        <optgroup label="── Áreas CD ──">
+          <option value="REV">Log. Reversa (REV)</option>
+          <option value="Mercearia">Mercearia (todas)</option>
+          <option value="Mercearia Recebimento">↳ Mercearia Recebimento</option>
+          <option value="Mercearia Expedição">↳ Mercearia Expedição</option>
+          <option value="FLV">FLV (todas)</option>
+          <option value="FLV Recebimento">↳ FLV Recebimento</option>
+          <option value="FLV Expedição">↳ FLV Expedição</option>
+          <option value="Perecível">Perecível (todas)</option>
+          <option value="Perecível Recebimento">↳ Perecível Recebimento</option>
+          <option value="Perecível Expedição">↳ Perecível Expedição</option>
+          <option value="Produção">Produção</option>
+          <option value="Central de Frios">Central de Frios</option>
+          <option value="Frigorífico">Frigorífico</option>
+        </optgroup>
+        <optgroup label="── Externo ──">
+          <option value="Lojas">Lojas</option>
+          <option value="Reforma">Em Reforma</option>
+          <option value="Fila Reforma">Fila Reforma</option>
+          <option value="Fornecedor">Fornecedor</option>
+          <option value="CD">CD</option>
+        </optgroup>
+      </select>
       <select class="filter-select" id="mdest" onchange="filtMovs()">
         <option value="">Todos os destinos</option>
         <optgroup label="── Áreas CD ──">
@@ -3386,13 +3502,22 @@ function parseTsDate(ts){
     return new Date(y,m-1,d,h,mi);
   }catch(e){return new Date(0);}
 }
+// Compara área de origem/destino. Área mãe inclui as subáreas.
+function matchArea(val,sel){
+  if(!sel)return true;
+  const d=(val||'').toLowerCase(),s=sel.toLowerCase();
+  if(s==='mercearia')return d.startsWith('mercearia');
+  if(s==='flv')return d.startsWith('flv');
+  if(s==='perecível'||s==='perecivel')return d.startsWith('perecív')||d.startsWith('pereciv');
+  return d===s;
+}
 function filtMovs(clr){
   if(clr){
-    ['ms','mt','mm','md','md2','mdest'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    ['ms','mt','mm','md','md2','mdest','morig'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     _movsOrdem='desc';
     const btn=document.getElementById('btn-ordem');if(btn)btn.textContent='🔼 Recente';
   }
-  const s=(v('ms')||'').toLowerCase(),t=v('mt'),m=v('mm'),dest=(v('mdest')||'');
+  const s=(v('ms')||'').toLowerCase(),t=v('mt'),m=v('mm'),dest=(v('mdest')||''),orig=(v('morig')||'');
   // ── PERÍODO: data inicial e/ou final. Qualquer uma pode ficar em branco.
   const dDe=v('md'),dAte=v('md2');
   const pDe=dDe?parseDate(dDe):null;
@@ -3412,15 +3537,8 @@ function filtMovs(clr){
     (!s||x.id.toLowerCase().includes(s)||x.tipo.toLowerCase().includes(s)||x.origem.toLowerCase().includes(s)||(x.destino||'').toLowerCase().includes(s)||x.usuario.toLowerCase().includes(s))&&
     (!t||x.tipo===t)&&
     (!m||x.modelos?.[m]>0)&&
-    (!dest||(()=>{
-      const d=(x.destino||'').toLowerCase();
-      const sel=dest.toLowerCase();
-      // Área mãe inclui subáreas
-      if(sel==='mercearia') return d.startsWith('mercearia');
-      if(sel==='flv') return d.startsWith('flv');
-      if(sel==='perecível'||sel==='perecivel') return d.startsWith('perecív')||d.startsWith('pereciv');
-      return d===sel;
-    })())&&
+    matchArea(x.destino,dest)&&
+    matchArea(x.origem,orig)&&
     noPeriodo(x)
   );
   f=[...f].sort((a,b)=>_movsOrdem==='asc'?parseTsDate(a.ts)-parseTsDate(b.ts):parseTsDate(b.ts)-parseTsDate(a.ts));
@@ -3428,8 +3546,9 @@ function filtMovs(clr){
   const totQtd=f.reduce((a,x)=>a+(x.qtd||0),0);
   const fmtBr=iso=>{const[y,mo,dy]=iso.split('-');return `${dy}/${mo}/${y}`;};
   const rot=(dDe||dAte)?` · ${dDe?fmtBr(dDe):'início'} → ${dAte?fmtBr(dAte):'hoje'}`:'';
+  const rotA=orig?` · origem: <strong>${orig}</strong>`:'';
   const ct=document.getElementById('mcount');
-  if(ct)ct.innerHTML=`<strong>${f.length}</strong> registro(s) · <strong>${totQtd.toLocaleString('pt-BR')}</strong> paletes${rot}`;
+  if(ct)ct.innerHTML=`<strong>${f.length}</strong> registro(s) · <strong>${totQtd.toLocaleString('pt-BR')}</strong> paletes${rot}${rotA}`;
   const tb=document.getElementById('mtbody');
   if(tb)tb.innerHTML=f.length?f.map(x=>`<tr>
     <td class="td-mono">${x.id}</td><td class="td-mono" style="font-size:10px">${x.ts}</td>
