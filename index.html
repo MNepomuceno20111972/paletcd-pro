@@ -742,6 +742,7 @@ async function syncDiff(){
   _syncing=true;
   updateSyncBadge();
   try{
+    try{persistirFaxina();}catch(e){} // cobre a carga vinda do localStorage
     const atual=snapState();
     const base=loadSynced()||{};
     const {updates,novos,contDiff,estDeltas}=computarDiffs(atual,base);
@@ -873,13 +874,37 @@ function applyRemote(v2){
   }finally{
     _applyingRemote=false;
     _sinalizarPrimeiraCarga();
-    // 🧹 v40: a faxina corrigiu rótulos em memória. Sem gravar de volta, a nuvem
-    // continua suja e o setor fantasma reaparece na próxima carga. Grava uma vez.
-    if(S&&S._faxinaPendente){
-      const n=S._faxinaPendente;delete S._faxinaPendente;
-      try{save();console.log(`🧹 Faxina persistida na nuvem (${n} registro(s)).`);}catch(e){}
-    }
+    // 🧹 v40: grava a faxina DIRETO nos nós. Não dá para usar save() aqui: o
+    // applyRemote já chamou saveSynced() com o estado limpo, então o diff
+    // enxergaria "0 alterações" e a nuvem continuaria suja para sempre.
+    if(S&&S._faxinaIds&&S._faxinaIds.length)persistirFaxina();
   }
+}
+
+// Regrava apenas os movimentos cujo rótulo foi normalizado.
+// Multi-path update: uma única chamada, sem tocar em mais nada.
+// Idempotente: consome S._faxinaIds, então nunca grava duas vezes.
+function persistirFaxina(){
+  if(!S||!S._faxinaIds||!S._faxinaIds.length)return;
+  if(!firebaseReady||!db)return; // sem nuvem agora; a próxima carga detecta de novo
+  const ids=S._faxinaIds.slice();
+  delete S._faxinaIds;
+  const updates={};
+  ids.forEach(id=>{
+    const m=(S.movs||[]).find(x=>x&&String(x.id)===String(id));
+    if(!m)return;
+    updates[`movs/${fbKey(id)}/origem`]=m.origem||'';
+    updates[`movs/${fbKey(id)}/destino`]=m.destino||'';
+    updates[`movs/${fbKey(id)}/usuario`]=m.usuario||'';
+  });
+  const n=Object.keys(updates).length;
+  if(!n)return;
+  db.ref(V2_PATH).update(updates)
+    .then(()=>{
+      saveSynced(snapState()); // baseline alinhado com a nuvem já limpa
+      console.log(`🧹 Faxina gravada na nuvem: ${n/3} movimentação(ões).`);
+    })
+    .catch(e=>{S._faxinaIds=ids;console.error('Falha ao gravar faxina, tentará de novo:',e);});
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1291,16 +1316,16 @@ function fixState(s){
   // de participação e quebra os filtros de Movimentações. Aqui o rótulo é
   // normalizado em memória; se algo mudou, marcamos para regravar na nuvem.
   const _n=x=>String(x==null?'':x).replace(/\s+/g,' ').trim();
-  let _sujos=0;
+  const _sujosIds=[];
   (s.movs||[]).forEach(m=>{
     if(!m||typeof m!=='object')return;
     const o=_n(m.origem),d=_n(m.destino),u=_n(m.usuario);
-    if(o!==m.origem||d!==m.destino||u!==m.usuario)_sujos++;
+    if(o!==m.origem||d!==m.destino||u!==m.usuario){if(m.id)_sujosIds.push(String(m.id));}
     m.origem=o;m.destino=d;m.usuario=u;
   });
-  if(_sujos){
-    s._faxinaPendente=_sujos;
-    console.log(`🧹 Faxina de rótulos: ${_sujos} movimentação(ões) normalizada(s).`);
+  if(_sujosIds.length){
+    s._faxinaIds=_sujosIds;
+    console.log(`🧹 Faxina de rótulos: ${_sujosIds.length} movimentação(ões) normalizada(s).`);
   }
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
   if(!s.senhas.CFR)s.senhas.CFR='CFR@2024';
