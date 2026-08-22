@@ -1112,6 +1112,7 @@ const MENUS={
   area:[
     ['solicitar','🙋','🙋 Solicitar Paletes'],
     ['envio-loja','🚚','🚚 Envio para Lojas'],
+    ['transf-area','🔀','🔀 Transferir para Área'],
     ['minha-area','📦','📦 Estoque da Área'],
     ['paletes-loja','🏪','🏪 Paletes por Loja (View)'],
   ],
@@ -1184,7 +1185,7 @@ function calcEst(movs,opts){
   s.forEach(m=>{const mds=m.modelos||{};
     switch(m.tipo){
       case 'Compra':MODELOS.forEach(k=>{est.REV[k]=(est.REV[k]||0)+(mds[k]||0);});break;
-      case 'Distribuição Interna':MODELOS.forEach(k=>{sub(est.REV,k,(mds[k]||0));if(est[m.destino])est[m.destino][k]=(est[m.destino][k]||0)+(mds[k]||0);});break;
+      case 'Distribuição Interna':{const _o=est[m.origem]?m.origem:'REV';MODELOS.forEach(k=>{sub(est[_o],k,(mds[k]||0));if(est[m.destino])est[m.destino][k]=(est[m.destino][k]||0)+(mds[k]||0);});break;}
       case 'Envio para Loja':MODELOS.forEach(k=>{sub(est[m.origem],k,(mds[k]||0));est.Lojas[k]=(est.Lojas[k]||0)+(mds[k]||0);});break;
       case 'Retorno de Loja':MODELOS.forEach(k=>{sub(est.Lojas,k,(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
       case 'Devolução Interna':MODELOS.forEach(k=>{sub(est[m.origem],k,(mds[k]||0));est.TriagemFila[k]=(est.TriagemFila[k]||0)+(mds[k]||0);});break;
@@ -1732,6 +1733,7 @@ const PAGE_INFO={
   'retorno-loja':['Retorno de Lojas','Lojas → REV'],'devolucao':['Devolução Interna','Áreas → Triagem'],
   movimentacoes:['Movimentações','Registro completo'],fornecedores:['Fornecedores','Gerenciar fornecedores'],
   'minha-area':['Estoque da Área','Saldo apenas da sua área'],
+  'transf-area':['Transferência entre Áreas','Sua área → outra área do CD'],
   'saida-forn':['Saída para Fornecedor','Devolução de paletes — baixa na REV'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
@@ -1765,7 +1767,7 @@ function renderScreen(s){
     triagem:rTriagem,reforma:rReforma,
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
-    'minha-area':rMinhaArea,
+    'minha-area':rMinhaArea,'transf-area':rTransfArea,
     'saida-forn':rSaidaForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),
     relatorios:rRelatorios,
   };
@@ -2195,6 +2197,136 @@ function doDistribuicao(){
   addMov('Distribuição Interna','REV',area,null,null,tot,user,v('d-obs'),modelos,v('d-data'));
   toast(`✓ ${tot} paletes distribuídos para ${area}.`);
   renderScreen('distribuicao');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRANSFERÊNCIA ENTRE ÁREAS  (Área → Área)
+// A ÁREA registra o volume que entrega para OUTRA área do CD.
+// Ex.: Perecível abastece a Central de Frios, que depois envia
+// esses paletes para as lojas com saldo próprio.
+// Grava como 'Distribuição Interna' com origem = área logada.
+// Baixa por DELTA DIRETO — nunca chamar syncEst() aqui.
+// ══════════════════════════════════════════════════════════════
+function transfDestinos(origem){
+  const grupo=ccGrupo(origem);                 // não deixa transferir dentro do próprio CC
+  return AREAS_INT.filter(a=>!grupo.includes(a));
+}
+function rTransfArea(el){
+  const isArea=CU.role==='area';
+  const origens=isArea?subAreasDe(CU.area):AREAS_ALL;
+  if(!window._trfOrigem||!origens.includes(window._trfOrigem))window._trfOrigem=origens[0];
+  const origem=window._trfOrigem;
+  S.est=fixEst(S.est);
+  const grupo=ccGrupo(origem);
+  const saldo=ccSaldo(grupo,S.est);
+  const totSaldo=totalModelos(saldo);
+  const modVis=MODELOS.filter(m=>(saldo[m]||0)>0);
+  const destinos=transfDestinos(origem);
+  const detGrupo=grupo.length>1?grupo.map(a=>`${a}: <strong>${totalEst(a)}</strong>`).join(' · '):'';
+
+  const hist=(S.movs||[]).filter(m=>m.tipo==='Distribuição Interna'&&grupo.includes(m.origem)).slice(0,15);
+
+  el.innerHTML=`
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:14px">🔀 Transferir Paletes para Outra Área</div>
+    <div class="info-box">Use quando a sua área <strong>entrega paletes para outra área do CD</strong>, e não para uma loja. O saldo sai do seu centro de custo e entra no da área destino, que passa a responder por ele.</div>
+
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Área Origem *</label>
+        ${origens.length>1
+          ? `<select class="form-control" id="trf-origem" onchange="trfTrocaOrigem()">${origens.map(a=>`<option${a===origem?' selected':''}>${a}</option>`).join('')}</select>`
+          : `<input class="form-control" id="trf-origem" value="${origem}" readonly style="background:var(--bg-card);font-weight:700;">`}
+      </div>
+      <div class="form-group"><label class="form-label">Área Destino *</label>
+        <select class="form-control" id="trf-destino">${destinos.map(a=>`<option>${a}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="trf-data" type="date" value="${hoje()}"></div>
+      <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="trf-user" value="${CU.nome}"></div>
+      <div class="form-group full"><label class="form-label">Observação</label><input class="form-control" id="trf-obs" placeholder="Ex: abastecimento da câmara fria"></div>
+    </div>
+
+    <div style="margin:14px 0;background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;">
+        Saldo disponível no centro de custo ${ccRaiz(origem)} · total ${totSaldo}
+      </div>
+      ${detGrupo?`<div style="font-size:11px;color:var(--text-light);margin-bottom:8px;">${detGrupo}</div>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${MODELOS.map(m=>`<span class="badge badge-${(saldo[m]||0)>0?'blue':'gray'}" style="font-size:11px;">${MODELO_LABELS[m].replace('Palete ','')} <strong>${saldo[m]||0}</strong></span>`).join('')}
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Quantidades por Modelo *</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;">
+          ${(modVis.length?modVis:MODELOS).map(m=>`<div style="display:flex;flex-direction:column;gap:3px;">
+            <label style="font-size:10px;font-weight:700;color:var(--text-light);">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')} <span style="color:var(--navy)">(${saldo[m]||0})</span></label>
+            <input class="form-control" type="number" min="0" placeholder="0" id="trf-q-${m}" style="padding:6px 8px;font-size:12px;">
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions"><button class="btn btn-primary" onclick="doTransfArea()">🔀 Transferir</button></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-hdr"><span class="card-title">📋 Últimas Transferências da Sua Área</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Data</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Modelos</th><th>Usuário</th></tr></thead>
+      <tbody>${hist.length?hist.map(m=>`<tr>
+        <td class="td-mono" style="font-size:10px">${m.id}</td>
+        <td class="td-mono" style="font-size:10px">${m.ts||'—'}</td>
+        <td style="font-size:11px">${m.origem||'—'}</td>
+        <td class="td-bold" style="font-size:11px">${m.destino||'—'}</td>
+        <td class="td-bold">${m.qtd}</td>
+        <td>${modelosHtml(m.modelos)}</td>
+        <td style="font-size:11px">${m.usuario||'—'}</td>
+      </tr>`).join(''):emptyRow(7)}</tbody>
+    </table></div>
+  </div>`;
+}
+function trfTrocaOrigem(){window._trfOrigem=v('trf-origem');renderScreen('transf-area');}
+function doTransfArea(){
+  if(!['adm','rev','area'].includes(CU.role))return toast('Perfil sem permissão para transferir.','err');
+  const origem=v('trf-origem')||window._trfOrigem;
+  const destino=v('trf-destino');
+  const data=v('trf-data'),user=v('trf-user'),obs=v('trf-obs');
+  if(!origem)return toast('Selecione a área de origem.','err');
+  if(!destino)return toast('Selecione a área de destino.','err');
+  if(!data)return toast('Informe a data.','err');
+  if(!user)return toast('Informe o usuário.','err');
+
+  const grupo=ccGrupo(origem);
+  if(grupo.includes(destino))return toast('Origem e destino são do mesmo centro de custo. A transferência não faria efeito.','err');
+
+  const modelos={};let tot=0;
+  MODELOS.forEach(m=>{const q=parseInt(document.getElementById('trf-q-'+m)?.value)||0;if(q>0){modelos[m]=q;tot+=q;}});
+  if(tot<1)return toast('Informe as quantidades por modelo.','err');
+
+  S.est=fixEst(S.est);
+  const disp=ccSaldo(grupo,S.est);
+  if(!S.modoMigracao){
+    for(const m of MODELOS){
+      const need=modelos[m]||0;
+      if(need>(disp[m]||0))return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} no centro de custo ${ccRaiz(origem)}. Disponível ${disp[m]||0}, transferindo ${need}.`,'err');
+    }
+  }
+
+  const rateados=[];
+  MODELOS.forEach(m=>{
+    const q=modelos[m]||0;if(!q)return;
+    const usadas=ccBaixar(origem,m,q);            // baixa origem → irmãs do mesmo CC
+    if(usadas.length)rateados.push(`${MODELO_LABELS[m]}: ${usadas.join(', ')}`);
+    if(!S.est[destino])S.est[destino]={};
+    S.est[destino][m]=(S.est[destino][m]||0)+q;
+  });
+
+  const mov=addMov('Distribuição Interna',origem,destino,null,null,tot,user,obs,modelos,data);
+  if(mov&&rateados.length)mov.ccRateio=rateados.slice();
+
+  save(); // ✅ SEM syncEst() — estoque atualizado por delta direto acima
+  toast(`✓ ${tot} paletes transferidos de ${origem} para ${destino}.`);
+  renderScreen('transf-area');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4780,7 +4912,7 @@ function aplicarEfeitoMov(mov,sign){
   };
   switch(mov.tipo){
     case 'Compra':MODELOS.forEach(m=>aj('REV',m,mds[m]||0));break;
-    case 'Distribuição Interna':MODELOS.forEach(m=>{const q=mds[m]||0;aj('REV',m,-q);aj(mov.destino,m,q);});break;
+    case 'Distribuição Interna':MODELOS.forEach(m=>{const q=mds[m]||0;aj(mov.origem||'REV',m,-q);aj(mov.destino,m,q);});break;
     case 'Envio para Loja':MODELOS.forEach(m=>{const q=mds[m]||0;aj(mov.origem,m,-q);aj('Lojas',m,q);});break;
     case 'Retorno de Loja':MODELOS.forEach(m=>{const q=mds[m]||0;aj('Lojas',m,-q);aj('TriagemFila',m,q);});break;
     case 'Devolução Interna':MODELOS.forEach(m=>{const q=mds[m]||0;aj(mov.origem,m,-q);aj('TriagemFila',m,q);});break;
