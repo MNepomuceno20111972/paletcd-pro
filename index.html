@@ -873,6 +873,12 @@ function applyRemote(v2){
   }finally{
     _applyingRemote=false;
     _sinalizarPrimeiraCarga();
+    // 🧹 v40: a faxina corrigiu rótulos em memória. Sem gravar de volta, a nuvem
+    // continua suja e o setor fantasma reaparece na próxima carga. Grava uma vez.
+    if(S&&S._faxinaPendente){
+      const n=S._faxinaPendente;delete S._faxinaPendente;
+      try{save();console.log(`🧹 Faxina persistida na nuvem (${n} registro(s)).`);}catch(e){}
+    }
   }
 }
 
@@ -1280,6 +1286,22 @@ function fixState(s){
   if(!s.forns)s.forns=[];
   
   s.est=fixEst(s.est);
+  // 🧹 v40: FAXINA DE RÓTULOS — roda em toda carga.
+  // Espaço extra ("Mercearia " vs "Mercearia") cria um setor fantasma no donut
+  // de participação e quebra os filtros de Movimentações. Aqui o rótulo é
+  // normalizado em memória; se algo mudou, marcamos para regravar na nuvem.
+  const _n=x=>String(x==null?'':x).replace(/\s+/g,' ').trim();
+  let _sujos=0;
+  (s.movs||[]).forEach(m=>{
+    if(!m||typeof m!=='object')return;
+    const o=_n(m.origem),d=_n(m.destino),u=_n(m.usuario);
+    if(o!==m.origem||d!==m.destino||u!==m.usuario)_sujos++;
+    m.origem=o;m.destino=d;m.usuario=u;
+  });
+  if(_sujos){
+    s._faxinaPendente=_sujos;
+    console.log(`🧹 Faxina de rótulos: ${_sujos} movimentação(ões) normalizada(s).`);
+  }
   if(!s.senhas)s.senhas={ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'};
   if(!s.senhas.CFR)s.senhas.CFR='CFR@2024';
   if(!s.senhas.FRI)s.senhas.FRI='FRI@2024';
@@ -1472,6 +1494,10 @@ function addMov(tipo,origem,destino,loja,forn,qtd,usuario,obs,modelos,dataForm){
   } else {
     ts=dataHoraBR();
   }
+  // 🧹 Normaliza os campos que agrupam gráfico e filtro. Sem isso, "Mercearia "
+  // com espaço vira um setor separado de "Mercearia" no donut de participação.
+  const _lim=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
+  origem=_lim(origem);destino=_lim(destino);usuario=_lim(usuario);
   const mov={id,tipo,origem,destino,loja:loja||'',forn:forn||'',qtd,usuario,obs:obs||'',modelos:modelos||null,ts};
   S.movs.unshift(mov);
   save();
@@ -3178,7 +3204,7 @@ function rPaletesLojaDashboard(el,fDe,fAte,filtrado,fmtBr){
     if(ate&&dt>ate)return false;
     return true;
   }).forEach(m=>{
-    const setor=m.origem||'REV';
+    const setor=String(m.origem||'REV').replace(/\s+/g,' ').trim()||'REV';
     setorMap[setor]=(setorMap[setor]||0)+(m.qtd||0);
   });
   const totalSetor=Object.values(setorMap).reduce((s,v)=>s+v,0)||1;
@@ -4969,8 +4995,9 @@ function confirmarEditMov(screen){
   const novosMod={};let novoTot=0;
   MODELOS.forEach(md=>{const q=parseInt(document.getElementById('emod-'+md)?.value)||0;if(q>0){novosMod[md]=q;novoTot+=q;}});
   // Área não remaneja centro de custo nem loja: origem e destino ficam como estão.
-  const novaOrigem=canDelete()?(document.getElementById('edit-mov-origem').value||m.origem):m.origem;
-  const novoDestino=canDelete()?(document.getElementById('edit-mov-destino').value||m.destino):m.destino;
+  const _limE=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
+  const novaOrigem=_limE(canDelete()?(document.getElementById('edit-mov-origem').value||m.origem):m.origem);
+  const novoDestino=_limE(canDelete()?(document.getElementById('edit-mov-destino').value||m.destino):m.destino);
   const mudouEfeito=(novoTot>0&&normStr(novosMod)!==normStr(m.modelos||{}))||novaOrigem!==m.origem||novoDestino!==m.destino;
   if(mudouEfeito&&TIPOS_VINCULO.includes(m.tipo)){
     if(!confirm(`"${m.tipo}" tem vínculos com saldo de fornecedor/lotes de reforma que esta edição NÃO reajusta. O estoque será corrigido, mas o vínculo não. Para corrigir tudo, exclua e relance. Continuar mesmo assim?`))return;
@@ -4979,7 +5006,7 @@ function confirmarEditMov(screen){
   if(mudouEfeito)aplicarEfeitoMov(m,-1);
   const dataVal=document.getElementById('edit-mov-data').value;
   if(dataVal){const [y,mo,d]=dataVal.split('-');const hora=m.ts.split(', ')[1]||'00:00:00';m.ts=`${d}/${mo}/${y}, ${hora}`;}
-  m.usuario=document.getElementById('edit-mov-user').value||m.usuario;
+  m.usuario=_limE(document.getElementById('edit-mov-user').value||m.usuario);
   m.origem=novaOrigem;
   m.destino=novoDestino;
   m.nf=document.getElementById('edit-mov-nf').value;
