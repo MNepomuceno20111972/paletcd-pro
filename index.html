@@ -1126,7 +1126,8 @@ const MENUS={
   adm:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
     ['solicitacoes','📨','Solicitações'],
-    ['envio-loja','🚚','Envio p/ Lojas'],['paletes-loja','🏪','Paletes por Loja'],
+    ['envio-loja','🚚','Envio p/ Lojas'],['consulta-envios','🔎','Consultar Envios'],['paletes-loja','🏪','Paletes por Loja'],
+    ['alertas-saldo','⚠️','Alertas de Saldo'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
@@ -1135,7 +1136,8 @@ const MENUS={
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
     ['solicitacoes','📨','Solicitações'],
-    ['envio-loja','🚚','Envio p/ Lojas'],['paletes-loja','🏪','Paletes por Loja'],
+    ['envio-loja','🚚','Envio p/ Lojas'],['consulta-envios','🔎','Consultar Envios'],['paletes-loja','🏪','Paletes por Loja'],
+    ['alertas-saldo','⚠️','Alertas de Saldo'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
     ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['ajuste-estoque','🔧','Ajuste Estoque'],
@@ -1143,6 +1145,7 @@ const MENUS={
   area:[
     ['solicitar','🙋','🙋 Solicitar Paletes'],
     ['envio-loja','🚚','🚚 Envio para Lojas'],
+    ['consulta-envios','🔎','🔎 Consultar Envios'],
     ['transf-area','🔀','🔀 Transferir para Área'],
     ['minha-area','📦','📦 Estoque da Área'],
     ['paletes-loja','🏪','🏪 Paletes por Loja (View)'],
@@ -1762,7 +1765,14 @@ function startApp(){
 function buildNav(){
   const menu=MENUS[CU.role]||[];
   const nav=document.getElementById('sidebar-nav');
-  nav.innerHTML=menu.map(([s,ic,lb])=>`<div class="nav-item" data-screen="${s}"><span class="nav-icon">${ic}</span>${lb}</div>`).join('');
+  nav.innerHTML=menu.map(([s,ic,lb])=>{
+    let extra='';
+    if(s==='alertas-saldo'){
+      let n=0;try{n=alertasSaldoPend().length;}catch(e){}
+      if(n)extra=`<span class="badge badge-red" style="margin-left:auto">${n}</span>`;
+    }
+    return `<div class="nav-item" data-screen="${s}"><span class="nav-icon">${ic}</span>${lb}${extra}</div>`;
+  }).join('');
   nav.querySelectorAll('[data-screen]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.screen)));
   const tbMig=document.getElementById('topbar-mig-wrap');
   if(tbMig&&(CU.role==='adm'||CU.role==='rev')){tbMig.innerHTML=`<button id="btn-migracao" onclick="toggleModoMigracao()" style="background:${S.modoMigracao?'var(--amber)':'var(--bg)'};border:1.5px solid ${S.modoMigracao?'var(--amber)':'var(--border-dark)'};color:${S.modoMigracao?'#fff':'var(--text-mid)'};border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--font);">${S.modoMigracao?'⚠️ Migração ON':'📥 Migração'}</button>`;}
@@ -1779,6 +1789,8 @@ const PAGE_INFO={
   solicitar:['Solicitar Paletes','Pedido de paletes à Logística Reversa'],
   solicitacoes:['Solicitações','Pedidos das áreas para a REV'],
   'envio-loja':['Envio para Lojas','Rateio de paletes da área para as lojas'],
+  'consulta-envios':['Consultar Envios','Buscar, conferir, editar ou excluir envios para lojas'],
+  'alertas-saldo':['Alertas de Saldo','Envios registrados sem saldo — repor estoque'],
   'paletes-loja':['Paletes por Loja','Saldo de paletes em posse de cada loja'],
   triagem:['Triagem','Classificação de paletes retornados'],reforma:['Controle de Reforma','Paletes em reforma'],
   'retorno-loja':['Retorno de Lojas','Lojas → REV'],'devolucao':['Devolução Interna','Áreas → Triagem'],
@@ -1814,7 +1826,8 @@ function renderScreen(s){
     dashboard:rDashboard,estoque:rEstoque,
     compra:rCompra,distribuicao:rDistribuicao,
     solicitar:rSolicitar,solicitacoes:rSolicitacoes,
-    'envio-loja':rEnvioLoja,'paletes-loja':rPaletesLoja,
+    'envio-loja':rEnvioLoja,'consulta-envios':rConsultaEnvios,
+    'alertas-saldo':rAlertasSaldo,'paletes-loja':rPaletesLoja,
     triagem:rTriagem,reforma:rReforma,
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
@@ -1824,6 +1837,20 @@ function renderScreen(s){
   };
   if(fn[s]) fn[s](el);
   else el.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-text">Tela em desenvolvimento</div></div>';
+  // 🔔 v41: aviso de falta de saldo para quem pode resolver
+  if(s==='dashboard'&&(CU.role==='adm'||CU.role==='rev')){
+    try{
+      const pend=alertasSaldoPend();
+      if(pend.length){
+        const div=document.createElement('div');
+        div.className='warn-box';
+        div.style.cssText='margin-bottom:14px;cursor:pointer;border-left-color:var(--red);background:#fdecea;color:#a83226;font-weight:600;';
+        div.innerHTML=`⚠️ <strong>${pend.length} alerta(s) de falta de saldo</strong> — houve envio para loja sem estoque suficiente. Clique para conferir e ajustar o estoque.`;
+        div.onclick=()=>navigate('alertas-saldo');
+        el.insertBefore(div,el.firstChild);
+      }
+    }catch(e){}
+  }
 }
 
 // ── ADESÃO DAS ÁREAS: ENVIO PARA LOJAS ─────────────────────────
@@ -2825,8 +2852,10 @@ function envCalc(){
     if(el){el.textContent=rest;el.style.color=rest<0?'var(--red)':'var(--navy)';}
     if(rest<0)estouro=true;
   });
+  // v41: o botão NUNCA é desabilitado por falta de saldo. O palete físico já
+  // saiu — travar aqui só gera envio não registrado. O aviso continua visível.
   const b=document.getElementById('env-btn');
-  if(b){b.disabled=estouro&&!S.modoMigracao;b.style.opacity=b.disabled?'.5':'1';}
+  if(b){b.disabled=false;b.style.opacity='1';}
   const w=document.getElementById('env-alerta');
   if(w)w.style.display=estouro?'block':'none';
 }
@@ -2926,7 +2955,7 @@ function rEnvioLoja(el){
     ${linhas}
     <button class="btn btn-ghost" onclick="envAddRow()" style="width:100%;margin-bottom:12px;">➕ Adicionar outra loja</button>
 
-    <div id="env-alerta" class="warn-box" style="display:none;margin-bottom:12px;">⚠️ O rateio está maior que o saldo disponível na área. Ajuste as quantidades.</div>
+    <div id="env-alerta" class="warn-box" style="display:none;margin-bottom:12px;">⚠️ <strong>Rateio maior que o saldo do centro de custo.</strong> O envio <u>não será bloqueado</u> — ele é registrado assim mesmo, o saldo fica negativo e um alerta é aberto para o administrador repor o estoque do modelo em falta.</div>
 
     <div style="background:var(--navy);color:#fff;border-radius:var(--radius-sm);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <span style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;opacity:.85">Total a enviar</span>
@@ -2982,32 +3011,361 @@ function doEnvioLoja(){
   S.est=fixEst(S.est);
   const grupo=ccGrupo(area);
   const dispCC=ccSaldo(grupo,S.est);
-  if(!S.modoMigracao){
-    for(const m of MODELOS){
-      const need=linhas.reduce((s,l)=>s+(l.mod[m]||0),0);
-      const disp=dispCC[m]||0;
-      if(need>disp)return toast(`Saldo insuficiente de ${MODELO_LABELS[m]} no centro de custo ${ccRaiz(area)}. Disponível ${disp}, enviando ${need}.`,'err');
-    }
+
+  // ── v41: FALTA DE SALDO NÃO TRAVA MAIS O REGISTRO ────────────────────
+  // O palete físico já saiu do CD. Bloquear o lançamento não devolve palete
+  // nenhum — só cria envio fantasma: a loja recebe e o sistema não sabe.
+  // Agora o envio é registrado, o saldo do modelo fica negativo (o negativo
+  // É o tamanho da falta) e sobe um alerta para o ADM repor/ajustar.
+  const faltas={};
+  MODELOS.forEach(m=>{
+    const need=linhas.reduce((s,l)=>s+(l.mod[m]||0),0);
+    const disp=dispCC[m]||0;
+    if(need>disp)faltas[m]=need-disp;
+  });
+  const modsFalta=Object.keys(faltas);
+  if(modsFalta.length&&!S.modoMigracao){
+    const resumo=modsFalta.map(m=>`• ${MODELO_LABELS[m]}: faltam ${faltas[m]}`).join('\n');
+    const ok=confirm(
+      `SALDO INSUFICIENTE no centro de custo ${ccRaiz(area)}:\n\n${resumo}\n\n`+
+      `O envio SERÁ registrado assim mesmo (o palete já saiu). O saldo do modelo ficará negativo `+
+      `e um alerta será aberto para o administrador lançar a entrada e ajustar o estoque.\n\nConfirmar o registro?`
+    );
+    if(!ok)return;
   }
 
   const rateados=[];
+  const criados=[];
   linhas.forEach(l=>{
     MODELOS.forEach(m=>{
       const q=l.mod[m]||0;if(!q)return;
-      const usadas=ccBaixar(area,m,q);        // baixa área escolhida → irmãs do CC
+      const usadas=ccBaixar(area,m,q);        // baixa área escolhida → irmãs do CC (aceita negativo)
       if(usadas.length)rateados.push(`${MODELO_LABELS[m]}: ${usadas.join(', ')}`);
       S.est.Lojas[m]=(S.est.Lojas[m]||0)+q;
     });
     const mov=addMov('Envio para Loja',area,lojaNome(l.loja),l.loja,null,l.tot,user,obs,l.mod,data);
     if(nf&&mov)mov.nf=nf;
     if(mov&&rateados.length)mov.ccRateio=rateados.slice();
+    if(mov)criados.push(mov);
   });
+
+  // Alerta de falta fica gravado no PRIMEIRO lançamento do lote.
+  // Vai junto com a movimentação no sync — não precisa de coleção nova.
+  if(modsFalta.length&&!S.modoMigracao&&criados.length){
+    criados[0].alertaSaldo={
+      status:'Pendente',
+      area:area,
+      cc:ccRaiz(area),
+      faltas:faltas,
+      lote:criados.map(x=>x.id),
+      lojas:linhas.map(l=>lojaNome(l.loja)),
+      abertoPor:user,
+      abertoEm:dataHoraBR()
+    };
+  }
 
   save(); // ✅ SEM syncEst() — estoque atualizado por delta direto acima
   const totGeral=linhas.reduce((s,l)=>s+l.tot,0);
   _envRows=[{loja:'',mod:{}}];
-  toast(`✓ ${totGeral} paletes enviados para ${linhas.length} loja(s).`);
+  if(modsFalta.length&&!S.modoMigracao){
+    toast(`✓ ${totGeral} paletes registrados. ⚠️ Alerta de falta aberto: ${modsFalta.map(m=>MODELO_LABELS[m]+' ('+faltas[m]+')').join(', ')}.`,'err');
+  }else{
+    toast(`✓ ${totGeral} paletes enviados para ${linhas.length} loja(s).`);
+  }
+  buildNav();
   renderScreen('envio-loja');
+}
+
+// ══════════════════════════════════════════════════════════════
+// v41 · ALERTAS DE FALTA DE SALDO
+// ──────────────────────────────────────────────────────────────
+// O alerta mora dentro da própria movimentação (campo alertaSaldo).
+// Vantagem: sincroniza igual a qualquer mov, sem coleção nova no
+// Firebase, e o rastro fica colado no lançamento que gerou a falta.
+// ══════════════════════════════════════════════════════════════
+function alertasSaldoPend(){
+  return (S.movs||[]).filter(m=>m&&m.alertaSaldo&&m.alertaSaldo.status==='Pendente');
+}
+function alertasSaldoTodos(){
+  return (S.movs||[]).filter(m=>m&&m.alertaSaldo);
+}
+function resolverAlertaSaldo(id){
+  if(!canDelete())return toast('Só ADM ou Log. Reversa encerra alerta.','err');
+  const m=S.movs.find(x=>x.id===id);
+  if(!m||!m.alertaSaldo)return toast('Alerta não encontrado.','err');
+  if(!confirm('Confirmar que a entrada do palete foi lançada e o estoque ajustado?\n\nO alerta será encerrado.'))return;
+  m.alertaSaldo.status='Resolvido';
+  m.alertaSaldo.resolvidoPor=CU.nome||CU.area||'—';
+  m.alertaSaldo.resolvidoEm=dataHoraBR();
+  save();buildNav();
+  toast('✓ Alerta encerrado.');
+  renderScreen('alertas-saldo');
+}
+function reabrirAlertaSaldo(id){
+  if(!canDelete())return toast('Sem permissão.','err');
+  const m=S.movs.find(x=>x.id===id);
+  if(!m||!m.alertaSaldo)return;
+  m.alertaSaldo.status='Pendente';
+  delete m.alertaSaldo.resolvidoPor;delete m.alertaSaldo.resolvidoEm;
+  save();buildNav();toast('Alerta reaberto.');renderScreen('alertas-saldo');
+}
+window._asTab=window._asTab||'pendentes';
+function asMudarAba(t){window._asTab=t;renderScreen('alertas-saldo');}
+
+function rAlertasSaldo(el){
+  if(!(CU.role==='adm'||CU.role==='rev')){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🔒</div><div class="empty-text">Tela restrita ao Administrador e à Logística Reversa.</div></div>';
+    return;
+  }
+  const tab=window._asTab||'pendentes';
+  const todos=alertasSaldoTodos().slice().sort((a,b)=>parseTsDate(b.ts)-parseTsDate(a.ts));
+  const pend=todos.filter(m=>m.alertaSaldo.status==='Pendente');
+  const resolv=todos.filter(m=>m.alertaSaldo.status!=='Pendente');
+  const lista=tab==='pendentes'?pend:resolv;
+
+  // Consolidado do que falta, por modelo — é o que precisa entrar no estoque
+  const totFalta={};MODELOS.forEach(m=>totFalta[m]=0);
+  pend.forEach(m=>{MODELOS.forEach(k=>{totFalta[k]+=(m.alertaSaldo.faltas?.[k]||0);});});
+  const somaFalta=MODELOS.reduce((s,m)=>s+totFalta[m],0);
+
+  el.innerHTML=`
+  <div class="${somaFalta?'warn-box':'info-box'}" style="${somaFalta?'border-left-color:var(--red);background:#fdecea;color:#a83226;':''}">
+    ${somaFalta
+      ? `⚠️ <strong>${pend.length} alerta(s) em aberto — ${somaFalta} palete(s) precisam entrar no estoque.</strong> O envio já foi registrado e o saldo está negativo. Lance a entrada (Compra / Retorno) ou use o Ajuste de Estoque para regularizar.`
+      : `✓ Nenhum alerta de falta de saldo em aberto.`}
+  </div>
+
+  ${somaFalta?`
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">📦 Falta por Modelo (consolidado)</span></div>
+    <div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;">
+      ${MODELOS.filter(m=>totFalta[m]>0).map(m=>`
+        <div style="background:#fdecea;border:1.5px solid var(--red);border-radius:var(--radius-sm);padding:8px 14px;min-width:130px;">
+          <div style="font-size:10px;font-weight:700;color:#a83226;text-transform:uppercase;margin-bottom:4px;">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:#a83226;">${totFalta[m]}</div>
+        </div>`).join('')}
+    </div>
+    <div style="padding:0 16px 14px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="navigate('compra')">🛒 Lançar Compra</button>
+      <button class="btn btn-warning btn-sm" onclick="navigate('ajuste-estoque')">🔧 Ajuste de Estoque</button>
+    </div>
+  </div>`:''}
+
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="btn ${tab==='pendentes'?'btn-primary':'btn-ghost'} btn-sm" onclick="asMudarAba('pendentes')">⏳ Pendentes (${pend.length})</button>
+    <button class="btn ${tab==='resolvidos'?'btn-primary':'btn-ghost'} btn-sm" onclick="asMudarAba('resolvidos')">✓ Resolvidos (${resolv.length})</button>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">${tab==='pendentes'?'⏳ Alertas Pendentes':'✓ Alertas Resolvidos'}</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Data</th><th>Lançamento</th><th>Área / CC</th><th>Loja(s)</th><th>Faltou</th><th>Aberto por</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody>${lista.length?lista.map(m=>{
+        const a=m.alertaSaldo;
+        const faltaHtml=MODELOS.filter(k=>(a.faltas?.[k]||0)>0)
+          .map(k=>`${modeloBadge(k)} <strong style="color:var(--red)">-${a.faltas[k]}</strong>`).join(' ')||'—';
+        return `<tr>
+          <td class="td-mono" style="font-size:10px">${m.ts}</td>
+          <td class="td-mono" style="font-size:10px">${(a.lote||[m.id]).join(', ')}</td>
+          <td style="font-size:11px">${a.area||'—'}<br><span style="color:var(--text-light)">CC ${a.cc||'—'}</span></td>
+          <td style="font-size:11px">${(a.lojas||[]).join(', ')||'—'}</td>
+          <td>${faltaHtml}</td>
+          <td style="font-size:11px">${a.abertoPor||'—'}</td>
+          <td>${a.status==='Pendente'
+            ? '<span class="badge badge-red">⏳ Pendente</span>'
+            : `<span class="badge badge-green">✓ Resolvido</span><br><span style="font-size:10px;color:var(--text-light)">${a.resolvidoPor||''} · ${a.resolvidoEm||''}</span>`}</td>
+          <td style="white-space:nowrap">
+            ${a.status==='Pendente'
+              ? `<button class="btn btn-primary btn-xs" onclick="resolverAlertaSaldo('${m.id}')">✓ Estoque ajustado</button>`
+              : `<button class="btn btn-ghost btn-xs" onclick="reabrirAlertaSaldo('${m.id}')">↺ Reabrir</button>`}
+          </td>
+        </tr>`;}).join(''):emptyRow(8)}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// v41 · CONSULTA DE ENVIOS PARA LOJAS
+// Filtro por loja, período, área e NF. Permite editar e excluir
+// reaproveitando as mesmas regras de permissão das outras telas.
+// ══════════════════════════════════════════════════════════════
+window._ceLoja=window._ceLoja||'';
+window._ceDe=window._ceDe||'';
+window._ceAte=window._ceAte||'';
+window._ceArea=window._ceArea||'';
+window._ceNf=window._ceNf||'';
+
+function ceAplicar(){
+  window._ceLoja=document.getElementById('ce-loja')?.value||'';
+  window._ceDe=document.getElementById('ce-de')?.value||'';
+  window._ceAte=document.getElementById('ce-ate')?.value||'';
+  window._ceArea=document.getElementById('ce-area')?.value||'';
+  window._ceNf=document.getElementById('ce-nf')?.value||'';
+  const a=parseDate(window._ceDe),b=parseDate(window._ceAte);
+  if(dataIncompleta(a)||dataIncompleta(b))return; // ainda digitando o ano
+  renderScreen('consulta-envios');
+}
+function ceLimpar(){
+  window._ceLoja='';window._ceDe='';window._ceAte='';window._ceArea='';window._ceNf='';
+  renderScreen('consulta-envios');
+}
+function _ceIso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function cePeriodo(dias){
+  const fim=agoraBR(),ini=agoraBR();ini.setDate(ini.getDate()-dias+1);
+  window._ceDe=_ceIso(ini);window._ceAte=_ceIso(fim);
+  renderScreen('consulta-envios');
+}
+function ceMesAtual(){
+  const h=agoraBR();
+  window._ceDe=_ceIso(new Date(h.getFullYear(),h.getMonth(),1));
+  window._ceAte=_ceIso(h);
+  renderScreen('consulta-envios');
+}
+// Lista filtrada — usada pela tabela e pela exportação
+function ceLista(){
+  const isArea=CU.role==='area';
+  const fLoja=window._ceLoja||'',fArea=window._ceArea||'';
+  const fNf=String(window._ceNf||'').trim().toLowerCase();
+  const dIni=window._ceDe?new Date(window._ceDe+'T00:00:00'):null;
+  const dFim=window._ceAte?new Date(window._ceAte+'T23:59:59'):null;
+  let lista=(S.movs||[]).filter(m=>m&&m.tipo==='Envio para Loja');
+  if(isArea)lista=lista.filter(m=>String(m.origem||'').startsWith(CU.area));
+  if(fLoja)lista=lista.filter(m=>String(m.loja)===String(fLoja));
+  if(fArea)lista=lista.filter(m=>matchArea(m.origem,fArea));
+  if(fNf)lista=lista.filter(m=>String(m.nf||'').toLowerCase().includes(fNf));
+  if(dIni||dFim)lista=lista.filter(m=>{
+    const d=parseTsDate(m.ts);
+    if(!d||dataIncompleta(d))return false;
+    if(dIni&&d<dIni)return false;
+    if(dFim&&d>dFim)return false;
+    return true;
+  });
+  return lista.slice().sort((a,b)=>parseTsDate(b.ts)-parseTsDate(a.ts));
+}
+function ceExportar(){
+  const lista=ceLista();
+  if(!lista.length)return toast('Nada para exportar com esse filtro.','err');
+  const cab=['ID','Data','Origem','Loja','NF','Total',...MODELOS.map(m=>MODELO_LABELS[m]),'Usuario','Observacao'];
+  const linhas=lista.map(m=>[
+    m.id,m.ts,m.origem||'',m.destino||lojaNome(m.loja),m.nf||'',m.qtd||0,
+    ...MODELOS.map(k=>m.modelos?.[k]||0),
+    m.usuario||'',String(m.obs||'').replace(/[\r\n;]/g,' ')
+  ]);
+  const csv='\uFEFF'+[cab,...linhas].map(l=>l.join(';')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`envios_lojas_${hoje()}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast(`✓ ${lista.length} registro(s) exportado(s).`);
+}
+
+function rConsultaEnvios(el){
+  const isArea=CU.role==='area';
+  const lista=ceLista();
+  const LIM=300;
+  const mostra=lista.slice(0,LIM);
+  const total=lista.reduce((s,m)=>s+(m.qtd||0),0);
+  const porModelo={};MODELOS.forEach(m=>porModelo[m]=0);
+  const lojasSet={};
+  lista.forEach(m=>{
+    MODELOS.forEach(k=>porModelo[k]+=(m.modelos?.[k]||0));
+    if(m.loja)lojasSet[m.loja]=1;
+  });
+  const nLojas=Object.keys(lojasSet).length;
+  const areasOpt=isArea?subAreasDe(CU.area):AREAS_ALL;
+  const temFiltro=!!(window._ceLoja||window._ceDe||window._ceAte||window._ceArea||window._ceNf);
+
+  el.innerHTML=`
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">🔎 Filtros</span></div>
+    <div style="padding:14px 16px">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Loja</label>
+          <select class="form-control" id="ce-loja" onchange="ceAplicar()">
+            <option value="">— Todas as lojas —</option>
+            ${lojasOptions(window._ceLoja)}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Área de origem</label>
+          <select class="form-control" id="ce-area" onchange="ceAplicar()">
+            <option value="">— Todas as áreas —</option>
+            ${areasOpt.map(a=>`<option value="${a}"${window._ceArea===a?' selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">De</label>
+          <input class="form-control" type="date" id="ce-de" value="${window._ceDe||''}" onchange="agendarFiltro(ceAplicar)">
+        </div>
+        <div class="form-group"><label class="form-label">Até</label>
+          <input class="form-control" type="date" id="ce-ate" value="${window._ceAte||''}" onchange="agendarFiltro(ceAplicar)">
+        </div>
+        <div class="form-group"><label class="form-label">NF / Documento</label>
+          <input class="form-control" id="ce-nf" value="${window._ceNf||''}" placeholder="Parte do número" oninput="agendarFiltro(ceAplicar)">
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn btn-ghost btn-sm" onclick="cePeriodo(1)">Hoje</button>
+        <button class="btn btn-ghost btn-sm" onclick="cePeriodo(7)">7 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="cePeriodo(30)">30 dias</button>
+        <button class="btn btn-ghost btn-sm" onclick="ceMesAtual()">Mês atual</button>
+        <button class="btn btn-ghost btn-sm" onclick="ceLimpar()">✕ Limpar filtros</button>
+        <button class="btn btn-primary btn-sm" onclick="ceExportar()" style="margin-left:auto">⬇️ Exportar CSV</button>
+      </div>
+      ${temFiltro?`<div style="margin-top:10px;font-size:11px;color:var(--teal);font-weight:600;">Filtro ativo — ${lista.length} lançamento(s) encontrado(s).</div>`:''}
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:14px">
+    <div class="kpi-card neutro">
+      <div class="kpi-label">Lançamentos</div>
+      <div class="kpi-value">${lista.length}</div>
+      <div class="kpi-sub">no filtro atual</div>
+    </div>
+    <div class="kpi-card neutro">
+      <div class="kpi-label">Paletes enviados</div>
+      <div class="kpi-value">${total.toLocaleString('pt-BR')}</div>
+      <div class="kpi-sub">soma do período</div>
+    </div>
+    <div class="kpi-card neutro">
+      <div class="kpi-label">Lojas atendidas</div>
+      <div class="kpi-value">${nLojas}</div>
+      <div class="kpi-sub">lojas distintas</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">📦 Total por Modelo</span></div>
+    <div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;">
+      ${MODELOS.map(m=>`<div style="background:#f8fbff;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);padding:6px 12px;font-size:11px;">
+        <span style="color:var(--text-light)">${MODELO_LABELS[m].replace('Palete ','').replace('Gaiola de Madeira','Gaiola')}</span>
+        <strong style="margin-left:6px;font-size:14px;font-family:var(--mono)">${porModelo[m].toLocaleString('pt-BR')}</strong>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Envios${window._ceLoja?' — '+lojaLabel(window._ceLoja):''}</span>
+      <span style="font-size:11px;color:var(--text-light)">${lista.length>LIM?`mostrando os ${LIM} mais recentes de ${lista.length}`:`${lista.length} registro(s)`}</span>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Data</th><th>Origem</th><th>Loja</th><th>NF</th><th>Total</th><th>Modelos</th><th>Usuário</th><th>Obs</th><th>Ações</th></tr></thead>
+      <tbody>${mostra.length?mostra.map(m=>`<tr>
+        <td class="td-mono" style="font-size:10px">${m.id}${m.alertaSaldo?(m.alertaSaldo.status==='Pendente'?' <span class="badge badge-red" title="Envio registrado sem saldo">⚠️</span>':' <span class="badge badge-green" title="Falta de saldo já regularizada">✓</span>'):''}</td>
+        <td class="td-mono" style="font-size:10px">${m.ts}</td>
+        <td style="font-size:11px">${m.origem||'—'}</td>
+        <td class="td-bold">${m.destino||lojaNome(m.loja)}</td>
+        <td class="td-mono" style="font-size:10px">${m.nf||'—'}</td>
+        <td class="td-bold">${m.qtd}</td>
+        <td>${modelosHtml(m.modelos)}</td>
+        <td style="font-size:11px">${m.usuario||'—'}</td>
+        <td style="font-size:11px;max-width:180px">${m.obs||'—'}</td>
+        <td style="white-space:nowrap">
+          ${canEditMov(m)?`<button class="btn btn-warning btn-xs" onclick="abrirEditMov('${m.id}','consulta-envios')" title="Editar lançamento" style="margin-right:4px">✏️ Editar</button>`:''}
+          ${canDelete()?`<button class="btn btn-danger btn-xs" onclick="excluirMov('${m.id}','consulta-envios')" title="Excluir">🗑️</button>`:''}
+          ${(!canEditMov(m)&&!canDelete())?'<span style="color:var(--text-light);font-size:11px">—</span>':''}
+        </td>
+      </tr>`).join(''):emptyRow(10)}</tbody>
+    </table></div>
+  </div>`;
 }
 
 // ══════════════════════════════════════════════════════════════
