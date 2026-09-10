@@ -1106,6 +1106,12 @@ const LOJAS_BASE=[
 ];
 
 // ═══════════════════════════════════════════════════════
+// LOJAS EXTRA — cadastradas manualmente pela tela "Lojas"
+// (persistidas em S.lojasExtra, sincronizadas como o resto do estado)
+// ═══════════════════════════════════════════════════════
+function getLojas(){return [...LOJAS_BASE,...(S.lojasExtra||[])];}
+
+// ═══════════════════════════════════════════════════════
 // PERFIS & SENHAS PADRÃO
 // ═══════════════════════════════════════════════════════
 const PERFIL_DEF = {
@@ -1131,7 +1137,7 @@ const MENUS={
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],
     ['devolucao','🔄','Devolução'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['lojas','🏬','Cadastrar Lojas'],['senhas-adm','🔑','Senhas'],['reset','🗑️','Resetar Sistema'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   rev:[
     ['dashboard','📊','Dashboard'],['estoque','📦','Estoque'],['compra','🛒','Compra'],['distribuicao','🔀','Distribuição'],
@@ -1140,7 +1146,7 @@ const MENUS={
     ['alertas-saldo','⚠️','Alertas de Saldo'],
     ['triagem','🔍','Triagem'],['reforma','🔧','Reforma'],
     ['retorno-loja','↩️','Retorno Lojas'],['movimentacoes','↕️','Movimentações'],['fornecedores','🏭','Fornecedores'],
-    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['ajuste-estoque','🔧','Ajuste Estoque'],
+    ['saida-forn','🚛','Saída p/ Fornecedor'],['relatorios','📈','Relatórios Mensais'],['lojas','🏬','Cadastrar Lojas'],['ajuste-estoque','🔧','Ajuste Estoque'],
   ],
   area:[
     ['solicitar','🙋','🙋 Solicitar Paletes'],
@@ -1171,7 +1177,7 @@ function emptyEst(){
 
 let S={
   est:emptyEst(),
-  movs:[],solics:[],triagens:[],reformas:[],forns:[],
+  movs:[],solics:[],triagens:[],reformas:[],forns:[],lojasExtra:[],
   nMov:1,nRef:1,nSol:1,nForn:1,
   senhas:{ADM:'ADM@2024',REV:'REV@2024',MER:'MER@2024',FLV:'FLV@2024',PER:'PER@2024',PRD:'PRD@2024',CFR:'CFR@2024',FRI:'FRI@2024'},
 };
@@ -1312,6 +1318,7 @@ function fixState(s){
   if(!s.triagens)s.triagens=[];
   if(!s.reformas)s.reformas=[];
   if(!s.forns)s.forns=[];
+  if(!s.lojasExtra)s.lojasExtra=[];
   
   s.est=fixEst(s.est);
   // 🧹 v40: FAXINA DE RÓTULOS — roda em toda carga.
@@ -1496,7 +1503,7 @@ function horaBR(dt){
 function dataHoraBR(dt){
   return `${dataBR(dt)}, ${horaBR(dt)}`;
 }
-function lojaNome(d){const l=LOJAS_BASE.find(x=>x.d===Number(d));return l?l.n:String(d);}
+function lojaNome(d){const l=getLojas().find(x=>x.d===Number(d));return l?l.n:String(d);}
 function totalEst(area){return MODELOS.reduce((s,m)=>s+(S.est[area]?.[m]||0),0);}
 // Formata valor respeitando o modo variação (mostra sinal e permite negativo)
 function fmtVal(v){
@@ -1605,7 +1612,7 @@ function lojaSearch(id){
   const dd=document.getElementById(id+'-dd');
   if(!dd)return;
   if(q.length<3){dd.style.display='none';return;}
-  const matches=LOJAS_BASE.filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
+  const matches=getLojas().filter(l=>l.n.toLowerCase().includes(q)||String(l.d).padStart(3,'0').includes(q));
   if(!matches.length){dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--text-light);">Nenhuma loja encontrada</div>';dd.style.display='block';return;}
   // guarda matches para navegação
   dd._matches=matches;
@@ -1798,6 +1805,7 @@ const PAGE_INFO={
   'minha-area':['Estoque da Área','Saldo apenas da sua área'],
   'transf-area':['Transferência entre Áreas','Sua área → outra área do CD'],
   'saida-forn':['Saída para Fornecedor','Devolução de paletes — baixa na REV'],
+  'lojas':['Cadastrar Lojas','Incluir novas lojas para envio e retorno de paletes'],
   'senhas-adm':['Gerenciar Senhas','Senhas de acesso por área'],
   'reset':['Resetar Sistema','⚠️ Apagar todos os dados'],'ajuste-estoque':['Ajuste de Estoque','Correção manual de saldos'],
 };
@@ -1832,7 +1840,7 @@ function renderScreen(s){
     'retorno-loja':rRetornoLoja,devolucao:rDevolucao,
     movimentacoes:rMovimentacoesWrap,fornecedores:rFornecedores,
     'minha-area':rMinhaArea,'transf-area':rTransfArea,
-    'saida-forn':rSaidaForn,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),
+    'saida-forn':rSaidaForn,'lojas':rLojas,'senhas-adm':rSenhasAdm,'reset':rReset,'ajuste-estoque':(el)=>abrirAjusteEstoque(),
     relatorios:rRelatorios,
   };
   if(fn[s]) fn[s](el);
@@ -2729,7 +2737,7 @@ function ccSaldo(grupo,est){
   return out;
 }
 function lojasOptions(sel){
-  return LOJAS_BASE.slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'))
+  return getLojas().slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'))
     .map(l=>`<option value="${l.d}"${String(sel)===String(l.d)?' selected':''}>${String(l.d).padStart(3,'0')} · ${l.n}</option>`).join('');
 }
 
@@ -2739,12 +2747,12 @@ function normLoja(s){
   return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
 function lojaLabel(d){
-  const l=LOJAS_BASE.find(x=>x.d===Number(d));
+  const l=getLojas().find(x=>x.d===Number(d));
   return l?`${String(l.d).padStart(3,'0')} · ${l.n}`:String(d||'');
 }
 function lojasMatch(q){
   const t=normLoja(q);
-  const base=LOJAS_BASE.slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'));
+  const base=getLojas().slice().sort((a,b)=>a.n.localeCompare(b.n,'pt-BR'));
   if(!t)return base;
   if(/^\d+$/.test(t)){
     const cod=base.filter(l=>String(l.d).startsWith(t)||String(l.d).padStart(3,'0').startsWith(t));
@@ -3420,7 +3428,7 @@ function calcSaldoLojas(de,ate){
     MODELOS.forEach(x=>{map[d].pm[x]+=sinal*(m.modelos?.[x]||0);});
   });
   return Object.keys(map).map(d=>{
-    const loja=LOJAS_BASE.find(l=>l.d===Number(d))||{d:Number(d),n:lojaNome(d)};
+    const loja=getLojas().find(l=>l.d===Number(d))||{d:Number(d),n:lojaNome(d)};
     const porModelo={};MODELOS.forEach(x=>porModelo[x]=map[d].pm[x]);
     return{loja,env:map[d].env,ret:map[d].ret,saldo:map[d].env-map[d].ret,porModelo};
   }).sort((a,b)=>b.saldo-a.saldo||a.loja.n.localeCompare(b.loja.n,'pt-BR'));
@@ -3518,7 +3526,7 @@ function rPaletesLoja(el){
     <div class="kpi-card teal"><div class="kpi-label">${filtrado?'Saldo do Período':'Paletes nas Lojas'}</div><div class="kpi-value">${totSaldo}</div><div class="kpi-sub">${filtrado?'enviado menos retornado':'saldo em posse'}</div></div>
     <div class="kpi-card blue"><div class="kpi-label">${filtrado?'Enviado no Período':'Total Enviado'}</div><div class="kpi-value">${totEnv}</div></div>
     <div class="kpi-card amber"><div class="kpi-label">${filtrado?'Retornado no Período':'Total Retornado'}</div><div class="kpi-value">${totRet}</div></div>
-    <div class="kpi-card slate"><div class="kpi-label">${filtrado?'Lojas com Movimento':'Lojas com Saldo'}</div><div class="kpi-value">${filtrado?data.length:comSaldo}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas${comNeg?` · <strong style="color:var(--red)">${comNeg} negativa(s)</strong>`:''}</div></div>
+    <div class="kpi-card slate"><div class="kpi-label">${filtrado?'Lojas com Movimento':'Lojas com Saldo'}</div><div class="kpi-value">${filtrado?data.length:comSaldo}</div><div class="kpi-sub">de ${getLojas().length} cadastradas${comNeg?` · <strong style="color:var(--red)">${comNeg} negativa(s)</strong>`:''}</div></div>
   </div>
 
   <div class="card" style="margin-top:16px">
@@ -3689,7 +3697,7 @@ function rPaletesLojaDashboard(el,fDe,fAte,filtrado,fmtBr){
     <div class="kpi-card teal"><div class="kpi-label">Saldo do Período</div><div class="kpi-value">${totSaldo.toLocaleString('pt-BR')}</div><div class="kpi-sub">${totSaldo<0?'negativo: voltou mais do que saiu':'enviado menos retornado'}</div></div>
     <div class="kpi-card ${corTaxa}"><div class="kpi-label">Taxa de Retorno</div><div class="kpi-value">${taxa}%</div><div class="kpi-sub">${subTaxa}</div></div>
     <div class="kpi-card ${comSaldo>0?'green':'slate'}"><div class="kpi-label">Lojas no Ciclo Normal</div><div class="kpi-value">${comSaldo}</div><div class="kpi-sub">saldo positivo · ${comNeg} ainda negativas</div></div>
-    <div class="kpi-card purple"><div class="kpi-label">Lojas com Movimento</div><div class="kpi-value">${data.length}</div><div class="kpi-sub">de ${LOJAS_BASE.length} cadastradas</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Lojas com Movimento</div><div class="kpi-value">${data.length}</div><div class="kpi-sub">de ${getLojas().length} cadastradas</div></div>
   </div>`;
 
   // Bar charts
@@ -3766,7 +3774,7 @@ function _visaoTV(de,ate){
   // Sempre publica o NOME. Se a loja não estiver no cadastro, calcSaldoLojas
   // devolve o dígito como nome — a TV mostraria "142" em vez de "Mascote 2".
   const lojas = linhas.map(r=>{
-    const cad = LOJAS_BASE.find(l=>l.d===Number(r.loja.d));
+    const cad = getLojas().find(l=>l.d===Number(r.loja.d));
     const nome = cad ? cad.n : (String(r.loja.n||'').trim() || 'Loja '+r.loja.d);
     return {n:nome, d:r.loja.d, e:r.env, r:r.ret, s:r.saldo};
   });
@@ -3808,7 +3816,7 @@ function montarSnapshotTV(){
     atualizadoEm: dataHoraBR(),
     epoch: Date.now(),
     totalMovs: (S.movs||[]).length,
-    lojasCadastradas: LOJAS_BASE.length,
+    lojasCadastradas: getLojas().length,
     inicioOperacao: INICIO_OPERACAO_BR,
     visoes: {
       mes:   Object.assign({rotulo: rot(pMes)||'Mês atual'},       _visaoTV(pMes, fim)),
@@ -4593,6 +4601,78 @@ function doExcluirForn(id){
   if(!confirm(`Excluir fornecedor "${f.nome}"? Esta ação não pode ser desfeita.`))return;
   S.forns=S.forns.filter(x=>x.id!==id);
   save();toast(`✓ Fornecedor excluído.`,'warn');renderScreen('fornecedores');
+}
+
+// ── CADASTRO DE LOJAS ──────────────────
+// Lojas cadastradas aqui (S.lojasExtra) entram automaticamente nas buscas
+// de "Envio p/ Lojas" e "Retorno Lojas" — ver getLojas().
+function rLojas(el){
+  const lojas=getLojas().slice().sort((a,b)=>a.d-b.d);
+  el.innerHTML=`
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:14px">🏬 Nova Loja</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Código *</label>
+        <input class="form-control" id="lj-cod" type="number" min="1" placeholder="Ex: 152"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doAddLoja();}">
+      </div>
+      <div class="form-group"><label class="form-label">Nome da Loja *</label>
+        <input class="form-control" id="lj-nome" placeholder="Ex: Vila Prudente" autocomplete="off"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doAddLoja();}">
+      </div>
+      <div class="form-group"><label class="form-label">Centro de Custo</label>
+        <input class="form-control" id="lj-cc" placeholder="Opcional"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doAddLoja();}">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="doAddLoja()">✓ Cadastrar Loja</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Lojas Cadastradas</span>
+      <span style="font-size:11px;color:var(--text-light)">${lojas.length} loja(s)</span>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Código</th><th>Nome</th><th>Centro de Custo</th><th>Origem</th><th>Ações</th></tr></thead>
+      <tbody>${lojas.length?lojas.map(l=>{
+        const extra=(S.lojasExtra||[]).some(x=>x.d===l.d);
+        return `<tr>
+        <td class="td-mono">${String(l.d).padStart(3,'0')}</td>
+        <td class="td-bold">${l.n}</td>
+        <td>${l.cc||'—'}</td>
+        <td><span class="badge ${extra?'badge-green':'badge-gray'}">${extra?'Cadastrada':'Padrão'}</span></td>
+        <td>${extra?`<button class="btn btn-danger btn-xs" onclick="doExcluirLoja(${l.d})">🗑️</button>`:'—'}</td>
+      </tr>`;}).join(''):`<tr><td colspan="5"><div class="empty"><div class="empty-icon">🏬</div><div class="empty-text">Nenhuma loja cadastrada</div></div></td></tr>`}
+      </tbody>
+    </table></div>
+  </div>`;
+  setTimeout(()=>document.getElementById('lj-cod')?.focus(),100);
+}
+function doAddLoja(){
+  const cod=parseInt(v('lj-cod'));
+  const nome=v('lj-nome').trim();
+  const cc=v('lj-cc').trim();
+  if(!cod||cod<1)return toast('Informe um código de loja válido.','err');
+  if(!nome)return toast('Informe o nome da loja.','err');
+  if(getLojas().some(l=>l.d===cod))
+    return toast(`Já existe uma loja cadastrada com o código ${String(cod).padStart(3,'0')}.`,'err');
+  const nova={d:cod,n:nome,cc:cc||''};
+  if(!S.lojasExtra)S.lojasExtra=[];
+  S.lojasExtra.push(nova);
+  save();
+  toast(`✓ Loja "${nova.n}" (${String(nova.d).padStart(3,'0')}) cadastrada com sucesso!`);
+  renderScreen('lojas');
+}
+function doExcluirLoja(d){
+  const l=(S.lojasExtra||[]).find(x=>x.d===Number(d));
+  if(!l)return;
+  if(!confirm(`Excluir a loja "${l.n}" (${String(l.d).padStart(3,'0')})? Esta ação não pode ser desfeita.`))return;
+  S.lojasExtra=S.lojasExtra.filter(x=>x.d!==Number(d));
+  save();
+  toast('✓ Loja excluída.','warn');
+  renderScreen('lojas');
 }
 
 // ── MINHA ÁREA ─────────────────────────
