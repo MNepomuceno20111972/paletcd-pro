@@ -445,6 +445,12 @@ textarea.form-control{resize:vertical;min-height:60px;}
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="edit-tr-data" type="date"></div>
         <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="edit-tr-user"></div>
+        <div class="form-group"><label class="form-label">Turno *</label><select class="form-control" id="edit-tr-turno">
+          <option value="">Selecione</option>
+          <option value="1º Turno">1º Turno</option>
+          <option value="2º Turno">2º Turno</option>
+          <option value="3º Turno">3º Turno</option>
+        </select></div>
         <div class="form-group"><label class="form-label">✅ Operação</label><input class="form-control" id="edit-tr-op" type="number" min="0"></div>
         <div class="form-group"><label class="form-label">🔧 Reforma</label><input class="form-control" id="edit-tr-ref" type="number" min="0"></div>
         <div class="form-group"><label class="form-label">🗑️ Descarte</label><input class="form-control" id="edit-tr-desc" type="number" min="0"></div>
@@ -1488,6 +1494,14 @@ function agoraBR(){
 function hoje(){
   const p=_partesBR();
   return `${p.year}-${p.month}-${p.day}`;
+}
+// Sugestão de turno com base no horário atual (Brasília) — só um valor
+// inicial pra agilizar; o usuário sempre pode trocar no formulário.
+function turnoAtual(){
+  const h=parseInt(_partesBR().hour,10);
+  if(h>=6&&h<14)return '1º Turno';
+  if(h>=14&&h<22)return '2º Turno';
+  return '3º Turno';
 }
 // "20/08/2026" — data de hoje em Brasília
 function dataBR(dt){
@@ -3978,6 +3992,9 @@ function doDevolucao(){
 function rTriagem(el){
   const totFila=totalEst('TriagemFila');
   const modelosNaFila=MODELOS.filter(m=>(S.est.TriagemFila[m]||0)>0);
+  const triagensFiltradas=S.triagens
+    .map((t,i)=>({t,i}))
+    .filter(({t})=>!_filtroTriTurno||t.turno===_filtroTriTurno);
 
   // Painel de lojas com retornos por modelo e NF
   const lojasRetorno={};
@@ -4049,6 +4066,12 @@ function rTriagem(el){
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Data *</label><input class="form-control" id="tr-data" type="date" value="${hoje()}"></div>
       <div class="form-group"><label class="form-label">Usuário *</label><input class="form-control" id="tr-user" value="${CU.nome}"></div>
+      <div class="form-group"><label class="form-label">Turno *</label><select class="form-control" id="tr-turno">
+        <option value="">Selecione</option>
+        <option value="1º Turno"${turnoAtual()==='1º Turno'?' selected':''}>1º Turno</option>
+        <option value="2º Turno"${turnoAtual()==='2º Turno'?' selected':''}>2º Turno</option>
+        <option value="3º Turno"${turnoAtual()==='3º Turno'?' selected':''}>3º Turno</option>
+      </select></div>
     </div>
     ${totFila>0?`
     <div style="margin-top:14px;overflow-x:auto;">
@@ -4079,11 +4102,19 @@ function rTriagem(el){
     <div class="form-group full" style="margin-top:12px"><label class="form-label">Observação</label><textarea class="form-control" id="tr-obs"></textarea></div>
     <div class="form-actions"><button class="btn btn-primary" onclick="doTriagem()">✓ Registrar Triagem</button></div>
   </div>
-  <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Triagens</span></div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Histórico de Triagens</span>
+    <select class="form-control" id="filtro-tri-turno" style="max-width:160px;margin-left:auto" onchange="_filtroTriTurno=this.value;renderScreen('triagem')">
+      <option value="">Todos os turnos</option>
+      <option value="1º Turno"${_filtroTriTurno==='1º Turno'?' selected':''}>1º Turno</option>
+      <option value="2º Turno"${_filtroTriTurno==='2º Turno'?' selected':''}>2º Turno</option>
+      <option value="3º Turno"${_filtroTriTurno==='3º Turno'?' selected':''}>3º Turno</option>
+    </select>
+  </div>
   <div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Triado</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>↩ Restante</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
-    <tbody>${S.triagens.length?S.triagens.map((t,i)=>`<tr>
+    <thead><tr><th>Data</th><th>Turno</th><th>Triado</th><th>✅ Operação</th><th>🔧 Reforma</th><th>🗑️ Descarte</th><th>↩ Restante</th><th>Detalhes</th><th>Usuário</th>${canDelete()?'<th></th>':''}</tr></thead>
+    <tbody>${triagensFiltradas.length?triagensFiltradas.map(({t,i})=>`<tr>
       <td class="td-mono">${t.data}</td>
+      <td>${t.turno||'—'}</td>
       <td class="td-bold">${t.total}</td>
       <td style="color:var(--green);font-weight:700">${t.prontos}</td>
       <td style="color:var(--amber);font-weight:700">${t.reforma}</td>
@@ -4092,7 +4123,7 @@ function rTriagem(el){
       <td style="max-width:220px;font-size:10px">${t.detModelos?Object.entries(t.detModelos).filter(([,v])=>v.op+v.ref+v.desc>0).map(([m,v])=>`<span style="white-space:nowrap">${MODELO_LABELS[m]?.replace('Palete ','').replace('Gaiola de Madeira','Gaiola')||m}: ✅${v.op} 🔧${v.ref} 🗑️${v.desc}</span>`).join(' · '):'—'}</td>
       <td>${t.usuario}</td>
       ${canDelete()?`<td style="white-space:nowrap;display:flex;gap:3px;"><button class="btn btn-ghost btn-xs" onclick="abrirEditTriagem(${i},'triagem')" title="Editar">✏️</button><button class="btn btn-danger btn-xs" onclick="excluirTriagem(${i},'triagem')" title="Excluir">🗑️</button></td>`:''}
-    </tr>`).join(''):emptyRow(canDelete()?9:8)}</tbody>
+    </tr>`).join(''):emptyRow(canDelete()?10:9)}</tbody>
   </table></div></div>`;
 }
 function calcTr(){
@@ -4132,9 +4163,10 @@ function doTriagem(){
     return toast('❌ Lançamentos apenas no DESKTOP!','err');
   }
   
-  const totFila=totalEst('TriagemFila'),user=v('tr-user');
+  const totFila=totalEst('TriagemFila'),user=v('tr-user'),turno=v('tr-turno');
   if(totFila===0)return toast('Não há itens em fila.','err');
   if(!user)return toast('Informe o usuário.','err');
+  if(!turno)return toast('Selecione o turno.','err');
   const modelosNaFila=MODELOS.filter(m=>(S.est.TriagemFila[m]||0)>0);
   const prontos={},reforma={},descarte={},detModelos={};
   let tp=0,tr=0,td=0,ttriado=0;
@@ -4170,6 +4202,7 @@ function doTriagem(){
   S.triagens.unshift({
     id:'TRI-'+Date.now(),_seq:Date.now(),
     data:v('tr-data')||hoje(),
+    turno,
     total:ttriado,
     prontos:tp,reforma:tr,descarte:td,
     restante,
@@ -5418,6 +5451,7 @@ function aplicarEfeitoMov(mov,sign){
 // o caminho correto é excluir (estorno completo) e relançar.
 const TIPOS_VINCULO=['Pagamento Fornecedor','Recebimento Fornecedor','Envio para Reforma','Retorno de Reforma','Envio Descartável Reforma'];
 let _editMovId=null, _editTriIdx=null, _editTriId=null, _editSolId=null;
+let _filtroTriTurno='';
 
 function abrirEditMov(id,screen){
   const m=S.movs.find(x=>x.id===id);if(!m)return;
@@ -5485,6 +5519,7 @@ function abrirEditTriagem(idx,screen){
   _editTriIdx=idx;_editTriId=t.id||null; // id sobrevive a reordenação por sync remoto
   document.getElementById('edit-tr-data').value=t.data||'';
   document.getElementById('edit-tr-user').value=t.usuario||'';
+  document.getElementById('edit-tr-turno').value=t.turno||'';
   document.getElementById('edit-tr-op').value=t.prontos||0;
   document.getElementById('edit-tr-ref').value=t.reforma||0;
   document.getElementById('edit-tr-desc').value=t.descarte||0;
@@ -5501,6 +5536,7 @@ function confirmarEditTriagem(screen){
   }
   t.data=document.getElementById('edit-tr-data').value||t.data;
   t.usuario=document.getElementById('edit-tr-user').value||t.usuario;
+  t.turno=document.getElementById('edit-tr-turno').value||t.turno;
   t.prontos=parseInt(document.getElementById('edit-tr-op').value)||0;
   t.reforma=parseInt(document.getElementById('edit-tr-ref').value)||0;
   t.descarte=parseInt(document.getElementById('edit-tr-desc').value)||0;
